@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "packages/quest",
     "packages/survivor",
 ]
 description = "Elysium Descent"
