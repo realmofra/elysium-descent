@@ -10,7 +10,7 @@ pub mod events {
 
 pub mod models {
     pub mod index;
-    pub mod survivor;
+    pub mod inventory;
 }
 
 pub mod components {

@@ -1,9 +1,9 @@
 [workspace]
 members = [
-    "packages/survivor",
-    "packages/inventory_management",
+    "packages/dojo_survivor",
+    "packages/dojo_inventory_mgmt",
 ]
-description = "Elysium Descent"
+description = "Elysium Descent Dojo Game"
 homepage = "https://github.com/okhaimie-dev/elysium_descent/"
 cairo-version = "2.10.1"
 

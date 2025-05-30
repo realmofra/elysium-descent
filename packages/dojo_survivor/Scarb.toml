@@ -1,5 +1,5 @@
 [package]
-name = "inventory_management"
+name = "dojo_survivor"
 version.workspace = true
 edition.workspace = true
 
