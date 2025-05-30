@@ -1,0 +1,22 @@
+[package]
+name = "elysium_descent"
+version = "0.0.1"
+edition = "2024"
+categories = ["game"]
+description = "Elysium Descent is a roguelike game inspired by lootsurvivor built with Bevy and Dojo"
+homepage = "https://realmofra.com"
+authors = [
+  "Okhai Omotuebe <okhaio@protonmail.com>"
+]
+keywords = ["game", "starknet", "bevy", "focg", "roguelike"]
+repository = "https://github.com/realmofra/elysium_descent"
+
+[workspace]
+resolver = "2"
+members = [
+  "crates/*",
+  "tools/*",
+]
+
+[workspace.dependencies]
+bevy = { version = "0.16", default-features = false }
