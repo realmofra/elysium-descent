@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "packages/survivor",
+    "packages/inventory_management",
 ]
 description = "Elysium Descent"
 homepage = "https://github.com/okhaimie-dev/elysium_descent/"
