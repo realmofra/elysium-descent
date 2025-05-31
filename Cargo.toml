@@ -15,10 +15,13 @@ repository = "https://github.com/realmofra/elysium_descent"
 resolver = "2"
 members = [
   "crates/bevy_dojo",
+  "client/"
 ]
+default-members = ["client/"]
 
 [workspace.dependencies]
 bevy = "0.16"
+bevy_enhanced_input = "0.12.0"
 # Set max log levels. This helps avoid unwanted low-severity log spam, which can affect performance.
 log = { version = "0.4", features = [
     "max_level_debug",
