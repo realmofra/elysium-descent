@@ -39,9 +39,8 @@ By participating in this project, you agree to abide by our Code of Conduct:
 Before you begin, ensure you have the following installed:
 
 **For Game Client (Bevy/Rust):**
-- Rust 1.75.0 or later
+- Rust 1.87.0 or later
 - Cargo (comes with Rust)
-- Git
 
 **For Smart Contracts (Cairo/Starknet):**
 - Scarb 2.10.1
@@ -57,7 +56,7 @@ Before you begin, ensure you have the following installed:
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/yourusername/elysium_descent.git
+   git clone https://github.com/realmofra/elysium_descent.git
    cd elysium_descent
    ```
 
