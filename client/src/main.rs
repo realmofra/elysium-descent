@@ -1,7 +1,14 @@
-use bevy::prelude::*;
 use bevy::window::{PresentMode, WindowMode, WindowResolution};
+use bevy::{prelude::*, render::view::RenderLayers};
+use bevy_kira_audio::prelude::*;
+use bevy_lunex::prelude::*;
 
+mod audio;
 mod keybinding;
+mod screens;
+mod ui;
+
+pub use audio::GameAudioPlugin;
 
 fn main() -> AppExit {
     App::new()
@@ -18,6 +25,23 @@ fn main() -> AppExit {
             }),
             ..default()
         }))
-        .add_plugins(keybinding::plugin)
+        .add_systems(Startup, setup_camera)
+        .add_plugins(UiLunexPlugins)
+        .add_plugins(AudioPlugin)
+        .add_plugins(GameAudioPlugin)
+        .add_plugins((screens::plugin, keybinding::plugin))
         .run()
+}
+
+fn setup_camera(mut commands: Commands) {
+    commands.spawn((
+        Camera2d::default(),
+        Camera {
+            order: 2,
+            ..default()
+        },
+        RenderLayers::from_layers(&[0, 1]),
+        UiSourceCamera::<0>,
+        Transform::from_translation(Vec3::Z * 1000.0),
+    ));
 }

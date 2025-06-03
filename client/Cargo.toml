@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = "0.16"
+bevy.workspace = true
 bevy_enhanced_input.workspace = true
+bevy_kira_audio = "0.23.0"
+bevy_lunex = "0.4.1"
 # Set max log levels. This helps avoid unwanted low-severity log spam, which can affect performance.
 log.workspace = true
 starknet = "0.15.1"

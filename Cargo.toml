@@ -20,7 +20,39 @@ members = [
 default-members = ["client/"]
 
 [workspace.dependencies]
-bevy = "0.16"
+bevy = { version = "0.16.0", default-features = false, features = [
+  "animation",
+  "bevy_asset",
+  "bevy_color",
+  "bevy_core_pipeline",
+  "bevy_gilrs",
+  "bevy_gizmos",
+  "bevy_gltf",
+  "bevy_mesh_picking_backend",
+  "bevy_pbr",
+  "bevy_picking",
+  "bevy_render",
+  "bevy_scene",
+  "bevy_sprite",
+  "bevy_sprite_picking_backend",
+  "bevy_state",
+  "bevy_text",
+  "bevy_ui",
+  "bevy_ui_picking_backend",
+  "bevy_window",
+  "bevy_winit",
+  "custom_cursor",
+  "hdr",
+  "multi_threaded",
+  "png",
+  "jpeg",
+  "smaa_luts",
+  "sysinfo_plugin",
+  "tonemapping_luts",
+  "webgl2",
+  #"webgpu",
+  "x11",
+]}
 bevy_enhanced_input = "0.12.0"
 # Set max log levels. This helps avoid unwanted low-severity log spam, which can affect performance.
 log = { version = "0.4", features = [
