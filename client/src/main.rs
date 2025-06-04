@@ -3,6 +3,7 @@ use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_kira_audio::prelude::*;
 use bevy_lunex::prelude::*;
 
+mod assets;
 mod audio;
 mod keybinding;
 mod screens;
@@ -28,6 +29,7 @@ fn main() -> AppExit {
         .add_systems(Startup, setup_camera)
         .add_plugins(UiLunexPlugins)
         .add_plugins(AudioPlugin)
+        .add_plugins(assets::AssetsPlugin)
         .add_plugins(GameAudioPlugin)
         .add_plugins((screens::plugin, keybinding::plugin))
         .run()

@@ -3,6 +3,8 @@ use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 use std::time::Duration;
 
+use crate::assets::AudioAssets;
+
 #[derive(Resource, Default)]
 pub struct AudioResources {
     pub current_music: Option<Handle<AudioInstance>>,
@@ -43,7 +45,7 @@ impl Plugin for GameAudioPlugin {
             .init_resource::<AudioSettings>()
             .add_audio_channel::<MusicChannel>()
             .add_audio_channel::<SfxChannel>()
-            .add_systems(Startup, setup_audio)
+            .add_systems(OnEnter(Screen::MainMenu), setup_audio)
             .add_systems(
                 Update,
                 (
@@ -55,9 +57,9 @@ impl Plugin for GameAudioPlugin {
     }
 }
 
-fn setup_audio(asset_server: Res<AssetServer>, mut audio_resources: ResMut<AudioResources>) {
-    audio_resources.main_menu_track = Some(asset_server.load("audio/main_menu.ogg"));
-    audio_resources.intro_track = Some(asset_server.load("audio/intro.ogg"));
+fn setup_audio(audio_assets: Res<AudioAssets>, mut audio_resources: ResMut<AudioResources>) {
+    audio_resources.main_menu_track = Some(audio_assets.main_menu_track.clone());
+    audio_resources.intro_track = Some(audio_assets.intro_track.clone());
 }
 
 fn apply_audio_settings(

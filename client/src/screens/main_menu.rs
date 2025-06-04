@@ -2,6 +2,7 @@ use bevy::{picking::*, prelude::*, sprite::Anchor};
 use bevy_lunex::*;
 
 use super::{Screen, despawn_scene};
+use crate::assets::{FontAssets, UiAssets};
 use crate::ui::styles::ElysiumDescentColorPalette;
 
 pub fn plugin(app: &mut App) {
@@ -12,7 +13,7 @@ pub fn plugin(app: &mut App) {
 #[derive(Component)]
 struct MainMenuScene;
 
-fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn spawn(mut commands: Commands, ui_assets: Res<UiAssets>, font_assets: Res<FontAssets>) {
     // Create UI
     commands
         .spawn((
@@ -29,7 +30,7 @@ fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
                     .size((1920.0, 1080.0))
                     .scaling(Scaling::Fill)
                     .pack(),
-                Sprite::from_image(asset_server.load("images/ui/background.png")),
+                Sprite::from_image(ui_assets.background.clone()),
             ));
 
             // Add the panel boundary
@@ -46,7 +47,7 @@ fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
                             .anchor(Anchor::TopCenter)
                             .size(Rl(105.0))
                             .pack(),
-                        Sprite::from_image(asset_server.load("images/ui/panel_menu.png")),
+                        Sprite::from_image(ui_assets.panel_menu.clone()),
                     ));
                     // Spawn the logo boundary
                     ui.spawn((UiLayout::window()
@@ -58,7 +59,7 @@ fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
                             ui.spawn((
                                 Name::new("Logo"),
                                 UiLayout::solid().size((1240.0, 381.0)).pack(),
-                                Sprite::from_image(asset_server.load("images/ui/title.png")),
+                                Sprite::from_image(ui_assets.title.clone()),
                             ));
                         });
 
@@ -94,7 +95,7 @@ fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
                                         (UiHover::id(), Color::ELYSIUM_DESCENT_YELLOW.with_alpha(1.2))
                                     ]),
                                     Sprite {
-                                        image: asset_server.load("images/ui/components/button_symetric_sliced.png"),
+                                        image: ui_assets.button_symmetric.clone(),
                                         // Here we enable sprite slicing
                                         image_mode: SpriteImageMode::Sliced(TextureSlicer { border: BorderRect::all(32.0), ..default() }),
                                         ..default()
@@ -117,7 +118,7 @@ fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
                                         // You can attach text like this
                                         Text2d::new(button),
                                         TextFont {
-                                            font: asset_server.load("fonts/rajdhani/Rajdhani-Medium.ttf"),
+                                            font: font_assets.rajdhani_medium.clone(),
                                             font_size: 64.0,
                                             ..default()
                                         },
@@ -139,7 +140,7 @@ fn spawn(mut commands: Commands, asset_server: Res<AssetServer>) {
                                         // You can attach text like this
                                         Text2d::new("<-"),
                                         TextFont {
-                                            font: asset_server.load("fonts/rajdhani/Rajdhani-Bold.ttf"),
+                                            font: font_assets.rajdhani_bold.clone(),
                                             font_size: 64.0,
                                             ..default()
                                         },
