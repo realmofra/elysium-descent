@@ -14,9 +14,6 @@ pub fn plugin(app: &mut App) {
 }
 
 fn setup_loading_screen(mut commands: Commands) {
-    // Spawn a simple loading screen
-    commands.spawn((LoadingScreen, Camera2d));
-
     commands
         .spawn((
             LoadingScreen,
