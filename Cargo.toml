@@ -52,8 +52,15 @@ bevy = { version = "0.16.0", default-features = false, features = [
   #"webgpu",
   "x11",
 ]}
+bevy_asset_loader = "0.23.0"
 bevy_enhanced_input = "0.12.0"
-# Set max log levels. This helps avoid unwanted low-severity log spam, which can affect performance.
+bevy_kira_audio = "0.23.0"
+bevy_lunex = "0.4.1"
+
+# Blockchain
+starknet = "0.15.1"
+
+# Logging
 log = { version = "0.4", features = [
     "max_level_debug",
     "release_max_level_warn",
@@ -62,6 +69,11 @@ tracing = { version = "0.1", features = [
     "max_level_debug",
     "release_max_level_warn",
 ] }
+
+[workspace.lints.clippy]
+# Bevy-specific
+too_many_arguments = "allow"
+type_complexity = "allow"
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]

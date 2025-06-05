@@ -3,13 +3,15 @@ use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_kira_audio::prelude::*;
 use bevy_lunex::prelude::*;
 
-mod assets;
-mod audio;
 mod keybinding;
+mod resources;
 mod screens;
 mod ui;
 
-pub use audio::GameAudioPlugin;
+pub use resources::assets;
+pub use resources::audio;
+
+pub use resources::audio::GameAudioPlugin;
 
 fn main() -> AppExit {
     App::new()
