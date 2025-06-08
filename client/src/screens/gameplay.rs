@@ -75,6 +75,22 @@ impl PlayingScene {
             )),
         ));
 
+        // Add player
+        commands.spawn((
+            Name::new("Player"),
+            SceneRoot(assets.load("models/player.glb#Scene0")),
+            Transform {
+                translation: Vec3::new(0.0, 2.0, 0.0),
+                scale: Vec3::splat(4.0), // Scale up by 4
+                ..default()
+            },
+            RigidBody::Dynamic,
+            Collider::cylinder(1.0, 0.5),
+            Friction::new(0.5),
+            Restitution::new(0.3),
+            GravityScale(1.0),
+        ));
+
         // Add camera
         commands.spawn((
             Name::new("Camera"),
@@ -83,7 +99,7 @@ impl PlayingScene {
                 order: 1,
                 ..default()
             },
-            Transform::from_xyz(0.0, 2.0, 6.0).looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),
+            Transform::from_xyz(0.0, 4.0, -12.0).looking_at(Vec3::new(0.0, 2.0, 0.0), Vec3::Y),
             FlyCam::default(),
         ));
     }
