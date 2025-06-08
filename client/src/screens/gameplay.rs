@@ -4,13 +4,16 @@ use std::time::Duration;
 
 use super::Screen;
 use crate::rendering::cameras::player_camera::*;
+use crate::systems::character_controller::{CharacterController, CharacterControllerBundle, CharacterControllerPlugin};
 
 // ===== PLUGIN SETUP =====
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::GamePlay), PlayingScene::spawn_environment)
+        .add_systems(Update, camera_follow_player)
         .add_systems(OnExit(Screen::GamePlay), despawn_scene::<PlayingScene>)
         .add_plugins(PhysicsPlugins::default())
+        .add_plugins(CharacterControllerPlugin)
         .insert_resource(ClearColor(Color::srgb(0.529, 0.808, 0.922))); // Sky blue color
 }
 
@@ -19,6 +22,32 @@ pub(super) fn plugin(app: &mut App) {
 fn despawn_scene<S: Component>(mut commands: Commands, query: Query<Entity, With<S>>) {
     for entity in &query {
         commands.entity(entity).despawn();
+    }
+}
+
+fn camera_follow_player(
+    player_query: Query<&Transform, With<CharacterController>>,
+    mut camera_query: Query<&mut Transform, (With<Camera>, Without<CharacterController>)>,
+    time: Res<Time>,
+) {
+    if let Ok(player_transform) = player_query.single() {
+        for mut camera_transform in camera_query.iter_mut() {
+            let player_pos = player_transform.translation;
+            let player_rotation = player_transform.rotation;
+            
+            // Calculate camera position behind player (inverted Z)
+            let camera_offset = player_rotation * Vec3::new(0.0, 4.0, -12.0);
+            let target_pos = player_pos + camera_offset;
+            
+            // Smoothly move camera to new position
+            camera_transform.translation = camera_transform.translation.lerp(
+                target_pos,
+                (5.0 * time.delta_secs()).min(1.0),
+            );
+            
+            // Make camera look at player
+            camera_transform.look_at(player_pos + Vec3::Y * 2.0, Vec3::Y);
+        }
     }
 }
 
@@ -84,8 +113,8 @@ impl PlayingScene {
                 scale: Vec3::splat(4.0), // Scale up by 4
                 ..default()
             },
-            RigidBody::Dynamic,
-            Collider::cylinder(1.0, 0.5),
+            CharacterControllerBundle::new(Collider::cylinder(1.0, 0.5))
+                .with_movement(112.5, 0.9, 7.0),
             Friction::new(0.5),
             Restitution::new(0.3),
             GravityScale(1.0),
@@ -100,7 +129,6 @@ impl PlayingScene {
                 ..default()
             },
             Transform::from_xyz(0.0, 4.0, -12.0).looking_at(Vec3::new(0.0, 2.0, 0.0), Vec3::Y),
-            FlyCam::default(),
         ));
     }
 }

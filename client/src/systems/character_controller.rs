@@ -214,17 +214,17 @@ fn movement(
         {
             match event {
                 MovementAction::Move(direction) => {
-                    // Rotate player based on horizontal input
+                    // Rotate player based on horizontal input (inverted)
                     if direction.x != 0.0 {
-                        let rotation_amount = direction.x * rotation_speed * delta_time as f32;
-                        transform.rotate_y(-rotation_amount);
+                        let rotation_amount = -direction.x * rotation_speed * delta_time as f32;
+                        transform.rotate_y(rotation_amount);
                     }
 
                     // Get player's forward and right vectors
                     let forward = transform.forward();
                     let _right = transform.right();
 
-                    // Calculate movement direction relative to player's rotation (inverted)
+                    // Calculate movement direction relative to player's rotation (normal forward/backward)
                     let movement_direction = (forward * -direction.y as f32).as_dvec3().as_vec3();
                     
                     // Apply movement in the direction the player is facing
