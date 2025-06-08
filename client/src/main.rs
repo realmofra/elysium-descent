@@ -9,6 +9,7 @@ mod screens;
 mod ui;
 mod rendering;
 mod game;
+mod systems;
 
 pub use resources::assets;
 pub use resources::audio;
