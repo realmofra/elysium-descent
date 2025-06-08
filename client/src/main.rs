@@ -7,9 +7,12 @@ mod keybinding;
 mod resources;
 mod screens;
 mod ui;
+mod rendering;
+mod game;
 
 pub use resources::assets;
 pub use resources::audio;
+pub use rendering::cameras::player_camera::PlayerPlugin;
 
 pub use resources::audio::GameAudioPlugin;
 
@@ -33,6 +36,7 @@ fn main() -> AppExit {
         .add_plugins(AudioPlugin)
         .add_plugins(assets::AssetsPlugin)
         .add_plugins(GameAudioPlugin)
+        .add_plugins(PlayerPlugin)
         .add_plugins((screens::plugin, keybinding::plugin))
         .run()
 }
