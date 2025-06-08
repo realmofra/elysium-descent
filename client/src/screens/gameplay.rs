@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use crate::rendering::cameras::player_camera::FlyCam;
-use crate::game::Player;
 
 use super::Screen;
 
