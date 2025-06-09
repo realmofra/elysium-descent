@@ -227,12 +227,6 @@ fn movement(
                     // Calculate movement direction relative to player's rotation
                     let movement_direction = (forward * direction.y as f32) + (right * direction.x as f32);
                     
-                    // Debug print to verify input and vectors
-                    println!("Input direction: {:?}", direction);
-                    println!("Forward vector: {:?}", forward);
-                    println!("Right vector: {:?}", right);
-                    println!("Final movement direction: {:?}", movement_direction);
-                    
                     // Apply movement in the direction the player is facing
                     let acceleration = movement_acceleration.0 * delta_time;
                     // Directly set velocity based on input direction
