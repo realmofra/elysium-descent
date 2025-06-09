@@ -207,7 +207,7 @@ fn movement(
 ) {
     let delta_time = time.delta_secs_f64().adjust_precision();
     let rotation_speed = 2.5;
-    let max_speed = 8.0;
+    let max_speed = 54.0;
 
     for event in movement_event_reader.read() {
         for (movement_acceleration, jump_impulse, mut linear_velocity, mut transform, is_grounded) in
@@ -268,8 +268,8 @@ fn apply_movement_damping(mut query: Query<(&MovementDampingFactor, &mut LinearV
             if linear_velocity.y < 0.0 {
                 linear_velocity.y = 0.0;
             }
-            // Add a small downward stick force
-            linear_velocity.y -= 0.5;
+            // Add a stronger downward stick force for higher speed
+            linear_velocity.y -= 1.0;
         }
 
         // Apply gravity if not grounded
