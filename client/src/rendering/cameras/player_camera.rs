@@ -18,12 +18,12 @@ pub struct FlyCam {
 impl Default for FlyCam {
     fn default() -> Self {
         Self {
-            distance: 18.0,         // Increased from 12.0 for an even wider default view
-            height_offset: 4.0,     // Increased height for better overview
-            look_ahead: 4.0,        // Increased look ahead for better visibility
-            smooth_speed: 5.0,      // Camera smoothing speed
-            min_vertical_angle: -30.0_f32.to_radians(), // Minimum look down angle
-            max_vertical_angle: 60.0_f32.to_radians(),  // Maximum look up angle
+            distance: 5.0,
+            height_offset: 2.0,
+            look_ahead: 2.0,
+            smooth_speed: 5.0,
+            min_vertical_angle: -89.0,
+            max_vertical_angle: 89.0,
         }
     }
 }

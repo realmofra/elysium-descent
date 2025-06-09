@@ -58,23 +58,22 @@ fn camera_follow_player(
 // ===== ANIMATION SYSTEMS =====
 
 fn update_animations(
-    mut players: Query<(&mut GltfAnimations, &LinearVelocity, &mut AnimationState), With<CharacterController>>,
+    mut query: Query<(&LinearVelocity, &mut GltfAnimations, &mut AnimationState)>,
     mut animation_players: Query<&mut AnimationPlayer>,
 ) {
-    for (mut gltf_animations, velocity, mut anim_state) in players.iter_mut() {
-        let mut player = animation_players.get_mut(gltf_animations.animation_player).unwrap();
-        // Only check horizontal movement (X and Z components)
-        let horizontal_velocity = Vec2::new(velocity.0.x, velocity.0.z);
+    for (velocity, mut animations, mut animation_state) in &mut query {
+        let horizontal_velocity = Vec2::new(velocity.x, velocity.z);
         let is_moving = horizontal_velocity.length() > 0.1;
-        
-        // Only change animation if movement state changed
-        if is_moving != anim_state.is_moving {
-            info!("Player velocity: {:?}, Horizontal velocity: {:?}, Is moving: {}", velocity.0, horizontal_velocity, is_moving);
+
+        if is_moving != animation_state.is_moving {
+            animation_state.is_moving = is_moving;
             let animation_index = if is_moving { 4 } else { 2 };
-            let animation = gltf_animations.get_by_number(animation_index).unwrap();
-            player.stop_all();
-            player.play(animation).repeat();
-            anim_state.is_moving = is_moving;
+            if let Some(animation) = animations.get_by_number(animation_index) {
+                if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
+                    player.stop_all();
+                    player.play(animation).repeat();
+                }
+            }
         }
     }
 }

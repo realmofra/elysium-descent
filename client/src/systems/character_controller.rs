@@ -44,7 +44,7 @@ pub struct MovementAcceleration(pub Scalar);
 
 /// The damping factor used for slowing down movement.
 #[derive(Component)]
-pub struct MovementDampingFactor(pub Scalar);
+pub struct MovementDampingFactor;
 
 /// The strength of a jump.
 #[derive(Component)]
@@ -73,12 +73,12 @@ pub struct MovementBundle {
 impl MovementBundle {
     pub const fn new(
         acceleration: Scalar,
-        damping: Scalar,
+        _damping: Scalar,
         jump_impulse: Scalar,
     ) -> Self {
         Self {
             acceleration: MovementAcceleration(acceleration),
-            damping: MovementDampingFactor(damping),
+            damping: MovementDampingFactor,
             jump_impulse: JumpImpulse(jump_impulse),
         }
     }
@@ -87,39 +87,6 @@ impl MovementBundle {
 impl Default for MovementBundle {
     fn default() -> Self {
         Self::new(5000.0, 0.9, 7.0)
-    }
-}
-
-impl CharacterControllerBundle {
-    pub fn new(collider: Collider) -> Self {
-        // Create shape caster as a slightly smaller version of collider
-        let mut caster_shape = collider.clone();
-        caster_shape.set_scale(Vector::ONE * 0.99, 10);
-
-        Self {
-            character_controller: CharacterController,
-            body: RigidBody::Dynamic,
-            collider,
-            ground_caster: ShapeCaster::new(
-                caster_shape,
-                Vector::ZERO,
-                Quaternion::default(),
-                Dir3::NEG_Y,
-            )
-            .with_max_distance(0.2),
-            locked_axes: LockedAxes::ROTATION_LOCKED,
-            movement: MovementBundle::default(),
-        }
-    }
-
-    pub fn with_movement(
-        mut self,
-        acceleration: Scalar,
-        damping: Scalar,
-        jump_impulse: Scalar,
-    ) -> Self {
-        self.movement = MovementBundle::new(acceleration, damping, jump_impulse);
-        self
     }
 }
 
@@ -240,9 +207,7 @@ fn movement(
                     }
                 }
                 MovementAction::Jump => {
-                    println!("Jump event received! Grounded: {}", is_grounded);
                     if is_grounded {
-                        println!("Jumping! Setting linear_velocity.y to {}", jump_impulse.0);
                         linear_velocity.y = jump_impulse.0;
                     }
                 }
@@ -253,7 +218,7 @@ fn movement(
 
 /// Slows down movement in the XZ plane and prevents unwanted vertical movement
 fn apply_movement_damping(mut query: Query<(&MovementDampingFactor, &mut LinearVelocity, Option<&Grounded>)>) {
-    for (damping_factor, mut linear_velocity, grounded) in &mut query {
+    for (_damping_factor, mut linear_velocity, grounded) in &mut query {
         // Dampen horizontal movement (increase damping for more friction)
         linear_velocity.x *= 0.6;
         linear_velocity.z *= 0.6;
@@ -291,11 +256,11 @@ fn camera_follow_player_system(
             // Get player's forward direction
             let player_forward = player_transform.forward();
             
-            // Calculate camera position in front of player (opposite of before)
+            // Calculate camera position in front of player
             let offset = Vec3::new(
-                player_forward.x * camera_distance,  // Removed negative sign
+                player_forward.x * camera_distance,
                 camera_height,
-                player_forward.z * camera_distance,  // Removed negative sign
+                player_forward.z * camera_distance,
             );
             
             let target_pos = player_pos + offset;
