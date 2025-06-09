@@ -43,15 +43,15 @@ pub struct Grounded;
 
 /// The acceleration used for character movement.
 #[derive(Component)]
-pub struct MovementAcceleration(Scalar);
+pub struct MovementAcceleration(pub Scalar);
 
 /// The damping factor used for slowing down movement.
 #[derive(Component)]
-pub struct MovementDampingFactor(Scalar);
+pub struct MovementDampingFactor(pub Scalar);
 
 /// The strength of a jump.
 #[derive(Component)]
-pub struct JumpImpulse(Scalar);
+pub struct JumpImpulse(pub Scalar);
 
 /// A bundle that contains the components needed for a basic
 /// kinematic character controller.
@@ -296,6 +296,36 @@ fn camera_follow_player_system(
             
             // Make camera look at player
             camera_transform.look_at(player_pos, Vec3::Y);
+        }
+    }
+}
+
+#[derive(Bundle)]
+pub struct TrimeshCharacterControllerBundle {
+    pub character_controller: CharacterController,
+    pub body: RigidBody,
+    pub collider_hierarchy: ColliderConstructorHierarchy,
+    pub ground_caster: ShapeCaster,
+    pub locked_axes: LockedAxes,
+    pub movement: MovementBundle,
+}
+
+impl TrimeshCharacterControllerBundle {
+    pub fn new() -> Self {
+        // Use a small sphere for the ground caster shape
+        let caster_shape = Collider::sphere(0.5);
+        Self {
+            character_controller: CharacterController,
+            body: RigidBody::Dynamic,
+            collider_hierarchy: ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+            ground_caster: ShapeCaster::new(
+                caster_shape,
+                Vector::ZERO,
+                Quaternion::default(),
+                Dir3::NEG_Y,
+            ).with_max_distance(0.2),
+            locked_axes: LockedAxes::ROTATION_LOCKED,
+            movement: MovementBundle::new(50.0, 0.8, 3.0),
         }
     }
 } 

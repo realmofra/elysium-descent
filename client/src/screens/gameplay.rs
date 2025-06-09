@@ -2,7 +2,7 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 
 use super::Screen;
-use crate::systems::character_controller::{CharacterController, CharacterControllerBundle, CharacterControllerPlugin};
+use crate::systems::character_controller::{CharacterController, CharacterControllerBundle, CharacterControllerPlugin, JumpImpulse, MovementAcceleration, MovementDampingFactor, TrimeshCharacterControllerBundle};
 
 // ===== PLUGIN SETUP =====
 
@@ -11,6 +11,7 @@ pub(super) fn plugin(app: &mut App) {
         .add_systems(Update, camera_follow_player)
         .add_systems(OnExit(Screen::GamePlay), despawn_scene::<PlayingScene>)
         .add_plugins(PhysicsPlugins::default())
+        .add_plugins(PhysicsDebugPlugin::default())
         .add_plugins(CharacterControllerPlugin)
         .insert_resource(ClearColor(Color::srgb(0.529, 0.808, 0.922))); // Sky blue color
 }
@@ -84,6 +85,7 @@ impl PlayingScene {
             },
             ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
             RigidBody::Static,
+            DebugRender::default(),
         ));
 
         // Add directional light
@@ -108,15 +110,14 @@ impl PlayingScene {
             SceneRoot(assets.load("models/player.glb#Scene0")),
             Transform {
                 translation: Vec3::new(0.0, 2.0, 0.0),
-                scale: Vec3::splat(4.0), // Scale up by 4
+                scale: Vec3::splat(4.0),
                 ..default()
             },
-            ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
-            CharacterControllerBundle::new(Collider::cylinder(1.0, 0.15))
-                .with_movement(200.0, 0.8, 7.0),
+            TrimeshCharacterControllerBundle::new(),
             Friction::new(0.5),
             Restitution::new(0.3),
             GravityScale(1.0),
+            DebugRender::default(),
         ));
 
         // Add camera
