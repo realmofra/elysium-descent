@@ -207,6 +207,7 @@ fn movement(
 ) {
     let delta_time = time.delta_secs_f64().adjust_precision();
     let rotation_speed = 2.5;
+    let max_speed = 8.0;
 
     for event in movement_event_reader.read() {
         for (movement_acceleration, jump_impulse, mut linear_velocity, mut transform, is_grounded) in
@@ -232,6 +233,14 @@ fn movement(
                     // Directly set velocity based on input direction
                     linear_velocity.x = movement_direction.x * acceleration * 10.0;
                     linear_velocity.z = movement_direction.z * acceleration * 10.0;
+
+                    // Clamp maximum horizontal speed
+                    let horizontal_speed = (linear_velocity.x.powi(2) + linear_velocity.z.powi(2)).sqrt();
+                    if horizontal_speed > max_speed {
+                        let scale = max_speed / horizontal_speed;
+                        linear_velocity.x *= scale;
+                        linear_velocity.z *= scale;
+                    }
                 }
                 MovementAction::Jump => {
                     // Only jump if grounded
