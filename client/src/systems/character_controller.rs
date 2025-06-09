@@ -225,7 +225,7 @@ fn movement(
                     let right = transform.right();
 
                     // Calculate movement direction relative to player's rotation
-                    let movement_direction = (forward * direction.y as f32) + (right * direction.x as f32);
+                    let movement_direction = (forward * -direction.y as f32) + (right * direction.x as f32);
                     
                     // Apply movement in the direction the player is facing
                     let acceleration = movement_acceleration.0 * delta_time;
@@ -331,7 +331,7 @@ impl TrimeshCharacterControllerBundle {
                 Dir3::NEG_Y,
             ).with_max_distance(0.2),
             locked_axes: LockedAxes::ROTATION_LOCKED,
-            movement: MovementBundle::new(50.0, 0.8, 3.0),
+            movement: MovementBundle::new(100.0, 0.6, 3.0),
         }
     }
 } 
