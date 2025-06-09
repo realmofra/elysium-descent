@@ -251,13 +251,13 @@ fn apply_movement_damping(mut query: Query<(&MovementDampingFactor, &mut LinearV
         linear_velocity.x *= 0.6;
         linear_velocity.z *= 0.6;
 
-        // Stick to ground: clamp both upward and excessive downward velocity
+        // Stick to ground: clamp both upward and all downward velocity
         if grounded.is_some() {
             if linear_velocity.y > 0.0 {
                 linear_velocity.y = 0.0;
             }
-            if linear_velocity.y < -1.0 {
-                linear_velocity.y = -1.0;
+            if linear_velocity.y < 0.0 {
+                linear_velocity.y = 0.0;
             }
             // Add a small downward stick force
             linear_velocity.y -= 0.5;

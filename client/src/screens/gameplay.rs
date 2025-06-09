@@ -115,7 +115,7 @@ impl PlayingScene {
             },
             TrimeshCharacterControllerBundle::new(),
             Friction::new(0.5),
-            Restitution::new(0.3),
+            Restitution::new(0.0),
             GravityScale(1.0),
             //DebugRender::default(),
         ));
