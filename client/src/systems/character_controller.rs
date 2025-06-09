@@ -251,15 +251,27 @@ fn movement(
 }
 
 /// Slows down movement in the XZ plane and prevents unwanted vertical movement
-fn apply_movement_damping(mut query: Query<(&MovementDampingFactor, &mut LinearVelocity)>) {
-    for (damping_factor, mut linear_velocity) in &mut query {
-        // Dampen horizontal movement
-        linear_velocity.x *= damping_factor.0;
-        linear_velocity.z *= damping_factor.0;
-        
+fn apply_movement_damping(mut query: Query<(&MovementDampingFactor, &mut LinearVelocity, Option<&Grounded>)>) {
+    for (damping_factor, mut linear_velocity, grounded) in &mut query {
+        // Dampen horizontal movement (increase damping for more friction)
+        linear_velocity.x *= 0.6;
+        linear_velocity.z *= 0.6;
+
+        // Stick to ground: clamp both upward and excessive downward velocity
+        if grounded.is_some() {
+            if linear_velocity.y > 0.0 {
+                linear_velocity.y = 0.0;
+            }
+            if linear_velocity.y < -1.0 {
+                linear_velocity.y = -1.0;
+            }
+            // Add a small downward stick force
+            linear_velocity.y -= 0.5;
+        }
+
         // Apply gravity if not grounded
-        if linear_velocity.y.abs() >= 0.1 { // Apply gravity when not on ground
-            linear_velocity.y -= 9.8 * 0.016; // Apply gravity
+        if grounded.is_none() && linear_velocity.y.abs() >= 0.1 {
+            linear_velocity.y -= 9.8 * 0.016;
         }
     }
 }
