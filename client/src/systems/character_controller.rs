@@ -310,7 +310,7 @@ fn camera_follow_player_system(
 pub struct TrimeshCharacterControllerBundle {
     pub character_controller: CharacterController,
     pub body: RigidBody,
-    pub collider_hierarchy: ColliderConstructorHierarchy,
+    pub collider: Collider,
     pub ground_caster: ShapeCaster,
     pub locked_axes: LockedAxes,
     pub movement: MovementBundle,
@@ -318,12 +318,17 @@ pub struct TrimeshCharacterControllerBundle {
 
 impl TrimeshCharacterControllerBundle {
     pub fn new() -> Self {
+        let length = 1.4;
+        let radius = 0.3;
+        let offset = Vec3::new(0.0, (length / 2.0) + radius, 0.0);
+        let capsule = Collider::capsule(radius, length);
+        let collider = Collider::compound(vec![(offset, Quat::IDENTITY, capsule)]);
         // Use a small sphere for the ground caster shape
         let caster_shape = Collider::sphere(0.5);
         Self {
             character_controller: CharacterController,
             body: RigidBody::Dynamic,
-            collider_hierarchy: ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+            collider,
             ground_caster: ShapeCaster::new(
                 caster_shape,
                 Vector::ZERO,
