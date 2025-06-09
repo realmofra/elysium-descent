@@ -11,8 +11,6 @@ pub struct FlyCam {
     pub height_offset: f32,
     pub look_ahead: f32,
     pub smooth_speed: f32,
-    pub min_vertical_angle: f32,
-    pub max_vertical_angle: f32,
 }
 
 impl Default for FlyCam {
@@ -22,8 +20,6 @@ impl Default for FlyCam {
             height_offset: 2.0,
             look_ahead: 2.0,
             smooth_speed: 5.0,
-            min_vertical_angle: -89.0,
-            max_vertical_angle: 89.0,
         }
     }
 }
