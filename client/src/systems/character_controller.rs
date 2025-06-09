@@ -243,8 +243,9 @@ fn movement(
                     }
                 }
                 MovementAction::Jump => {
-                    // Only jump if grounded
+                    println!("Jump event received! Grounded: {}", is_grounded);
                     if is_grounded {
+                        println!("Jumping! Setting linear_velocity.y to {}", jump_impulse.0);
                         linear_velocity.y = jump_impulse.0;
                     }
                 }
@@ -262,14 +263,13 @@ fn apply_movement_damping(mut query: Query<(&MovementDampingFactor, &mut LinearV
 
         // Stick to ground: clamp both upward and all downward velocity
         if grounded.is_some() {
-            if linear_velocity.y > 0.0 {
-                linear_velocity.y = 0.0;
-            }
+            // Only clamp and apply stick force if not moving up
             if linear_velocity.y < 0.0 {
                 linear_velocity.y = 0.0;
             }
-            // Add a stronger downward stick force for higher speed
-            linear_velocity.y -= 1.0;
+            if linear_velocity.y <= 0.0 {
+                linear_velocity.y -= 1.0;
+            }
         }
 
         // Apply gravity if not grounded
@@ -345,7 +345,7 @@ impl TrimeshCharacterControllerBundle {
                 Dir3::NEG_Y,
             ).with_max_distance(0.2),
             locked_axes: LockedAxes::ROTATION_LOCKED,
-            movement: MovementBundle::new(100.0, 0.6, 3.0),
+            movement: MovementBundle::new(100.0, 0.6, 10.0),
         }
     }
 } 
