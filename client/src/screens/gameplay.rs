@@ -1,5 +1,6 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use bevy_gltf_animation::prelude::*;
 
 use super::Screen;
 use crate::systems::character_controller::{CharacterController, CharacterControllerPlugin, TrimeshCharacterControllerBundle};
@@ -8,11 +9,15 @@ use crate::systems::character_controller::{CharacterController, CharacterControl
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::GamePlay), PlayingScene::spawn_environment)
-        .add_systems(Update, camera_follow_player)
+        .add_systems(Update, (
+            camera_follow_player,
+            update_animations,
+        ))
         .add_systems(OnExit(Screen::GamePlay), despawn_scene::<PlayingScene>)
         .add_plugins(PhysicsPlugins::default())
         // .add_plugins(PhysicsDebugPlugin::default())
         .add_plugins(CharacterControllerPlugin)
+        .add_plugins(GltfAnimationPlugin)
         .insert_resource(ClearColor(Color::srgb(0.529, 0.808, 0.922))); // Sky blue color
 }
 
@@ -48,6 +53,53 @@ fn camera_follow_player(
             camera_transform.look_at(player_pos + Vec3::Y * 2.0, Vec3::Y);
         }
     }
+}
+
+// ===== ANIMATION SYSTEMS =====
+
+fn update_animations(
+    mut players: Query<(&mut GltfAnimations, &LinearVelocity, &mut AnimationState), With<CharacterController>>,
+    mut animation_players: Query<&mut AnimationPlayer>,
+) {
+    for (mut gltf_animations, velocity, mut anim_state) in players.iter_mut() {
+        let mut player = animation_players.get_mut(gltf_animations.animation_player).unwrap();
+        // Only check horizontal movement (X and Z components)
+        let horizontal_velocity = Vec2::new(velocity.0.x, velocity.0.z);
+        let is_moving = horizontal_velocity.length() > 0.1;
+        
+        // Only change animation if movement state changed
+        if is_moving != anim_state.is_moving {
+            info!("Player velocity: {:?}, Horizontal velocity: {:?}, Is moving: {}", velocity.0, horizontal_velocity, is_moving);
+            let animation_index = if is_moving { 4 } else { 2 };
+            let animation = gltf_animations.get_by_number(animation_index).unwrap();
+            player.stop_all();
+            player.play(animation).repeat();
+            anim_state.is_moving = is_moving;
+        }
+    }
+}
+
+fn idle(
+    trigger: Trigger<OnAdd, GltfAnimations>,
+    mut commands: Commands,
+    mut players: Query<&mut GltfAnimations>,
+    mut animation_players: Query<&mut AnimationPlayer>,
+) {
+    let Ok(mut gltf_animations) = players.get_mut(trigger.target()) else {
+        return;
+    };
+    let mut player = animation_players.get_mut(gltf_animations.animation_player).unwrap();
+    let animation = gltf_animations.get_by_number(2).unwrap();
+    player.stop_all();
+    player.play(animation).repeat();
+    
+    // Add AnimationState component
+    commands.entity(trigger.target()).insert(AnimationState { is_moving: false });
+}
+
+#[derive(Component)]
+struct AnimationState {
+    is_moving: bool,
 }
 
 // ===== RESOURCES & COMPONENTS =====
@@ -107,7 +159,7 @@ impl PlayingScene {
         // Add player
         commands.spawn((
             Name::new("Player"),
-            SceneRoot(assets.load("models/player.glb#Scene0")),
+            GltfSceneRoot::new(assets.load("models/player.glb")),
             Transform {
                 translation: Vec3::new(0.0, 2.0, 0.0),
                 scale: Vec3::splat(4.0),
@@ -117,8 +169,9 @@ impl PlayingScene {
             Friction::new(0.5),
             Restitution::new(0.0),
             GravityScale(1.0),
+            AnimationState { is_moving: false },
             // DebugRender::default(),
-        ));
+        )).observe(idle);
 
         // Add camera
         commands.spawn((

@@ -1,9 +1,6 @@
-use std::time::Duration;
-
 use avian3d::{math::*, prelude::*};
 use bevy::{ecs::query::Has, prelude::*};
 use crate::{rendering::cameras::player_camera::FlyCam, game::Player};
-
 pub struct CharacterControllerPlugin;
 
 impl Plugin for CharacterControllerPlugin {

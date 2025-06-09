@@ -8,6 +8,7 @@ avian3d = { version = "0.3.1", features = ["debug-plugin"] }
 bevy.workspace = true
 bevy_asset_loader.workspace = true
 bevy_enhanced_input.workspace = true
+bevy_gltf_animation = "0.2.0"
 bevy_kira_audio.workspace = true
 bevy_lunex.workspace = true
 log.workspace = true
