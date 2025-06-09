@@ -89,7 +89,7 @@ impl MovementBundle {
 
 impl Default for MovementBundle {
     fn default() -> Self {
-        Self::new(112.5, 0.9, 7.0)
+        Self::new(5000.0, 0.9, 7.0)
     }
 }
 
@@ -222,14 +222,22 @@ fn movement(
 
                     // Get player's forward and right vectors
                     let forward = transform.forward();
-                    let _right = transform.right();
+                    let right = transform.right();
 
-                    // Calculate movement direction relative to player's rotation (normal forward/backward)
-                    let movement_direction = (forward * -direction.y as f32).as_dvec3().as_vec3();
+                    // Calculate movement direction relative to player's rotation
+                    let movement_direction = (forward * direction.y as f32) + (right * direction.x as f32);
+                    
+                    // Debug print to verify input and vectors
+                    println!("Input direction: {:?}", direction);
+                    println!("Forward vector: {:?}", forward);
+                    println!("Right vector: {:?}", right);
+                    println!("Final movement direction: {:?}", movement_direction);
                     
                     // Apply movement in the direction the player is facing
-                    linear_velocity.x += movement_direction.x * movement_acceleration.0 * delta_time;
-                    linear_velocity.z += movement_direction.z * movement_acceleration.0 * delta_time;
+                    let acceleration = movement_acceleration.0 * delta_time;
+                    // Directly set velocity based on input direction
+                    linear_velocity.x = movement_direction.x * acceleration * 10.0;
+                    linear_velocity.z = movement_direction.z * acceleration * 10.0;
                 }
                 MovementAction::Jump => {
                     // Only jump if grounded

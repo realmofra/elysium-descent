@@ -1,9 +1,7 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use std::time::Duration;
 
 use super::Screen;
-use crate::rendering::cameras::player_camera::*;
 use crate::systems::character_controller::{CharacterController, CharacterControllerBundle, CharacterControllerPlugin};
 
 // ===== PLUGIN SETUP =====
@@ -113,8 +111,9 @@ impl PlayingScene {
                 scale: Vec3::splat(4.0), // Scale up by 4
                 ..default()
             },
-            CharacterControllerBundle::new(Collider::cylinder(1.0, 0.5))
-                .with_movement(112.5, 0.9, 7.0),
+            ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+            CharacterControllerBundle::new(Collider::cylinder(1.0, 0.15))
+                .with_movement(200.0, 0.8, 7.0),
             Friction::new(0.5),
             Restitution::new(0.3),
             GravityScale(1.0),
