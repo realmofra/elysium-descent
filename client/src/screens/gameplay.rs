@@ -11,7 +11,7 @@ pub(super) fn plugin(app: &mut App) {
         .add_systems(Update, camera_follow_player)
         .add_systems(OnExit(Screen::GamePlay), despawn_scene::<PlayingScene>)
         .add_plugins(PhysicsPlugins::default())
-        .add_plugins(PhysicsDebugPlugin::default())
+        // .add_plugins(PhysicsDebugPlugin::default())
         .add_plugins(CharacterControllerPlugin)
         .insert_resource(ClearColor(Color::srgb(0.529, 0.808, 0.922))); // Sky blue color
 }
@@ -117,7 +117,7 @@ impl PlayingScene {
             Friction::new(0.5),
             Restitution::new(0.0),
             GravityScale(1.0),
-            DebugRender::default(),
+            // DebugRender::default(),
         ));
 
         // Add camera
