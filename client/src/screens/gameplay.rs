@@ -13,6 +13,7 @@ pub(super) fn plugin(app: &mut App) {
             camera_follow_player,
             update_animations,
             collect_fruits,
+            update_floating_items,
         ))
         .add_systems(OnExit(Screen::GamePlay), despawn_scene::<PlayingScene>)
         .add_plugins(PhysicsPlugins::default())
@@ -114,10 +115,26 @@ struct FruitCollector {
 struct Fruit;
 
 #[derive(Component)]
+struct FloatingItem {
+    base_height: f32,
+    hover_amplitude: f32,
+    hover_speed: f32,
+}
+
+#[derive(Component, Clone, Copy, Debug)]
+enum FruitType {
+    Apple,
+    Tomato,
+}
+
+#[derive(Component)]
 struct PlayingScene;
 
 #[derive(Component)]
 struct EnvironmentMarker;
+
+#[derive(Component)]
+struct Sensor;
 
 // ===== PLAYING SCENE IMPLEMENTATION =====
 
@@ -190,18 +207,25 @@ impl PlayingScene {
             Name::new("Tomato"),
             SceneRoot(tomato_handle),
             Transform {
-                translation: Vec3::new(0.0, 0.0, -10.0), // 10 meters ahead, on the floor
-                scale: Vec3::splat(0.5), // Scale down the tomato
+                translation: Vec3::new(0.0, 2.0, -10.0),
+                scale: Vec3::splat(0.5),
                 ..default()
             },
             ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
-            RigidBody::Dynamic,
+            RigidBody::Kinematic,
             Friction::new(0.5),
             Restitution::new(0.0),
             Visibility::Visible,
             InheritedVisibility::default(),
             ViewVisibility::default(),
             Fruit,
+            FruitType::Tomato,
+            FloatingItem {
+                base_height: 2.0,
+                hover_amplitude: 0.2,
+                hover_speed: 2.0,
+            },
+            Sensor,
             // DebugRender::default(),
         ));
 
@@ -213,11 +237,11 @@ impl PlayingScene {
             Name::new("Apple"),
             SceneRoot(apple_handle.clone()),
             Transform {
-                translation: Vec3::new(0.0, 0.0, 60.0), // 60 meters ahead, on the floor
-                scale: Vec3::splat(5.5), // Scale down the apple
+                translation: Vec3::new(0.0, 2.0, 60.0),
+                scale: Vec3::splat(5.5),
                 ..default()
             },
-            RigidBody::Dynamic,
+            RigidBody::Kinematic,
             Friction::new(0.5),
             Restitution::new(0.0),
             Visibility::Visible,
@@ -225,6 +249,13 @@ impl PlayingScene {
             ViewVisibility::default(),
             ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
             Fruit,
+            FruitType::Apple,
+            FloatingItem {
+                base_height: 2.0,
+                hover_amplitude: 0.2,
+                hover_speed: 2.0,
+            },
+            Sensor,
             // DebugRender::default(),
         ));
 
@@ -234,11 +265,11 @@ impl PlayingScene {
                 Name::new(format!("Apple {}", i)),
                 SceneRoot(apple_handle.clone()),
                 Transform {
-                    translation: Vec3::new(i as f32 * 5.0, 0.0, 60.0), // 5 meters apart, same Z position
+                    translation: Vec3::new(i as f32 * 5.0, 2.0, 60.0),
                     scale: Vec3::splat(5.5),
                     ..default()
                 },
-                RigidBody::Dynamic,
+                RigidBody::Kinematic,
                 Friction::new(0.5),
                 Restitution::new(0.0),
                 Visibility::Visible,
@@ -246,6 +277,13 @@ impl PlayingScene {
                 ViewVisibility::default(),
                 ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
                 Fruit,
+                FruitType::Apple,
+                FloatingItem {
+                    base_height: 2.0,
+                    hover_amplitude: 0.2,
+                    hover_speed: 2.0,
+                },
+                Sensor,
                 // DebugRender::default(),
             ));
         }
@@ -266,23 +304,48 @@ impl PlayingScene {
 fn collect_fruits(
     mut commands: Commands,
     mut fruit_collector: ResMut<FruitCollector>,
-    player_query: Query<(&Transform, Entity), With<CharacterController>>,
-    fruit_query: Query<(Entity, &Transform), With<Fruit>>,
+    mut collision_events: EventReader<CollisionStarted>,
+    player_query: Query<Entity, With<CharacterController>>,
+    fruit_query: Query<(Entity, &FruitType), With<Fruit>>,
 ) {
-    let Ok((player_transform, _player_entity)) = player_query.single() else {
+    let Ok(player_entity) = player_query.single() else {
         return;
     };
-    let player_pos = player_transform.translation;
-    
-    for (fruit_entity, fruit_transform) in fruit_query.iter() {
-        let fruit_pos = fruit_transform.translation;
-        let distance = (player_pos - fruit_pos).length();
+
+    for collision_event in collision_events.read() {
+        let entity_a = collision_event.0;
+        let entity_b = collision_event.1;
         
-        // If player is close enough to the fruit, collect it
-        if distance < 2.0 {
+        info!("Collision detected between entities: {:?} and {:?}", entity_a, entity_b);
+        
+        let (fruit_entity, fruit_type) = if let Ok((_, fruit_type)) = fruit_query.get(entity_a) {
+            info!("Entity A is a fruit: {:?}", fruit_type);
+            (entity_a, fruit_type)
+        } else if let Ok((_, fruit_type)) = fruit_query.get(entity_b) {
+            info!("Entity B is a fruit: {:?}", fruit_type);
+            (entity_b, fruit_type)
+        } else {
+            continue;
+        };
+
+        // Check if one of the entities is the player
+        if entity_a == player_entity || entity_b == player_entity {
+            info!("Player collision detected with fruit: {:?}", fruit_type);
+            
+            // Despawn the fruit entity and all its children
+            info!("Attempting to despawn fruit entity: {:?}", fruit_entity);
             commands.entity(fruit_entity).despawn();
+            
             fruit_collector.fruits_collected += 1;
-            info!("Fruits collected: {}", fruit_collector.fruits_collected);
+            info!("Collected a {:?}! Total fruits: {}", fruit_type, fruit_collector.fruits_collected);
         }
+    }
+}
+
+fn update_floating_items(time: Res<Time>, mut query: Query<(&FloatingItem, &mut Transform)>) {
+    for (floating, mut transform) in query.iter_mut() {
+        let time = time.elapsed_secs();
+        let hover_offset = (time * floating.hover_speed).sin() * floating.hover_amplitude;
+        transform.translation.y = floating.base_height + hover_offset;
     }
 }
