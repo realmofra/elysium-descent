@@ -304,40 +304,20 @@ impl PlayingScene {
 fn collect_fruits(
     mut commands: Commands,
     mut fruit_collector: ResMut<FruitCollector>,
-    mut collision_events: EventReader<CollisionStarted>,
-    player_query: Query<Entity, With<CharacterController>>,
-    fruit_query: Query<(Entity, &FruitType), With<Fruit>>,
+    player_query: Query<&Transform, With<CharacterController>>,
+    fruit_query: Query<(Entity, &Transform, &FruitType), With<Fruit>>,
 ) {
-    let Ok(player_entity) = player_query.single() else {
+    let Ok(player_transform) = player_query.single() else {
         return;
     };
 
-    for collision_event in collision_events.read() {
-        let entity_a = collision_event.0;
-        let entity_b = collision_event.1;
-        
-        info!("Collision detected between entities: {:?} and {:?}", entity_a, entity_b);
-        
-        let (fruit_entity, fruit_type) = if let Ok((_, fruit_type)) = fruit_query.get(entity_a) {
-            info!("Entity A is a fruit: {:?}", fruit_type);
-            (entity_a, fruit_type)
-        } else if let Ok((_, fruit_type)) = fruit_query.get(entity_b) {
-            info!("Entity B is a fruit: {:?}", fruit_type);
-            (entity_b, fruit_type)
-        } else {
-            continue;
-        };
-
-        // Check if one of the entities is the player
-        if entity_a == player_entity || entity_b == player_entity {
-            info!("Player collision detected with fruit: {:?}", fruit_type);
-            
-            // Despawn the fruit entity and all its children
-            info!("Attempting to despawn fruit entity: {:?}", fruit_entity);
+    for (fruit_entity, fruit_transform, fruit_type) in fruit_query.iter() {
+        let distance = player_transform.translation.distance(fruit_transform.translation);
+        if distance < 5.0 { // Collection radius
+            info!("Collected a {:?}!", fruit_type);
             commands.entity(fruit_entity).despawn();
-            
             fruit_collector.fruits_collected += 1;
-            info!("Collected a {:?}! Total fruits: {}", fruit_type, fruit_collector.fruits_collected);
+            info!("Total fruits collected: {}", fruit_collector.fruits_collected);
         }
     }
 }
