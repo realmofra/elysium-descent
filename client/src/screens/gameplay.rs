@@ -12,13 +12,15 @@ pub(super) fn plugin(app: &mut App) {
         .add_systems(Update, (
             camera_follow_player,
             update_animations,
+            collect_fruits,
         ))
         .add_systems(OnExit(Screen::GamePlay), despawn_scene::<PlayingScene>)
         .add_plugins(PhysicsPlugins::default())
         // .add_plugins(PhysicsDebugPlugin::default())
         .add_plugins(CharacterControllerPlugin)
         .add_plugins(GltfAnimationPlugin)
-        .insert_resource(ClearColor(Color::srgb(0.529, 0.808, 0.922))); // Sky blue color
+        .insert_resource(ClearColor(Color::srgb(0.529, 0.808, 0.922))) // Sky blue color
+        .insert_resource(FruitCollector { fruits_collected: 0 });
 }
 
 // ===== SYSTEMS =====
@@ -103,6 +105,14 @@ struct AnimationState {
 
 // ===== RESOURCES & COMPONENTS =====
 
+#[derive(Resource)]
+struct FruitCollector {
+    fruits_collected: u32,
+}
+
+#[derive(Component)]
+struct Fruit;
+
 #[derive(Component)]
 struct PlayingScene;
 
@@ -172,6 +182,74 @@ impl PlayingScene {
             // DebugRender::default(),
         )).observe(idle);
 
+        // Add tomato ahead of player
+        let tomato_path = "models/food/tomato.glb#Scene0";
+        let tomato_handle = assets.load(tomato_path);
+        
+        commands.spawn((
+            Name::new("Tomato"),
+            SceneRoot(tomato_handle),
+            Transform {
+                translation: Vec3::new(0.0, 0.0, -10.0), // 10 meters ahead, on the floor
+                scale: Vec3::splat(0.5), // Scale down the tomato
+                ..default()
+            },
+            ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+            RigidBody::Dynamic,
+            Friction::new(0.5),
+            Restitution::new(0.0),
+            Visibility::Visible,
+            InheritedVisibility::default(),
+            ViewVisibility::default(),
+            Fruit,
+            // DebugRender::default(),
+        ));
+
+        let apple_path = "models/food/apple.glb#Scene0";
+        let apple_handle = assets.load(apple_path);
+        
+        // Spawn the first apple
+        commands.spawn((
+            Name::new("Apple"),
+            SceneRoot(apple_handle.clone()),
+            Transform {
+                translation: Vec3::new(0.0, 0.0, 60.0), // 60 meters ahead, on the floor
+                scale: Vec3::splat(5.5), // Scale down the apple
+                ..default()
+            },
+            RigidBody::Dynamic,
+            Friction::new(0.5),
+            Restitution::new(0.0),
+            Visibility::Visible,
+            InheritedVisibility::default(),
+            ViewVisibility::default(),
+            ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+            Fruit,
+            // DebugRender::default(),
+        ));
+
+        // Spawn 10 more apples in a line to the right
+        for i in 1..=10 {
+            commands.spawn((
+                Name::new(format!("Apple {}", i)),
+                SceneRoot(apple_handle.clone()),
+                Transform {
+                    translation: Vec3::new(i as f32 * 5.0, 0.0, 60.0), // 5 meters apart, same Z position
+                    scale: Vec3::splat(5.5),
+                    ..default()
+                },
+                RigidBody::Dynamic,
+                Friction::new(0.5),
+                Restitution::new(0.0),
+                Visibility::Visible,
+                InheritedVisibility::default(),
+                ViewVisibility::default(),
+                ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+                Fruit,
+                // DebugRender::default(),
+            ));
+        }
+
         // Add camera
         commands.spawn((
             Name::new("Camera"),
@@ -182,5 +260,29 @@ impl PlayingScene {
             },
             Transform::from_xyz(0.0, 4.0, -12.0).looking_at(Vec3::new(0.0, 2.0, 0.0), Vec3::Y),
         ));
+    }
+}
+
+fn collect_fruits(
+    mut commands: Commands,
+    mut fruit_collector: ResMut<FruitCollector>,
+    player_query: Query<(&Transform, Entity), With<CharacterController>>,
+    fruit_query: Query<(Entity, &Transform), With<Fruit>>,
+) {
+    let Ok((player_transform, _player_entity)) = player_query.single() else {
+        return;
+    };
+    let player_pos = player_transform.translation;
+    
+    for (fruit_entity, fruit_transform) in fruit_query.iter() {
+        let fruit_pos = fruit_transform.translation;
+        let distance = (player_pos - fruit_pos).length();
+        
+        // If player is close enough to the fruit, collect it
+        if distance < 2.0 {
+            commands.entity(fruit_entity).despawn();
+            fruit_collector.fruits_collected += 1;
+            info!("Fruits collected: {}", fruit_collector.fruits_collected);
+        }
     }
 }
