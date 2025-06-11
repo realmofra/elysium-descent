@@ -221,7 +221,7 @@ impl PlayingScene {
             Fruit,
             FruitType::Tomato,
             FloatingItem {
-                base_height: 2.0,
+                base_height: 1.0,
                 hover_amplitude: 0.2,
                 hover_speed: 2.0,
             },
@@ -251,7 +251,7 @@ impl PlayingScene {
             Fruit,
             FruitType::Apple,
             FloatingItem {
-                base_height: 2.0,
+                base_height: 1.0,
                 hover_amplitude: 0.2,
                 hover_speed: 2.0,
             },
@@ -279,7 +279,7 @@ impl PlayingScene {
                 Fruit,
                 FruitType::Apple,
                 FloatingItem {
-                    base_height: 2.0,
+                    base_height: 1.0,
                     hover_amplitude: 0.2,
                     hover_speed: 2.0,
                 },
