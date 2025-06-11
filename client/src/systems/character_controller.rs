@@ -119,9 +119,6 @@ fn keyboard_input(
     if let Ok(mut animation_state) = query.single_mut() {
         if up && !down {
             animation_state.forward_hold_time += time.delta_secs();
-            if animation_state.forward_hold_time >= 1.0 {
-                info!("holding the forward key sec - {:.1}", animation_state.forward_hold_time);
-            }
         } else {
             animation_state.forward_hold_time = 0.0;
         }
