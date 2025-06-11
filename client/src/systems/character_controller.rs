@@ -2,6 +2,7 @@ use avian3d::{math::*, prelude::*};
 use bevy::{ecs::query::Has, prelude::*};
 use bevy_gltf_animation::prelude::*;
 use crate::{rendering::cameras::player_camera::FlyCam, game::Player};
+use tracing::info;
 pub struct CharacterControllerPlugin;
 
 impl Plugin for CharacterControllerPlugin {
@@ -102,6 +103,8 @@ fn keyboard_input(
     mut movement_event_writer: EventWriter<MovementAction>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut last_input: ResMut<LastInputDirection>,
+    mut query: Query<&mut AnimationState>,
+    time: Res<Time>,
 ) {
     let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
     let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]);
@@ -111,6 +114,18 @@ fn keyboard_input(
     let horizontal = right as i8 - left as i8;
     let vertical = up as i8 - down as i8;
     let direction = Vector2::new(horizontal as Scalar, vertical as Scalar).clamp_length_max(1.0);
+
+    // Update forward hold time
+    if let Ok(mut animation_state) = query.single_mut() {
+        if up && !down {
+            animation_state.forward_hold_time += time.delta_secs();
+            if animation_state.forward_hold_time >= 1.0 {
+                info!("holding the forward key sec - {:.1}", animation_state.forward_hold_time);
+            }
+        } else {
+            animation_state.forward_hold_time = 0.0;
+        }
+    }
 
     if direction != Vector2::ZERO {
         movement_event_writer.write(MovementAction::Move(direction));
@@ -283,6 +298,8 @@ fn camera_follow_player_system(
 #[derive(Component)]
 pub struct AnimationState {
     pub is_moving: bool,
+    pub forward_hold_time: f32,
+    pub current_animation: usize,
 }
 
 /// Updates animations based on character movement
@@ -294,13 +311,22 @@ fn update_animations(
         let horizontal_velocity = Vec2::new(velocity.x, velocity.z);
         let is_moving = horizontal_velocity.length() > 0.1;
 
-        if is_moving != animation_state.is_moving {
-            animation_state.is_moving = is_moving;
-            let animation_index = if is_moving { 4 } else { 2 };
-            if let Some(animation) = animations.get_by_number(animation_index) {
+        // Determine which animation should be playing
+        let target_animation = if !is_moving {
+            2 // Idle
+        } else if animation_state.forward_hold_time >= 3.0 {
+            3 // Special animation after 3 seconds
+        } else {
+            4 // Regular running
+        };
+
+        // Only change animation if we need to
+        if target_animation != animation_state.current_animation {
+            if let Some(animation) = animations.get_by_number(target_animation) {
                 if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
                     player.stop_all();
                     player.play(animation).repeat();
+                    animation_state.current_animation = target_animation;
                 }
             }
         }
@@ -345,7 +371,11 @@ impl CharacterControllerBundle {
             ).with_max_distance(0.2),
             locked_axes: LockedAxes::ROTATION_LOCKED,
             movement: MovementBundle::new(100.0, 0.6, 10.0),
-            animation_state: AnimationState { is_moving: false },
+            animation_state: AnimationState { 
+                is_moving: false,
+                forward_hold_time: 0.0,
+                current_animation: 2, // Start with idle animation
+            },
         }
     }
-} 
+}
