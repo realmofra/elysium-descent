@@ -185,6 +185,7 @@ fn movement(
         &mut LinearVelocity,
         &mut Transform,
         Has<Grounded>,
+        &AnimationState,
     )>,
 ) {
     let delta_time = time.delta_secs_f64().adjust_precision();
@@ -192,7 +193,7 @@ fn movement(
     let max_speed = 54.0;
 
     for event in movement_event_reader.read() {
-        for (movement_acceleration, jump_impulse, mut linear_velocity, mut transform, is_grounded) in
+        for (movement_acceleration, jump_impulse, mut linear_velocity, mut transform, is_grounded, animation_state) in
             &mut controllers
         {
             match event {
@@ -212,9 +213,13 @@ fn movement(
                     
                     // Apply movement in the direction the player is facing
                     let acceleration = movement_acceleration.0 * delta_time;
-                    // Directly set velocity based on input direction
-                    linear_velocity.x = movement_direction.x * acceleration * 10.0;
-                    linear_velocity.z = movement_direction.z * acceleration * 10.0;
+                    
+                    // Double speed when in special animation (animation 3)
+                    let speed_multiplier = if animation_state.current_animation == 3 { 1.5 } else { 1.0 };
+                    
+                    // Directly set velocity based on input direction with speed multiplier
+                    linear_velocity.x = movement_direction.x * acceleration * 10.0 * speed_multiplier;
+                    linear_velocity.z = movement_direction.z * acceleration * 10.0 * speed_multiplier;
 
                     // Clamp maximum horizontal speed
                     let horizontal_speed = (linear_velocity.x.powi(2) + linear_velocity.z.powi(2)).sqrt();
@@ -235,8 +240,10 @@ fn movement(
 }
 
 /// Slows down movement in the XZ plane and prevents unwanted vertical movement
-fn apply_movement_damping(mut query: Query<(&MovementDampingFactor, &mut LinearVelocity, Option<&Grounded>)>) {
-    for (_damping_factor, mut linear_velocity, grounded) in &mut query {
+fn apply_movement_damping(
+    mut query: Query<(&MovementDampingFactor, &mut LinearVelocity, Option<&Grounded>, &AnimationState)>
+) {
+    for (_damping_factor, mut linear_velocity, grounded, animation_state) in &mut query {
         // Dampen horizontal movement (increase damping for more friction)
         linear_velocity.x *= 0.6;
         linear_velocity.z *= 0.6;
@@ -248,13 +255,17 @@ fn apply_movement_damping(mut query: Query<(&MovementDampingFactor, &mut LinearV
                 linear_velocity.y = 0.0;
             }
             if linear_velocity.y <= 0.0 {
-                linear_velocity.y -= 1.0;
+                // Significantly increase ground clamping force when running (animation 3)
+                let ground_force = if animation_state.current_animation == 3 { 10.0 } else { 1.0 };
+                linear_velocity.y -= ground_force;
             }
         }
 
         // Apply gravity if not grounded
         if grounded.is_none() && linear_velocity.y.abs() >= 0.1 {
-            linear_velocity.y -= 9.8 * 0.016;
+            // Increase gravity when running to help keep grounded
+            let gravity_multiplier = if animation_state.current_animation == 3 { 2.0 } else { 1.0 };
+            linear_velocity.y -= 9.8 * 0.016 * gravity_multiplier;
         }
     }
 }
