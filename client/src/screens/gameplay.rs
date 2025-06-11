@@ -4,23 +4,20 @@ use bevy_gltf_animation::prelude::*;
 
 use super::Screen;
 use crate::systems::character_controller::{CharacterController, CharacterControllerPlugin, CharacterControllerBundle, setup_idle_animation};
+use crate::systems::collectibles::{CollectiblesPlugin, FruitType, spawn_fruit};
 
 // ===== PLUGIN SETUP =====
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::GamePlay), PlayingScene::spawn_environment)
-        .add_systems(Update, (
-            camera_follow_player,
-            collect_fruits,
-            update_floating_items,
-        ))
+        .add_systems(Update, camera_follow_player)
         .add_systems(OnExit(Screen::GamePlay), despawn_scene::<PlayingScene>)
         .add_plugins(PhysicsPlugins::default())
         // .add_plugins(PhysicsDebugPlugin::default())
         .add_plugins(CharacterControllerPlugin)
         .add_plugins(GltfAnimationPlugin)
-        .insert_resource(ClearColor(Color::srgb(0.529, 0.808, 0.922))) // Sky blue color
-        .insert_resource(FruitCollector { fruits_collected: 0 });
+        .add_plugins(CollectiblesPlugin)
+        .insert_resource(ClearColor(Color::srgb(0.529, 0.808, 0.922))); // Sky blue color
 }
 
 // ===== SYSTEMS =====
@@ -57,37 +54,11 @@ fn camera_follow_player(
     }
 }
 
-// ===== RESOURCES & COMPONENTS =====
-
-#[derive(Resource)]
-struct FruitCollector {
-    fruits_collected: u32,
-}
-
-#[derive(Component)]
-struct Fruit;
-
-#[derive(Component)]
-struct FloatingItem {
-    base_height: f32,
-    hover_amplitude: f32,
-    hover_speed: f32,
-}
-
-#[derive(Component, Clone, Copy, Debug)]
-enum FruitType {
-    Apple,
-    Tomato,
-}
-
 #[derive(Component)]
 struct PlayingScene;
 
 #[derive(Component)]
 struct EnvironmentMarker;
-
-#[derive(Component)]
-struct Sensor;
 
 // ===== PLAYING SCENE IMPLEMENTATION =====
 
@@ -151,93 +122,19 @@ impl PlayingScene {
             // DebugRender::default(),
         )).observe(setup_idle_animation);
 
-        // Add tomato ahead of player
-        let tomato_path = "models/food/tomato.glb#Scene0";
-        let tomato_handle = assets.load(tomato_path);
-        
-        commands.spawn((
-            Name::new("Tomato"),
-            SceneRoot(tomato_handle),
-            Transform {
-                translation: Vec3::new(0.0, 2.0, -10.0),
-                scale: Vec3::splat(0.5),
-                ..default()
-            },
-            ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
-            RigidBody::Kinematic,
-            Friction::new(0.5),
-            Restitution::new(0.0),
-            Visibility::Visible,
-            InheritedVisibility::default(),
-            ViewVisibility::default(),
-            Fruit,
-            FruitType::Tomato,
-            FloatingItem {
-                base_height: 1.0,
-                hover_amplitude: 0.2,
-                hover_speed: 2.0,
-            },
-            Sensor,
-            // DebugRender::default(),
-        ));
+        // Spawn fruits
+        spawn_fruit(&mut commands, &assets, FruitType::Tomato, Vec3::new(0.0, 2.0, -10.0), 0.5);
+        spawn_fruit(&mut commands, &assets, FruitType::Apple, Vec3::new(0.0, 2.0, 60.0), 5.5);
 
-        let apple_path = "models/food/apple.glb#Scene0";
-        let apple_handle = assets.load(apple_path);
-        
-        // Spawn the first apple
-        commands.spawn((
-            Name::new("Apple"),
-            SceneRoot(apple_handle.clone()),
-            Transform {
-                translation: Vec3::new(0.0, 2.0, 60.0),
-                scale: Vec3::splat(5.5),
-                ..default()
-            },
-            RigidBody::Kinematic,
-            Friction::new(0.5),
-            Restitution::new(0.0),
-            Visibility::Visible,
-            InheritedVisibility::default(),
-            ViewVisibility::default(),
-            ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
-            Fruit,
-            FruitType::Apple,
-            FloatingItem {
-                base_height: 1.0,
-                hover_amplitude: 0.2,
-                hover_speed: 2.0,
-            },
-            Sensor,
-            // DebugRender::default(),
-        ));
-
-        // Spawn 10 more apples in a line to the right
+        // Spawn line of apples
         for i in 1..=10 {
-            commands.spawn((
-                Name::new(format!("Apple {}", i)),
-                SceneRoot(apple_handle.clone()),
-                Transform {
-                    translation: Vec3::new(i as f32 * 5.0, 2.0, 60.0),
-                    scale: Vec3::splat(5.5),
-                    ..default()
-                },
-                RigidBody::Kinematic,
-                Friction::new(0.5),
-                Restitution::new(0.0),
-                Visibility::Visible,
-                InheritedVisibility::default(),
-                ViewVisibility::default(),
-                ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
-                Fruit,
+            spawn_fruit(
+                &mut commands,
+                &assets,
                 FruitType::Apple,
-                FloatingItem {
-                    base_height: 1.0,
-                    hover_amplitude: 0.2,
-                    hover_speed: 2.0,
-                },
-                Sensor,
-                // DebugRender::default(),
-            ));
+                Vec3::new(i as f32 * 5.0, 2.0, 60.0),
+                5.5
+            );
         }
 
         // Add camera
@@ -250,34 +147,5 @@ impl PlayingScene {
             },
             Transform::from_xyz(0.0, 4.0, -12.0).looking_at(Vec3::new(0.0, 2.0, 0.0), Vec3::Y),
         ));
-    }
-}
-
-fn collect_fruits(
-    mut commands: Commands,
-    mut fruit_collector: ResMut<FruitCollector>,
-    player_query: Query<&Transform, With<CharacterController>>,
-    fruit_query: Query<(Entity, &Transform, &FruitType), With<Fruit>>,
-) {
-    let Ok(player_transform) = player_query.single() else {
-        return;
-    };
-
-    for (fruit_entity, fruit_transform, fruit_type) in fruit_query.iter() {
-        let distance = player_transform.translation.distance(fruit_transform.translation);
-        if distance < 5.0 { // Collection radius
-            info!("Collected a {:?}!", fruit_type);
-            commands.entity(fruit_entity).despawn();
-            fruit_collector.fruits_collected += 1;
-            info!("Total fruits collected: {}", fruit_collector.fruits_collected);
-        }
-    }
-}
-
-fn update_floating_items(time: Res<Time>, mut query: Query<(&FloatingItem, &mut Transform)>) {
-    for (floating, mut transform) in query.iter_mut() {
-        let time = time.elapsed_secs();
-        let hover_offset = (time * floating.hover_speed).sin() * floating.hover_amplitude;
-        transform.translation.y = floating.base_height + hover_offset;
     }
 }
