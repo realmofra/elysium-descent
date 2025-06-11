@@ -4,7 +4,7 @@ use bevy_gltf_animation::prelude::*;
 
 use super::Screen;
 use crate::systems::character_controller::{CharacterController, CharacterControllerPlugin, CharacterControllerBundle, setup_idle_animation};
-use crate::systems::collectibles::{CollectiblesPlugin, FruitType, spawn_fruit};
+use crate::systems::collectibles::{CollectiblesPlugin, CollectibleType, spawn_collectible};
 
 // ===== PLUGIN SETUP =====
 
@@ -122,16 +122,28 @@ impl PlayingScene {
             // DebugRender::default(),
         )).observe(setup_idle_animation);
 
-        // Spawn fruits
-        spawn_fruit(&mut commands, &assets, FruitType::Tomato, Vec3::new(0.0, 2.0, -10.0), 0.5);
-        spawn_fruit(&mut commands, &assets, FruitType::Apple, Vec3::new(0.0, 2.0, 60.0), 5.5);
+        // Spawn collectibles
+        spawn_collectible(&mut commands, &assets, CollectibleType::Tomato, Vec3::new(0.0, 2.0, -10.0), 0.5);
+        spawn_collectible(&mut commands, &assets, CollectibleType::Apple, Vec3::new(0.0, 2.0, 60.0), 5.5);
+        spawn_collectible(&mut commands, &assets, CollectibleType::Pumpkin, Vec3::new(5.0, 2.0, 60.0), 5.5);
+        spawn_collectible(&mut commands, &assets, CollectibleType::Radish, Vec3::new(10.0, 2.0, 60.0), 5.5);
+        spawn_collectible(&mut commands, &assets, CollectibleType::Mushroom, Vec3::new(15.0, 2.0, 60.0), 5.5);
 
-        // Spawn line of apples
+        // Spawn a line of mixed collectibles
+        let collectible_types = [
+            CollectibleType::Apple,
+            CollectibleType::Tomato,
+            CollectibleType::Pumpkin,
+            CollectibleType::Radish,
+            CollectibleType::Mushroom,
+        ];
+        
         for i in 1..=10 {
-            spawn_fruit(
+            let collectible_type = collectible_types[i % collectible_types.len()];
+            spawn_collectible(
                 &mut commands,
                 &assets,
-                FruitType::Apple,
+                collectible_type,
                 Vec3::new(i as f32 * 5.0, 2.0, 60.0),
                 5.5
             );
