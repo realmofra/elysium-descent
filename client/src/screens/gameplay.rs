@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
 
 use super::Screen;
-use crate::systems::character_controller::{CharacterController, CharacterControllerPlugin, TrimeshCharacterControllerBundle};
+use crate::systems::character_controller::{CharacterController, CharacterControllerPlugin, CharacterControllerBundle, setup_idle_animation};
 
 // ===== PLUGIN SETUP =====
 
@@ -11,7 +11,6 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::GamePlay), PlayingScene::spawn_environment)
         .add_systems(Update, (
             camera_follow_player,
-            update_animations,
             collect_fruits,
             update_floating_items,
         ))
@@ -56,52 +55,6 @@ fn camera_follow_player(
             camera_transform.look_at(player_pos + Vec3::Y * 2.0, Vec3::Y);
         }
     }
-}
-
-// ===== ANIMATION SYSTEMS =====
-
-fn update_animations(
-    mut query: Query<(&LinearVelocity, &mut GltfAnimations, &mut AnimationState)>,
-    mut animation_players: Query<&mut AnimationPlayer>,
-) {
-    for (velocity, mut animations, mut animation_state) in &mut query {
-        let horizontal_velocity = Vec2::new(velocity.x, velocity.z);
-        let is_moving = horizontal_velocity.length() > 0.1;
-
-        if is_moving != animation_state.is_moving {
-            animation_state.is_moving = is_moving;
-            let animation_index = if is_moving { 4 } else { 2 };
-            if let Some(animation) = animations.get_by_number(animation_index) {
-                if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
-                    player.stop_all();
-                    player.play(animation).repeat();
-                }
-            }
-        }
-    }
-}
-
-fn idle(
-    trigger: Trigger<OnAdd, GltfAnimations>,
-    mut commands: Commands,
-    mut players: Query<&mut GltfAnimations>,
-    mut animation_players: Query<&mut AnimationPlayer>,
-) {
-    let Ok(mut gltf_animations) = players.get_mut(trigger.target()) else {
-        return;
-    };
-    let mut player = animation_players.get_mut(gltf_animations.animation_player).unwrap();
-    let animation = gltf_animations.get_by_number(2).unwrap();
-    player.stop_all();
-    player.play(animation).repeat();
-    
-    // Add AnimationState component
-    commands.entity(trigger.target()).insert(AnimationState { is_moving: false });
-}
-
-#[derive(Component)]
-struct AnimationState {
-    is_moving: bool,
 }
 
 // ===== RESOURCES & COMPONENTS =====
@@ -191,13 +144,12 @@ impl PlayingScene {
                 scale: Vec3::splat(4.0),
                 ..default()
             },
-            TrimeshCharacterControllerBundle::new(),
+            CharacterControllerBundle::new(),
             Friction::new(0.5),
             Restitution::new(0.0),
             GravityScale(1.0),
-            AnimationState { is_moving: false },
             // DebugRender::default(),
-        )).observe(idle);
+        )).observe(setup_idle_animation);
 
         // Add tomato ahead of player
         let tomato_path = "models/food/tomato.glb#Scene0";

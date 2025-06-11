@@ -1,5 +1,6 @@
 use avian3d::{math::*, prelude::*};
 use bevy::{ecs::query::Has, prelude::*};
+use bevy_gltf_animation::prelude::*;
 use crate::{rendering::cameras::player_camera::FlyCam, game::Player};
 pub struct CharacterControllerPlugin;
 
@@ -16,6 +17,7 @@ impl Plugin for CharacterControllerPlugin {
                     movement,
                     apply_movement_damping,
                     camera_follow_player_system,
+                    update_animations,
                 )
                     .chain(),
             );
@@ -51,15 +53,16 @@ pub struct MovementDampingFactor;
 pub struct JumpImpulse(pub Scalar);
 
 /// A bundle that contains the components needed for a basic
-/// kinematic character controller.
+/// kinematic character controller with animation support.
 #[derive(Bundle)]
 pub struct CharacterControllerBundle {
-    character_controller: CharacterController,
-    body: RigidBody,
-    collider: Collider,
-    ground_caster: ShapeCaster,
-    locked_axes: LockedAxes,
-    movement: MovementBundle,
+    pub character_controller: CharacterController,
+    pub body: RigidBody,
+    pub collider: Collider,
+    pub ground_caster: ShapeCaster,
+    pub locked_axes: LockedAxes,
+    pub movement: MovementBundle,
+    pub animation_state: AnimationState,
 }
 
 /// A bundle that contains components for character movement.
@@ -277,17 +280,50 @@ fn camera_follow_player_system(
     }
 }
 
-#[derive(Bundle)]
-pub struct TrimeshCharacterControllerBundle {
-    pub character_controller: CharacterController,
-    pub body: RigidBody,
-    pub collider: Collider,
-    pub ground_caster: ShapeCaster,
-    pub locked_axes: LockedAxes,
-    pub movement: MovementBundle,
+#[derive(Component)]
+pub struct AnimationState {
+    pub is_moving: bool,
 }
 
-impl TrimeshCharacterControllerBundle {
+/// Updates animations based on character movement
+fn update_animations(
+    mut query: Query<(&LinearVelocity, &mut GltfAnimations, &mut AnimationState)>,
+    mut animation_players: Query<&mut AnimationPlayer>,
+) {
+    for (velocity, mut animations, mut animation_state) in &mut query {
+        let horizontal_velocity = Vec2::new(velocity.x, velocity.z);
+        let is_moving = horizontal_velocity.length() > 0.1;
+
+        if is_moving != animation_state.is_moving {
+            animation_state.is_moving = is_moving;
+            let animation_index = if is_moving { 4 } else { 2 };
+            if let Some(animation) = animations.get_by_number(animation_index) {
+                if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
+                    player.stop_all();
+                    player.play(animation).repeat();
+                }
+            }
+        }
+    }
+}
+
+/// Sets up initial idle animation when character is spawned
+pub fn setup_idle_animation(
+    trigger: Trigger<OnAdd, GltfAnimations>,
+    mut _commands: Commands,
+    mut players: Query<&mut GltfAnimations>,
+    mut animation_players: Query<&mut AnimationPlayer>,
+) {
+    let Ok(mut gltf_animations) = players.get_mut(trigger.target()) else {
+        return;
+    };
+    let mut player = animation_players.get_mut(gltf_animations.animation_player).unwrap();
+    let animation = gltf_animations.get_by_number(2).unwrap();
+    player.stop_all();
+    player.play(animation).repeat();
+}
+
+impl CharacterControllerBundle {
     pub fn new() -> Self {
         let length = 1.4;
         let radius = 0.3;
@@ -296,6 +332,7 @@ impl TrimeshCharacterControllerBundle {
         let collider = Collider::compound(vec![(offset, Quat::IDENTITY, capsule)]);
         // Use a small sphere for the ground caster shape
         let caster_shape = Collider::sphere(0.5);
+        
         Self {
             character_controller: CharacterController,
             body: RigidBody::Dynamic,
@@ -308,6 +345,7 @@ impl TrimeshCharacterControllerBundle {
             ).with_max_distance(0.2),
             locked_axes: LockedAxes::ROTATION_LOCKED,
             movement: MovementBundle::new(100.0, 0.6, 10.0),
+            animation_state: AnimationState { is_moving: false },
         }
     }
 } 
