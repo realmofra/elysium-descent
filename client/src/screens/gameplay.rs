@@ -1,10 +1,11 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
+use std::sync::Arc;
 
 use super::Screen;
 use crate::systems::character_controller::{CharacterController, CharacterControllerPlugin, CharacterControllerBundle, setup_idle_animation};
-use crate::systems::collectibles::{CollectiblesPlugin, CollectibleType, spawn_collectible};
+use crate::systems::collectibles::{CollectiblesPlugin, CollectibleType, spawn_collectible, CollectibleConfig, CollectibleRotation};
 
 // ===== PLUGIN SETUP =====
 
@@ -122,31 +123,94 @@ impl PlayingScene {
             // DebugRender::default(),
         )).observe(setup_idle_animation);
 
-        // Spawn collectibles
-        spawn_collectible(&mut commands, &assets, CollectibleType::Tomato, Vec3::new(0.0, 2.0, -10.0), 0.5);
-        spawn_collectible(&mut commands, &assets, CollectibleType::Apple, Vec3::new(0.0, 2.0, 60.0), 5.5);
-        spawn_collectible(&mut commands, &assets, CollectibleType::Pumpkin, Vec3::new(5.0, 2.0, 60.0), 5.5);
-        spawn_collectible(&mut commands, &assets, CollectibleType::Radish, Vec3::new(10.0, 2.0, 60.0), 5.5);
-        spawn_collectible(&mut commands, &assets, CollectibleType::Mushroom, Vec3::new(15.0, 2.0, 60.0), 5.5);
-
-        // Spawn a line of mixed collectibles
-        let collectible_types = [
-            CollectibleType::Apple,
-            CollectibleType::Tomato,
-            CollectibleType::Pumpkin,
-            CollectibleType::Radish,
-            CollectibleType::Mushroom,
+        // Define collectible configurations
+        let collectible_configs = vec![
+            CollectibleConfig {
+                position: Vec3::new(0.0, 2.0, 60.0),
+                collectible_type: CollectibleType::Pumpkin,
+                scale: 1.0,
+                rotation: Some(CollectibleRotation::new(true, false, 1.5)), // Spinning counter-clockwise at 1.5 rad/s
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(5.0, 2.0, 60.0),
+                collectible_type: CollectibleType::Coconut,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(10.0, 2.0, 60.0),
+                collectible_type: CollectibleType::Mushroom,
+                scale: 1.0,
+                rotation: Some(CollectibleRotation::new(true, true, 3.0)), // Fast clockwise spin
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(15.0, 2.0, 60.0),
+                collectible_type: CollectibleType::Pumpkin,
+                scale: 1.0,
+                rotation: Some(CollectibleRotation::new(true, false, 1.0)), // Slow counter-clockwise spin
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(20.0, 2.0, 60.0),
+                collectible_type: CollectibleType::Coconut,
+                scale: 1.0,
+                rotation: Some(CollectibleRotation::new(true, true, 2.5)), // Medium-fast clockwise spin
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(25.0, 2.0, 60.0),
+                collectible_type: CollectibleType::Mushroom,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(30.0, 2.0, 60.0),
+                collectible_type: CollectibleType::Pumpkin,
+                scale: 1.0,
+                rotation: Some(CollectibleRotation::new(true, false, 2.0)), // Medium counter-clockwise spin
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(35.0, 2.0, 60.0),
+                collectible_type: CollectibleType::Coconut,
+                scale: 1.0,
+                rotation: Some(CollectibleRotation::new(true, true, 1.0)), // Slow clockwise spin
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(40.0, 2.0, 60.0),
+                collectible_type: CollectibleType::Mushroom,
+                scale: 1.0,
+                rotation: Some(CollectibleRotation::new(true, false, 3.0)), // Fast counter-clockwise spin
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
         ];
-        
-        for i in 1..=10 {
-            let collectible_type = collectible_types[i % collectible_types.len()];
-            spawn_collectible(
-                &mut commands,
-                &assets,
-                collectible_type,
-                Vec3::new(i as f32 * 5.0, 2.0, 60.0),
-                5.5
-            );
+
+        // Spawn all collectibles from configurations
+        for config in collectible_configs {
+            spawn_collectible(&mut commands, &assets, config);
         }
 
         // Add camera

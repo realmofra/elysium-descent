@@ -2,7 +2,6 @@ use avian3d::{math::*, prelude::*};
 use bevy::{ecs::query::Has, prelude::*};
 use bevy_gltf_animation::prelude::*;
 use crate::{rendering::cameras::player_camera::FlyCam, game::Player};
-use tracing::info;
 pub struct CharacterControllerPlugin;
 
 impl Plugin for CharacterControllerPlugin {
@@ -305,7 +304,6 @@ fn camera_follow_player_system(
 
 #[derive(Component)]
 pub struct AnimationState {
-    pub is_moving: bool,
     pub forward_hold_time: f32,
     pub current_animation: usize,
 }
@@ -380,7 +378,6 @@ impl CharacterControllerBundle {
             locked_axes: LockedAxes::ROTATION_LOCKED,
             movement: MovementBundle::new(100.0, 0.6, 10.0),
             animation_state: AnimationState { 
-                is_moving: false,
                 forward_hold_time: 0.0,
                 current_animation: 2, // Start with idle animation
             },
