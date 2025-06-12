@@ -215,13 +215,14 @@ impl PlayingScene {
 
         // Add camera
         commands.spawn((
-            Name::new("Camera"),
+            Name::new("Gameplay Camera"),
             Camera3d::default(),
             Camera {
                 order: 1,
                 ..default()
             },
             Transform::from_xyz(0.0, 4.0, -12.0).looking_at(Vec3::new(0.0, 2.0, 0.0), Vec3::Y),
+            PlayingScene, // Add scene marker to ensure cleanup
         ));
     }
 }

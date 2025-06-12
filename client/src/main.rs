@@ -46,11 +46,12 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn((
         Camera2d::default(),
         Camera {
-            order: 2,
+            order: 0,
             ..default()
         },
         RenderLayers::from_layers(&[0, 1]),
         UiSourceCamera::<0>,
         Transform::from_translation(Vec3::Z * 1000.0),
+        Name::new("UI Camera"),
     ));
 }
