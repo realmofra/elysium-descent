@@ -2,6 +2,16 @@ use avian3d::{math::*, prelude::*};
 use bevy::{ecs::query::Has, prelude::*};
 use bevy_gltf_animation::prelude::*;
 use crate::{rendering::cameras::player_camera::FlyCam, game::Player};
+
+// Constants for movement tuning
+const MAX_SLOPE_ANGLE: f32 = 45.0;
+const STAIR_HEIGHT: f32 = 0.3;
+const GROUND_SNAP_DISTANCE: f32 = 0.2;
+const MOVEMENT_ACCELERATION: f32 = 30.0;
+const MOVEMENT_DECELERATION: f32 = 40.0;
+const MAX_SPEED: f32 = 5.0;
+const ROTATION_SPEED: f32 = 5.0;
+
 pub struct CharacterControllerPlugin;
 
 impl Plugin for CharacterControllerPlugin {
@@ -40,10 +50,6 @@ pub struct CharacterController;
 #[component(storage = "SparseSet")]
 pub struct Grounded;
 
-/// The acceleration used for character movement.
-#[derive(Component)]
-pub struct MovementAcceleration(pub Scalar);
-
 /// The damping factor used for slowing down movement.
 #[derive(Component)]
 pub struct MovementDampingFactor;
@@ -68,19 +74,17 @@ pub struct CharacterControllerBundle {
 /// A bundle that contains components for character movement.
 #[derive(Bundle)]
 pub struct MovementBundle {
-    acceleration: MovementAcceleration,
     damping: MovementDampingFactor,
     jump_impulse: JumpImpulse,
 }
 
 impl MovementBundle {
     pub const fn new(
-        acceleration: Scalar,
+        _acceleration: Scalar,
         _damping: Scalar,
         jump_impulse: Scalar,
     ) -> Self {
         Self {
-            acceleration: MovementAcceleration(acceleration),
             damping: MovementDampingFactor,
             jump_impulse: JumpImpulse(jump_impulse),
         }
@@ -89,7 +93,7 @@ impl MovementBundle {
 
 impl Default for MovementBundle {
     fn default() -> Self {
-        Self::new(5000.0, 0.9, 7.0)
+        Self::new(MOVEMENT_ACCELERATION, 0.9, 7.0)
     }
 }
 
@@ -154,29 +158,80 @@ fn gamepad_input(
     }
 }
 
-/// Updates the [`Grounded`] status for character controllers.
+/// Updates the [`Grounded`] status and handles ground snapping
 fn update_grounded(
     mut commands: Commands,
-    mut query: Query<(Entity, &LinearVelocity), With<CharacterController>>,
+    mut query: Query<(Entity, &Transform, &mut LinearVelocity), With<CharacterController>>,
+    time: Res<Time>,
+    mut ray_cast: MeshRayCast,
 ) {
-    for (entity, velocity) in &mut query {
-        // Consider grounded only when velocity is very close to zero
-        let is_grounded = velocity.y.abs() < 0.1; // Check if we're actually on the ground
-
-        if is_grounded {
-            commands.entity(entity).insert(Grounded);
+    for (entity, transform, mut velocity) in &mut query {
+        // Cast ray downward to detect ground
+        let ray_origin = transform.translation;
+        let ray_direction = Dir3::NEG_Y;
+        let ray = Ray3d::new(ray_origin, ray_direction);
+        
+        // Create settings for ground detection
+        let settings = MeshRayCastSettings::default()
+            .with_visibility(RayCastVisibility::Any) // Cast against all meshes
+            .with_early_exit_test(&|_| true); // Stop at first hit
+        
+        // Perform the ground check
+        if let Some((_, hit)) = ray_cast
+            .cast_ray(ray, &settings)
+            .first()
+        {
+            let ground_normal = hit.normal;
+            let slope_angle = ground_normal.angle_between(Vec3::Y).to_degrees();
+            
+            // Check if we're on a valid slope
+            if slope_angle <= MAX_SLOPE_ANGLE {
+                // Ground snapping for small obstacles
+                let distance_to_ground = hit.distance;
+                if distance_to_ground <= GROUND_SNAP_DISTANCE {
+                    // Snap to ground
+                    velocity.y = 0.0;
+                    commands.entity(entity).insert(Grounded);
+                    
+                    // Handle stair climbing
+                    if distance_to_ground > STAIR_HEIGHT {
+                        // Try to climb the stair
+                        let forward = transform.forward();
+                        let stair_origin = ray_origin + forward * 0.3;
+                        let stair_ray = Ray3d::new(stair_origin, ray_direction);
+                        
+                        // Perform the stair check with same settings
+                        if let Some((_, stair_hit)) = ray_cast
+                            .cast_ray(stair_ray, &settings)
+                            .first()
+                        {
+                            if stair_hit.distance <= STAIR_HEIGHT {
+                                // Smoothly move up the stair
+                                velocity.y = STAIR_HEIGHT / time.delta_secs();
+                            }
+                        }
+                    }
+                } else {
+                    commands.entity(entity).remove::<Grounded>();
+                }
+            } else {
+                // Too steep, slide down
+                let slide_direction = (ground_normal - Vec3::Y * ground_normal.y).normalize();
+                velocity.x += slide_direction.x * 9.8 * time.delta_secs();
+                velocity.z += slide_direction.z * 9.8 * time.delta_secs();
+                commands.entity(entity).remove::<Grounded>();
+            }
         } else {
             commands.entity(entity).remove::<Grounded>();
         }
     }
 }
 
-/// Responds to [`MovementAction`] events and moves character controllers accordingly.
+/// Responds to [`MovementAction`] events and moves character controllers accordingly
 fn movement(
     time: Res<Time>,
     mut movement_event_reader: EventReader<MovementAction>,
     mut controllers: Query<(
-        &MovementAcceleration,
         &JumpImpulse,
         &mut LinearVelocity,
         &mut Transform,
@@ -184,46 +239,43 @@ fn movement(
         &AnimationState,
     )>,
 ) {
-    let delta_time = time.delta_secs_f64().adjust_precision();
-    let rotation_speed = 2.5;
-    let max_speed = 54.0;
-
+    let delta_time = time.delta_secs();
+    
     for event in movement_event_reader.read() {
-        for (movement_acceleration, jump_impulse, mut linear_velocity, mut transform, is_grounded, animation_state) in
+        for (jump_impulse, mut linear_velocity, mut transform, is_grounded, animation_state) in
             &mut controllers
         {
             match event {
                 MovementAction::Move(direction) => {
-                    // Rotate player based on horizontal input (inverted)
+                    // Smooth rotation
                     if direction.x != 0.0 {
-                        let rotation_amount = -direction.x * rotation_speed * delta_time as f32;
-                        transform.rotate_y(rotation_amount);
+                        let target_rotation = -direction.x * ROTATION_SPEED * delta_time;
+                        transform.rotate_y(target_rotation);
                     }
 
-                    // Get player's forward and right vectors
+                    // Get movement vectors
                     let forward = transform.forward();
                     let right = transform.right();
-
-                    // Calculate movement direction relative to player's rotation
-                    let movement_direction = (forward * -direction.y as f32) + (right * direction.x as f32);
+                    let movement_direction = (forward * -direction.y) + (right * direction.x);
                     
-                    // Apply movement in the direction the player is facing
-                    let acceleration = movement_acceleration.0 * delta_time;
+                    // Calculate target velocity
+                    let target_speed = MAX_SPEED * direction.length();
+                    let current_speed = Vec2::new(linear_velocity.x, linear_velocity.z).length();
                     
-                    // Double speed when in special animation (animation 3)
+                    // Smooth acceleration/deceleration
+                    let acceleration = if target_speed > current_speed {
+                        MOVEMENT_ACCELERATION
+                    } else {
+                        MOVEMENT_DECELERATION
+                    };
+                    
+                    // Apply movement
                     let speed_multiplier = if animation_state.current_animation == 3 { 1.5 } else { 1.0 };
+                    let target_velocity = movement_direction * target_speed * speed_multiplier;
                     
-                    // Directly set velocity based on input direction with speed multiplier
-                    linear_velocity.x = movement_direction.x * acceleration * 10.0 * speed_multiplier;
-                    linear_velocity.z = movement_direction.z * acceleration * 10.0 * speed_multiplier;
-
-                    // Clamp maximum horizontal speed
-                    let horizontal_speed = (linear_velocity.x.powi(2) + linear_velocity.z.powi(2)).sqrt();
-                    if horizontal_speed > max_speed {
-                        let scale = max_speed / horizontal_speed;
-                        linear_velocity.x *= scale;
-                        linear_velocity.z *= scale;
-                    }
+                    // Smoothly interpolate current velocity to target velocity
+                    linear_velocity.x = linear_velocity.x.lerp(target_velocity.x, acceleration * delta_time);
+                    linear_velocity.z = linear_velocity.z.lerp(target_velocity.z, acceleration * delta_time);
                 }
                 MovementAction::Jump => {
                     if is_grounded {
@@ -235,33 +287,29 @@ fn movement(
     }
 }
 
-/// Slows down movement in the XZ plane and prevents unwanted vertical movement
+/// Applies movement damping and ground sticking
 fn apply_movement_damping(
-    mut query: Query<(&MovementDampingFactor, &mut LinearVelocity, Option<&Grounded>, &AnimationState)>
+    mut query: Query<(&MovementDampingFactor, &mut LinearVelocity, Option<&Grounded>)>
 ) {
-    for (_damping_factor, mut linear_velocity, grounded, animation_state) in &mut query {
-        // Dampen horizontal movement (increase damping for more friction)
-        linear_velocity.x *= 0.6;
-        linear_velocity.z *= 0.6;
-
-        // Stick to ground: clamp both upward and all downward velocity
-        if grounded.is_some() {
-            // Only clamp and apply stick force if not moving up
-            if linear_velocity.y < 0.0 {
-                linear_velocity.y = 0.0;
-            }
-            if linear_velocity.y <= 0.0 {
-                // Significantly increase ground clamping force when running (animation 3)
-                let ground_force = if animation_state.current_animation == 3 { 10.0 } else { 1.0 };
-                linear_velocity.y -= ground_force;
-            }
+    for (_damping_factor, mut linear_velocity, grounded) in &mut query {
+        // Apply air resistance when not grounded
+        if grounded.is_none() {
+            linear_velocity.x *= 0.98;
+            linear_velocity.z *= 0.98;
         }
-
-        // Apply gravity if not grounded
-        if grounded.is_none() && linear_velocity.y.abs() >= 0.1 {
-            // Increase gravity when running to help keep grounded
-            let gravity_multiplier = if animation_state.current_animation == 3 { 2.0 } else { 1.0 };
-            linear_velocity.y -= 9.8 * 0.016 * gravity_multiplier;
+        
+        // Apply ground friction
+        if grounded.is_some() {
+            linear_velocity.x *= 0.92;
+            linear_velocity.z *= 0.92;
+        }
+        
+        // Prevent tiny residual movement
+        if linear_velocity.x.abs() < 0.01 {
+            linear_velocity.x = 0.0;
+        }
+        if linear_velocity.z.abs() < 0.01 {
+            linear_velocity.z = 0.0;
         }
     }
 }
@@ -376,7 +424,7 @@ impl CharacterControllerBundle {
                 Dir3::NEG_Y,
             ).with_max_distance(0.2),
             locked_axes: LockedAxes::ROTATION_LOCKED,
-            movement: MovementBundle::new(100.0, 0.6, 10.0),
+            movement: MovementBundle::new(MOVEMENT_ACCELERATION, 0.9, 7.0),
             animation_state: AnimationState { 
                 forward_hold_time: 0.0,
                 current_animation: 2, // Start with idle animation
