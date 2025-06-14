@@ -126,24 +126,6 @@ impl PlayingScene {
         // Define collectible configurations
         let collectible_configs = vec![
             CollectibleConfig {
-                position: Vec3::new(0.0, 2.0, 60.0),
-                collectible_type: CollectibleType::Pumpkin,
-                scale: 1.0,
-                rotation: Some(CollectibleRotation::new(true, false, 1.5)), // Spinning counter-clockwise at 1.5 rad/s
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(5.0, 2.0, 60.0),
-                collectible_type: CollectibleType::Coconut,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
                 position: Vec3::new(10.0, 2.0, 60.0),
                 collectible_type: CollectibleType::Mushroom,
                 scale: 1.0,
@@ -153,7 +135,7 @@ impl PlayingScene {
                 }),
             },
             CollectibleConfig {
-                position: Vec3::new(15.0, 2.0, 60.0),
+                position: Vec3::new(25.0, 2.0, 60.0),
                 collectible_type: CollectibleType::Pumpkin,
                 scale: 1.0,
                 rotation: Some(CollectibleRotation::new(true, false, 1.0)), // Slow counter-clockwise spin
@@ -162,7 +144,7 @@ impl PlayingScene {
                 }),
             },
             CollectibleConfig {
-                position: Vec3::new(20.0, 2.0, 60.0),
+                position: Vec3::new(40.0, 2.0, 60.0),
                 collectible_type: CollectibleType::Coconut,
                 scale: 1.0,
                 rotation: Some(CollectibleRotation::new(true, true, 2.5)), // Medium-fast clockwise spin
@@ -171,7 +153,7 @@ impl PlayingScene {
                 }),
             },
             CollectibleConfig {
-                position: Vec3::new(25.0, 2.0, 60.0),
+                position: Vec3::new(55.0, 2.0, 60.0),
                 collectible_type: CollectibleType::Mushroom,
                 scale: 1.0,
                 rotation: None, // No rotation
@@ -180,38 +162,29 @@ impl PlayingScene {
                 }),
             },
             CollectibleConfig {
-                position: Vec3::new(30.0, 2.0, 60.0),
-                collectible_type: CollectibleType::Pumpkin,
-                scale: 1.0,
-                rotation: Some(CollectibleRotation::new(true, false, 2.0)), // Medium counter-clockwise spin
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(35.0, 2.0, 60.0),
-                collectible_type: CollectibleType::Coconut,
-                scale: 1.0,
-                rotation: Some(CollectibleRotation::new(true, true, 1.0)), // Slow clockwise spin
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(40.0, 2.0, 60.0),
+                position: Vec3::new(58.5, 5.0, 50.0),
                 collectible_type: CollectibleType::Mushroom,
                 scale: 1.0,
-                rotation: Some(CollectibleRotation::new(true, false, 3.0)), // Fast counter-clockwise spin
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(60.0, 8.0, 48.0),
+                collectible_type: CollectibleType::Mushroom,
+                scale: 1.0,
+                rotation: None, // No rotation
                 on_collect: Arc::new(|commands, entity| {
                     commands.entity(entity).despawn();
                 }),
             },
         ];
 
-        // Spawn all collectibles from configurations
-        for config in collectible_configs {
+        // Spawn collectibles using map
+        collectible_configs.into_iter().for_each(|config| {
             spawn_collectible(&mut commands, &assets, config);
-        }
+        });
 
         // Add camera
         commands.spawn((

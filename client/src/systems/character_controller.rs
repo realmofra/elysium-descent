@@ -405,7 +405,7 @@ pub fn setup_idle_animation(
 
 impl CharacterControllerBundle {
     pub fn new() -> Self {
-        let length = 1.4;
+        let length = 0.8;
         let radius = 0.3;
         let offset = Vec3::new(0.0, (length / 2.0) + radius, 0.0);
         let capsule = Collider::capsule(radius, length);
