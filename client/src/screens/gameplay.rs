@@ -295,25 +295,7 @@ impl PlayingScene {
                 on_collect: Arc::new(|commands, entity| {
                     commands.entity(entity).despawn();
                 }),
-            },
-            // CollectibleConfig {
-            //     position: Vec3::new(105.0, 10.0, -56.0),
-            //     collectible_type: CollectibleType::Mushroom,
-            //     scale: 1.0,
-            //     rotation: None, // No rotation
-            //     on_collect: Arc::new(|commands, entity| {
-            //         commands.entity(entity).despawn();
-            //     }),
-            // },
-            // CollectibleConfig {
-            //     position: Vec3::new(120.0, 10.0, -68.0),
-            //     collectible_type: CollectibleType::Book,
-            //     scale: 1.0,
-            //     rotation: None, // No rotation
-            //     on_collect: Arc::new(|commands, entity| {
-            //         commands.entity(entity).despawn();
-            //     }),
-            // },
+            }
         ];
 
         // Spawn collectibles using map
