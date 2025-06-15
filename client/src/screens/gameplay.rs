@@ -1,11 +1,11 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
-use std::sync::Arc;
 
 use super::Screen;
 use crate::systems::character_controller::{CharacterController, CharacterControllerPlugin, CharacterControllerBundle, setup_idle_animation};
-use crate::systems::collectibles::{CollectiblesPlugin, CollectibleType, spawn_collectible, CollectibleConfig, CollectibleRotation};
+use crate::systems::collectibles::{CollectiblesPlugin, spawn_collectible};
+use crate::systems::collectibles_config::COLLECTIBLES;
 
 // ===== PLUGIN SETUP =====
 
@@ -123,185 +123,10 @@ impl PlayingScene {
             // DebugRender::default(),
         )).observe(setup_idle_animation);
 
-        // Define collectible configurations
-        let collectible_configs = vec![
-            CollectibleConfig {
-                position: Vec3::new(10.0, 2.0, 60.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: Some(CollectibleRotation::new(true, true, 3.0)), // Fast clockwise spin
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(25.0, 2.0, 60.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: Some(CollectibleRotation::new(true, false, 1.0)), // Slow counter-clockwise spin
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(40.0, 2.0, 60.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: Some(CollectibleRotation::new(true, true, 2.5)), // Medium-fast clockwise spin
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(55.0, 2.0, 60.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(58.5, 5.0, 50.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(60.0, 8.0, 48.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(60.0, 12.0, 42.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(60.0, 12.0, 32.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(60.0, 12.0, 22.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(75.0, 12.0, 22.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(90.0, 12.0, 22.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(90.0, 12.0, 12.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(90.0, 12.0, 2.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(90.0, 12.0, -10.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(90.0, 12.0, -22.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(90.0, 12.0, -34.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(90.0, 15.0, -40.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(90.0, 18.0, -46.0),
-                collectible_type: CollectibleType::FirstAidKit,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            },
-            CollectibleConfig {
-                position: Vec3::new(90.0, 22.0, -54.0),
-                collectible_type: CollectibleType::Book,
-                scale: 1.0,
-                rotation: None, // No rotation
-                on_collect: Arc::new(|commands, entity| {
-                    commands.entity(entity).despawn();
-                }),
-            }
-        ];
-
-        // Spawn collectibles using map
-        collectible_configs.into_iter().for_each(|config| {
-            spawn_collectible(&mut commands, &assets, config);
-        });
+        // Spawn collectibles using imported array
+        for config in COLLECTIBLES.iter() {
+            spawn_collectible(&mut commands, &assets, config.clone());
+        }
 
         // Add camera
         commands.spawn((

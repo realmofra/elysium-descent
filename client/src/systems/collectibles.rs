@@ -32,9 +32,6 @@ pub struct FloatingItem {
 
 #[derive(Component, Clone, Copy, Debug)]
 pub enum CollectibleType {
-    Mushroom,
-    Pumpkin,
-    Coconut,
     Book,
     FirstAidKit,
 }
@@ -50,16 +47,6 @@ pub struct CollectibleConfig {
     pub scale: f32,
     pub rotation: Option<CollectibleRotation>,
     pub on_collect: Arc<dyn Fn(&mut Commands, Entity) + Send + Sync>,
-}
-
-impl CollectibleRotation {
-    pub fn new(enabled: bool, clockwise: bool, speed: f32) -> Self {
-        Self {
-            enabled,
-            clockwise,
-            speed,
-        }
-    }
 }
 
 // ===== PLUGIN =====
@@ -85,9 +72,6 @@ pub fn spawn_collectible(
     config: CollectibleConfig,
 ) {
     let model_path = match config.collectible_type {
-        CollectibleType::Mushroom => "models/food/mushroom.glb#Scene0",
-        CollectibleType::Pumpkin => "models/food/pumpkin.glb#Scene0",
-        CollectibleType::Coconut => "models/food/coconut.glb#Scene0",
         CollectibleType::Book => "models/book.glb#Scene0",
         CollectibleType::FirstAidKit => "models/first-aid-kit.glb#Scene0",
     };

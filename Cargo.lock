@@ -1797,6 +1797,7 @@ dependencies = [
  "bevy_kira_audio",
  "bevy_lunex",
  "log",
+ "once_cell",
  "starknet",
  "tracing",
 ]
