@@ -5,7 +5,7 @@ use crate::{rendering::cameras::player_camera::FlyCam, game::Player};
 
 // Constants for movement tuning
 const MAX_SLOPE_ANGLE: f32 = 45.0;
-const STAIR_HEIGHT: f32 = 0.3;
+const STAIR_HEIGHT: f32 = 0.6;
 const GROUND_SNAP_DISTANCE: f32 = 0.2;
 const MOVEMENT_ACCELERATION: f32 = 30.0;
 const MOVEMENT_DECELERATION: f32 = 40.0;
@@ -197,7 +197,7 @@ fn update_grounded(
                     if distance_to_ground > STAIR_HEIGHT {
                         // Try to climb the stair
                         let forward = transform.forward();
-                        let stair_origin = ray_origin + forward * 0.3;
+                        let stair_origin = ray_origin + forward * 0.6;
                         let stair_ray = Ray3d::new(stair_origin, ray_direction);
                         
                         // Perform the stair check with same settings
@@ -207,9 +207,11 @@ fn update_grounded(
                         {
                             if stair_hit.distance <= STAIR_HEIGHT {
                                 // Smoothly move up the stair
-                                velocity.y = STAIR_HEIGHT / time.delta_secs();
+                                velocity.y = (STAIR_HEIGHT / time.delta_secs()) * 1.5;
                             }
                         }
+                    } else {
+                        commands.entity(entity).remove::<Grounded>();
                     }
                 } else {
                     commands.entity(entity).remove::<Grounded>();
