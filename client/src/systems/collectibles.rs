@@ -35,6 +35,8 @@ pub enum CollectibleType {
     Mushroom,
     Pumpkin,
     Coconut,
+    Book,
+    FirstAidKit,
 }
 
 #[derive(Component)]
@@ -86,6 +88,8 @@ pub fn spawn_collectible(
         CollectibleType::Mushroom => "models/food/mushroom.glb#Scene0",
         CollectibleType::Pumpkin => "models/food/pumpkin.glb#Scene0",
         CollectibleType::Coconut => "models/food/coconut.glb#Scene0",
+        CollectibleType::Book => "models/book.glb#Scene0",
+        CollectibleType::FirstAidKit => "models/first-aid-kit.glb#Scene0",
     };
     
     let model_handle = assets.load(model_path);

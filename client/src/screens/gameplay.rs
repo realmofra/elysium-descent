@@ -127,7 +127,7 @@ impl PlayingScene {
         let collectible_configs = vec![
             CollectibleConfig {
                 position: Vec3::new(10.0, 2.0, 60.0),
-                collectible_type: CollectibleType::Mushroom,
+                collectible_type: CollectibleType::FirstAidKit,
                 scale: 1.0,
                 rotation: Some(CollectibleRotation::new(true, true, 3.0)), // Fast clockwise spin
                 on_collect: Arc::new(|commands, entity| {
@@ -136,7 +136,7 @@ impl PlayingScene {
             },
             CollectibleConfig {
                 position: Vec3::new(25.0, 2.0, 60.0),
-                collectible_type: CollectibleType::Pumpkin,
+                collectible_type: CollectibleType::FirstAidKit,
                 scale: 1.0,
                 rotation: Some(CollectibleRotation::new(true, false, 1.0)), // Slow counter-clockwise spin
                 on_collect: Arc::new(|commands, entity| {
@@ -145,7 +145,7 @@ impl PlayingScene {
             },
             CollectibleConfig {
                 position: Vec3::new(40.0, 2.0, 60.0),
-                collectible_type: CollectibleType::Coconut,
+                collectible_type: CollectibleType::FirstAidKit,
                 scale: 1.0,
                 rotation: Some(CollectibleRotation::new(true, true, 2.5)), // Medium-fast clockwise spin
                 on_collect: Arc::new(|commands, entity| {
@@ -154,7 +154,7 @@ impl PlayingScene {
             },
             CollectibleConfig {
                 position: Vec3::new(55.0, 2.0, 60.0),
-                collectible_type: CollectibleType::Mushroom,
+                collectible_type: CollectibleType::FirstAidKit,
                 scale: 1.0,
                 rotation: None, // No rotation
                 on_collect: Arc::new(|commands, entity| {
@@ -163,7 +163,7 @@ impl PlayingScene {
             },
             CollectibleConfig {
                 position: Vec3::new(58.5, 5.0, 50.0),
-                collectible_type: CollectibleType::Mushroom,
+                collectible_type: CollectibleType::FirstAidKit,
                 scale: 1.0,
                 rotation: None, // No rotation
                 on_collect: Arc::new(|commands, entity| {
@@ -172,13 +172,148 @@ impl PlayingScene {
             },
             CollectibleConfig {
                 position: Vec3::new(60.0, 8.0, 48.0),
-                collectible_type: CollectibleType::Mushroom,
+                collectible_type: CollectibleType::FirstAidKit,
                 scale: 1.0,
                 rotation: None, // No rotation
                 on_collect: Arc::new(|commands, entity| {
                     commands.entity(entity).despawn();
                 }),
             },
+            CollectibleConfig {
+                position: Vec3::new(60.0, 12.0, 42.0),
+                collectible_type: CollectibleType::FirstAidKit,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(60.0, 12.0, 32.0),
+                collectible_type: CollectibleType::FirstAidKit,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(60.0, 12.0, 22.0),
+                collectible_type: CollectibleType::FirstAidKit,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(75.0, 12.0, 22.0),
+                collectible_type: CollectibleType::FirstAidKit,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(90.0, 12.0, 22.0),
+                collectible_type: CollectibleType::FirstAidKit,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(90.0, 12.0, 12.0),
+                collectible_type: CollectibleType::FirstAidKit,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(90.0, 12.0, 2.0),
+                collectible_type: CollectibleType::FirstAidKit,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(90.0, 12.0, -10.0),
+                collectible_type: CollectibleType::FirstAidKit,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(90.0, 12.0, -22.0),
+                collectible_type: CollectibleType::FirstAidKit,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(90.0, 12.0, -34.0),
+                collectible_type: CollectibleType::FirstAidKit,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(90.0, 15.0, -40.0),
+                collectible_type: CollectibleType::FirstAidKit,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(90.0, 18.0, -46.0),
+                collectible_type: CollectibleType::FirstAidKit,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            CollectibleConfig {
+                position: Vec3::new(90.0, 22.0, -54.0),
+                collectible_type: CollectibleType::Book,
+                scale: 1.0,
+                rotation: None, // No rotation
+                on_collect: Arc::new(|commands, entity| {
+                    commands.entity(entity).despawn();
+                }),
+            },
+            // CollectibleConfig {
+            //     position: Vec3::new(105.0, 10.0, -56.0),
+            //     collectible_type: CollectibleType::Mushroom,
+            //     scale: 1.0,
+            //     rotation: None, // No rotation
+            //     on_collect: Arc::new(|commands, entity| {
+            //         commands.entity(entity).despawn();
+            //     }),
+            // },
+            // CollectibleConfig {
+            //     position: Vec3::new(120.0, 10.0, -68.0),
+            //     collectible_type: CollectibleType::Book,
+            //     scale: 1.0,
+            //     rotation: None, // No rotation
+            //     on_collect: Arc::new(|commands, entity| {
+            //         commands.entity(entity).despawn();
+            //     }),
+            // },
         ];
 
         // Spawn collectibles using map
