@@ -6,6 +6,7 @@ use super::Screen;
 use crate::systems::character_controller::{CharacterController, CharacterControllerPlugin, CharacterControllerBundle, setup_idle_animation};
 use crate::systems::collectibles::{CollectiblesPlugin, spawn_collectible};
 use crate::systems::collectibles_config::COLLECTIBLES;
+use crate::ui::inventory::spawn_inventory_ui;
 
 // ===== PLUGIN SETUP =====
 
@@ -55,7 +56,7 @@ fn camera_follow_player(
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 struct PlayingScene;
 
 #[derive(Component)]
@@ -139,5 +140,7 @@ impl PlayingScene {
             Transform::from_xyz(0.0, 4.0, -12.0).looking_at(Vec3::new(0.0, 2.0, 0.0), Vec3::Y),
             PlayingScene, // Add scene marker to ensure cleanup
         ));
+
+        spawn_inventory_ui::<PlayingScene>(commands);
     }
 }

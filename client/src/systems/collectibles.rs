@@ -2,7 +2,8 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use std::sync::Arc;
 
-use crate::systems::character_controller::CharacterController;
+use crate::{systems::character_controller::CharacterController, ui::inventory};
+use crate::screens::Screen;
 
 // ===== COMPONENTS & RESOURCES =====
 
@@ -30,11 +31,16 @@ pub struct FloatingItem {
     pub hover_speed: f32,
 }
 
-#[derive(Component, Clone, Copy, Debug)]
+#[derive(Component, Clone, Copy, Debug, PartialEq)]
 pub enum CollectibleType {
     Book,
     FirstAidKit,
 }
+
+
+#[derive(Resource)]
+pub struct NextItemToAdd(pub CollectibleType);
+
 
 #[derive(Component)]
 pub struct Sensor;
@@ -56,10 +62,13 @@ pub struct CollectiblesPlugin;
 impl Plugin for CollectiblesPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(CollectibleCounter { collectibles_collected: 0 })
+            .insert_resource(inventory::InventoryVisibilityState::default())
             .add_systems(Update, (
                 collect_items,
                 update_floating_items,
                 rotate_collectibles,
+                inventory::add_item_to_inventory.run_if(in_state(Screen::GamePlay)),
+                inventory::toggle_inventory_visibility.run_if(in_state(Screen::GamePlay)),
             ));
     }
 }
@@ -123,13 +132,13 @@ fn collect_items(
     for (collectible_entity, collectible_transform, collectible_type, collectible) in collectible_query.iter() {
         let distance = player_transform.translation.distance(collectible_transform.translation);
         if distance < 5.0 { // Collection radius
-            info!("Collected a {:?}!", collectible_type);
             (collectible.on_collect)(&mut commands, collectible_entity);
+            commands.insert_resource(NextItemToAdd(*collectible_type));
             collectible_counter.collectibles_collected += 1;
-            info!("Total collectibles collected: {}", collectible_counter.collectibles_collected);
         }
     }
 }
+
 
 fn update_floating_items(time: Res<Time>, mut query: Query<(&FloatingItem, &mut Transform)>) {
     for (floating, mut transform) in query.iter_mut() {
