@@ -1,3 +1,4 @@
+use crate::assets::ModelAssets;
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use std::sync::Arc;
@@ -55,12 +56,13 @@ pub struct CollectiblesPlugin;
 
 impl Plugin for CollectiblesPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(CollectibleCounter { collectibles_collected: 0 })
-            .add_systems(Update, (
-                collect_items,
-                update_floating_items,
-                rotate_collectibles,
-            ));
+        app.insert_resource(CollectibleCounter {
+            collectibles_collected: 0,
+        })
+        .add_systems(
+            Update,
+            (collect_items, update_floating_items, rotate_collectibles),
+        );
     }
 }
 
@@ -68,16 +70,14 @@ impl Plugin for CollectiblesPlugin {
 
 pub fn spawn_collectible(
     commands: &mut Commands,
-    assets: &Res<AssetServer>,
+    assets: &Res<ModelAssets>,
     config: CollectibleConfig,
 ) {
-    let model_path = match config.collectible_type {
-        CollectibleType::Book => "models/book.glb#Scene0",
-        CollectibleType::FirstAidKit => "models/first-aid-kit.glb#Scene0",
+    let model_handle = match config.collectible_type {
+        CollectibleType::Book => assets.book.clone(),
+        CollectibleType::FirstAidKit => assets.first_aid_kit.clone(),
     };
-    
-    let model_handle = assets.load(model_path);
-    
+
     let mut entity = commands.spawn((
         Name::new(format!("{:?}", config.collectible_type)),
         SceneRoot(model_handle),
@@ -120,13 +120,21 @@ fn collect_items(
         return;
     };
 
-    for (collectible_entity, collectible_transform, collectible_type, collectible) in collectible_query.iter() {
-        let distance = player_transform.translation.distance(collectible_transform.translation);
-        if distance < 5.0 { // Collection radius
+    for (collectible_entity, collectible_transform, collectible_type, collectible) in
+        collectible_query.iter()
+    {
+        let distance = player_transform
+            .translation
+            .distance(collectible_transform.translation);
+        if distance < 5.0 {
+            // Collection radius
             info!("Collected a {:?}!", collectible_type);
             (collectible.on_collect)(&mut commands, collectible_entity);
             collectible_counter.collectibles_collected += 1;
-            info!("Total collectibles collected: {}", collectible_counter.collectibles_collected);
+            info!(
+                "Total collectibles collected: {}",
+                collectible_counter.collectibles_collected
+            );
         }
     }
 }
@@ -153,4 +161,4 @@ pub fn rotate_collectibles(
             transform.rotate_y(rotation_amount);
         }
     }
-} 
+}

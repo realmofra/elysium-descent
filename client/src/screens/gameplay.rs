@@ -3,7 +3,10 @@ use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
 
 use super::Screen;
-use crate::systems::character_controller::{CharacterController, CharacterControllerPlugin, CharacterControllerBundle, setup_idle_animation};
+use crate::assets::ModelAssets;
+use crate::systems::character_controller::{
+    CharacterController, CharacterControllerBundle, CharacterControllerPlugin, setup_idle_animation,
+};
 use crate::systems::collectibles::{CollectiblesPlugin, spawn_collectible};
 use crate::systems::collectibles_config::COLLECTIBLES;
 
@@ -38,17 +41,16 @@ fn camera_follow_player(
         for mut camera_transform in camera_query.iter_mut() {
             let player_pos = player_transform.translation;
             let player_rotation = player_transform.rotation;
-            
+
             // Calculate camera position behind player (inverted Z)
             let camera_offset = player_rotation * Vec3::new(0.0, 4.0, -12.0);
             let target_pos = player_pos + camera_offset;
-            
+
             // Smoothly move camera to new position
-            camera_transform.translation = camera_transform.translation.lerp(
-                target_pos,
-                (5.0 * time.delta_secs()).min(1.0),
-            );
-            
+            camera_transform.translation = camera_transform
+                .translation
+                .lerp(target_pos, (5.0 * time.delta_secs()).min(1.0));
+
             // Make camera look at player
             camera_transform.look_at(player_pos + Vec3::Y * 2.0, Vec3::Y);
         }
@@ -64,10 +66,7 @@ struct EnvironmentMarker;
 // ===== PLAYING SCENE IMPLEMENTATION =====
 
 impl PlayingScene {
-    fn spawn_environment(
-        mut commands: Commands,
-        assets: Res<AssetServer>,
-    ) {
+    fn spawn_environment(mut commands: Commands, assets: Res<ModelAssets>) {
         // Set up ambient light
         commands.insert_resource(AmbientLight {
             color: Color::srgb_u8(68, 71, 88),
@@ -76,7 +75,7 @@ impl PlayingScene {
         });
 
         // Environment (see the `collider_constructors` example for creating colliders from scenes)
-        let scene_handle = assets.load("models/environment.glb#Scene0");
+        let scene_handle = assets.environment.clone();
         commands.spawn((
             Name::new("Environment"),
             EnvironmentMarker,
@@ -108,20 +107,22 @@ impl PlayingScene {
         ));
 
         // Add player
-        commands.spawn((
-            Name::new("Player"),
-            GltfSceneRoot::new(assets.load("models/player.glb")),
-            Transform {
-                translation: Vec3::new(0.0, 2.0, 0.0),
-                scale: Vec3::splat(4.0),
-                ..default()
-            },
-            CharacterControllerBundle::new(),
-            Friction::new(0.5),
-            Restitution::new(0.0),
-            GravityScale(1.0),
-            // DebugRender::default(),
-        )).observe(setup_idle_animation);
+        commands
+            .spawn((
+                Name::new("Player"),
+                GltfSceneRoot::new(assets.player.clone()),
+                Transform {
+                    translation: Vec3::new(0.0, 2.0, 0.0),
+                    scale: Vec3::splat(4.0),
+                    ..default()
+                },
+                CharacterControllerBundle::new(),
+                Friction::new(0.5),
+                Restitution::new(0.0),
+                GravityScale(1.0),
+                // DebugRender::default(),
+            ))
+            .observe(setup_idle_animation);
 
         // Spawn collectibles using imported array
         for config in COLLECTIBLES.iter() {
