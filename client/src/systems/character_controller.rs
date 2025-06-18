@@ -95,7 +95,6 @@ fn keyboard_input(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut last_input: ResMut<LastInputDirection>,
     mut query: Query<&mut AnimationState>,
-    time: Res<Time>,
 ) {
     let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
     let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]);
