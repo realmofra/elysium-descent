@@ -2,18 +2,20 @@ use bevy::window::{PresentMode, WindowMode, WindowResolution};
 use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_kira_audio::prelude::*;
 use bevy_lunex::prelude::*;
+use dojo_bevy_plugin::{DojoPlugin, DojoResource, TokioRuntime};
 
+mod constants;
+mod game;
 mod keybinding;
+mod rendering;
 mod resources;
 mod screens;
-mod ui;
-mod rendering;
-mod game;
 mod systems;
+mod ui;
 
+pub use rendering::cameras::player_camera::PlayerPlugin;
 pub use resources::assets;
 pub use resources::audio;
-pub use rendering::cameras::player_camera::PlayerPlugin;
 
 pub use resources::audio::GameAudioPlugin;
 
@@ -35,6 +37,9 @@ fn main() -> AppExit {
         .add_systems(Startup, setup_camera)
         .add_plugins(UiLunexPlugins)
         .add_plugins(AudioPlugin)
+        .add_plugins(DojoPlugin)
+        .init_resource::<DojoResource>()
+        .init_resource::<TokioRuntime>()
         .add_plugins(assets::AssetsPlugin)
         .add_plugins(GameAudioPlugin)
         .add_plugins(PlayerPlugin)
