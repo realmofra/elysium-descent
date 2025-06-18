@@ -101,15 +101,16 @@ fn keyboard_input(
     let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]);
     let left = keyboard_input.any_pressed([KeyCode::KeyA, KeyCode::ArrowLeft]);
     let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]);
+    let shift = keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
 
     let horizontal = right as i8 - left as i8;
     let vertical = up as i8 - down as i8;
     let direction = Vector2::new(horizontal as Scalar, vertical as Scalar).clamp_length_max(1.0);
 
-    // Update forward hold time
     if let Ok(mut animation_state) = query.single_mut() {
-        if up && !down {
-            animation_state.forward_hold_time += time.delta_secs();
+        // Set forward_hold_time to either max value for sprint or 0 for normal movement
+        if (up || down) && shift {
+            animation_state.forward_hold_time = 4.0;
         } else {
             animation_state.forward_hold_time = 0.0;
         }
