@@ -13,6 +13,8 @@ mod screens;
 mod systems;
 mod ui;
 
+use systems::dojo;
+
 pub use rendering::cameras::player_camera::PlayerPlugin;
 pub use resources::assets;
 pub use resources::audio;
@@ -37,13 +39,13 @@ fn main() -> AppExit {
         .add_systems(Startup, setup_camera)
         .add_plugins(UiLunexPlugins)
         .add_plugins(AudioPlugin)
-        .add_plugins(DojoPlugin)
         .init_resource::<DojoResource>()
         .init_resource::<TokioRuntime>()
+        .add_plugins(DojoPlugin)
         .add_plugins(assets::AssetsPlugin)
         .add_plugins(GameAudioPlugin)
         .add_plugins(PlayerPlugin)
-        .add_plugins((screens::plugin, keybinding::plugin))
+        .add_plugins((screens::plugin, keybinding::plugin, dojo::plugin))
         .run()
 }
 
