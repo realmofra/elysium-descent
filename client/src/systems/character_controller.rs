@@ -1,16 +1,8 @@
+use crate::constants::movement::CharacterMovementConfig;
+use crate::{game::Player, rendering::cameras::player_camera::FlyCam};
 use avian3d::{math::*, prelude::*};
 use bevy::{ecs::query::Has, prelude::*};
 use bevy_gltf_animation::prelude::*;
-use crate::{rendering::cameras::player_camera::FlyCam, game::Player};
-
-// Constants for movement tuning
-const MAX_SLOPE_ANGLE: f32 = 45.0;
-const STAIR_HEIGHT: f32 = 0.6;
-const GROUND_SNAP_DISTANCE: f32 = 0.2;
-const MOVEMENT_ACCELERATION: f32 = 30.0;
-const MOVEMENT_DECELERATION: f32 = 40.0;
-const MAX_SPEED: f32 = 5.0;
-const ROTATION_SPEED: f32 = 5.0;
 
 pub struct CharacterControllerPlugin;
 
@@ -79,11 +71,7 @@ pub struct MovementBundle {
 }
 
 impl MovementBundle {
-    pub const fn new(
-        _acceleration: Scalar,
-        _damping: Scalar,
-        jump_impulse: Scalar,
-    ) -> Self {
+    pub const fn new(_acceleration: Scalar, _damping: Scalar, jump_impulse: Scalar) -> Self {
         Self {
             damping: MovementDampingFactor,
             jump_impulse: JumpImpulse(jump_impulse),
@@ -93,7 +81,7 @@ impl MovementBundle {
 
 impl Default for MovementBundle {
     fn default() -> Self {
-        Self::new(MOVEMENT_ACCELERATION, 0.9, 7.0)
+        Self::new(CharacterMovementConfig::MOVEMENT_ACCELERATION, 0.9, 7.0)
     }
 }
 
@@ -170,44 +158,42 @@ fn update_grounded(
         let ray_origin = transform.translation;
         let ray_direction = Dir3::NEG_Y;
         let ray = Ray3d::new(ray_origin, ray_direction);
-        
+
         // Create settings for ground detection
         let settings = MeshRayCastSettings::default()
             .with_visibility(RayCastVisibility::Any) // Cast against all meshes
             .with_early_exit_test(&|_| true); // Stop at first hit
-        
+
         // Perform the ground check
-        if let Some((_, hit)) = ray_cast
-            .cast_ray(ray, &settings)
-            .first()
-        {
+        if let Some((_, hit)) = ray_cast.cast_ray(ray, &settings).first() {
             let ground_normal = hit.normal;
             let slope_angle = ground_normal.angle_between(Vec3::Y).to_degrees();
-            
+
             // Check if we're on a valid slope
-            if slope_angle <= MAX_SLOPE_ANGLE {
+            if slope_angle <= CharacterMovementConfig::MAX_SLOPE_ANGLE {
                 // Ground snapping for small obstacles
                 let distance_to_ground = hit.distance;
-                if distance_to_ground <= GROUND_SNAP_DISTANCE {
+                if distance_to_ground <= CharacterMovementConfig::GROUND_SNAP_DISTANCE {
                     // Snap to ground
                     velocity.y = 0.0;
                     commands.entity(entity).insert(Grounded);
-                    
+
                     // Handle stair climbing
-                    if distance_to_ground > STAIR_HEIGHT {
+                    if distance_to_ground > CharacterMovementConfig::STAIR_HEIGHT {
                         // Try to climb the stair
                         let forward = transform.forward();
                         let stair_origin = ray_origin + forward * 0.6;
                         let stair_ray = Ray3d::new(stair_origin, ray_direction);
-                        
+
                         // Perform the stair check with same settings
-                        if let Some((_, stair_hit)) = ray_cast
-                            .cast_ray(stair_ray, &settings)
-                            .first()
+                        if let Some((_, stair_hit)) =
+                            ray_cast.cast_ray(stair_ray, &settings).first()
                         {
-                            if stair_hit.distance <= STAIR_HEIGHT {
+                            if stair_hit.distance <= CharacterMovementConfig::STAIR_HEIGHT {
                                 // Smoothly move up the stair
-                                velocity.y = (STAIR_HEIGHT / time.delta_secs()) * 1.5;
+                                velocity.y = (CharacterMovementConfig::STAIR_HEIGHT
+                                    / time.delta_secs())
+                                    * 1.5;
                             }
                         }
                     } else {
@@ -242,7 +228,7 @@ fn movement(
     )>,
 ) {
     let delta_time = time.delta_secs();
-    
+
     for event in movement_event_reader.read() {
         for (jump_impulse, mut linear_velocity, mut transform, is_grounded, animation_state) in
             &mut controllers
@@ -251,7 +237,8 @@ fn movement(
                 MovementAction::Move(direction) => {
                     // Smooth rotation
                     if direction.x != 0.0 {
-                        let target_rotation = -direction.x * ROTATION_SPEED * delta_time;
+                        let target_rotation =
+                            -direction.x * CharacterMovementConfig::ROTATION_SPEED * delta_time;
                         transform.rotate_y(target_rotation);
                     }
 
@@ -259,25 +246,33 @@ fn movement(
                     let forward = transform.forward();
                     let right = transform.right();
                     let movement_direction = (forward * -direction.y) + (right * direction.x);
-                    
+
                     // Calculate target velocity
-                    let target_speed = MAX_SPEED * direction.length();
+                    let target_speed = CharacterMovementConfig::MAX_SPEED * direction.length();
                     let current_speed = Vec2::new(linear_velocity.x, linear_velocity.z).length();
-                    
+
                     // Smooth acceleration/deceleration
                     let acceleration = if target_speed > current_speed {
-                        MOVEMENT_ACCELERATION
+                        CharacterMovementConfig::MOVEMENT_ACCELERATION
                     } else {
-                        MOVEMENT_DECELERATION
+                        CharacterMovementConfig::MOVEMENT_DECELERATION
                     };
-                    
+
                     // Apply movement
-                    let speed_multiplier = if animation_state.current_animation == 3 { 1.5 } else { 1.0 };
+                    let speed_multiplier = if animation_state.current_animation == 3 {
+                        1.5
+                    } else {
+                        1.0
+                    };
                     let target_velocity = movement_direction * target_speed * speed_multiplier;
-                    
+
                     // Smoothly interpolate current velocity to target velocity
-                    linear_velocity.x = linear_velocity.x.lerp(target_velocity.x, acceleration * delta_time);
-                    linear_velocity.z = linear_velocity.z.lerp(target_velocity.z, acceleration * delta_time);
+                    linear_velocity.x = linear_velocity
+                        .x
+                        .lerp(target_velocity.x, acceleration * delta_time);
+                    linear_velocity.z = linear_velocity
+                        .z
+                        .lerp(target_velocity.z, acceleration * delta_time);
                 }
                 MovementAction::Jump => {
                     if is_grounded {
@@ -291,7 +286,11 @@ fn movement(
 
 /// Applies movement damping and ground sticking
 fn apply_movement_damping(
-    mut query: Query<(&MovementDampingFactor, &mut LinearVelocity, Option<&Grounded>)>
+    mut query: Query<(
+        &MovementDampingFactor,
+        &mut LinearVelocity,
+        Option<&Grounded>,
+    )>,
 ) {
     for (_damping_factor, mut linear_velocity, grounded) in &mut query {
         // Apply air resistance when not grounded
@@ -299,13 +298,13 @@ fn apply_movement_damping(
             linear_velocity.x *= 0.98;
             linear_velocity.z *= 0.98;
         }
-        
+
         // Apply ground friction
         if grounded.is_some() {
             linear_velocity.x *= 0.92;
             linear_velocity.z *= 0.92;
         }
-        
+
         // Prevent tiny residual movement
         if linear_velocity.x.abs() < 0.01 {
             linear_velocity.x = 0.0;
@@ -327,25 +326,24 @@ fn camera_follow_player_system(
             let player_pos = player_transform.translation;
             let camera_distance = 18.0;
             let camera_height = 4.0;
-            
+
             // Get player's forward direction
             let player_forward = player_transform.forward();
-            
+
             // Calculate camera position in front of player
             let offset = Vec3::new(
                 player_forward.x * camera_distance,
                 camera_height,
                 player_forward.z * camera_distance,
             );
-            
+
             let target_pos = player_pos + offset;
-            
+
             // Smoothly move camera to new position
-            camera_transform.translation = camera_transform.translation.lerp(
-                target_pos,
-                (5.0 * time.delta_secs()).min(1.0),
-            );
-            
+            camera_transform.translation = camera_transform
+                .translation
+                .lerp(target_pos, (5.0 * time.delta_secs()).min(1.0));
+
             // Make camera look at player
             camera_transform.look_at(player_pos, Vec3::Y);
         }
@@ -399,7 +397,9 @@ pub fn setup_idle_animation(
     let Ok(mut gltf_animations) = players.get_mut(trigger.target()) else {
         return;
     };
-    let mut player = animation_players.get_mut(gltf_animations.animation_player).unwrap();
+    let mut player = animation_players
+        .get_mut(gltf_animations.animation_player)
+        .unwrap();
     let animation = gltf_animations.get_by_number(2).unwrap();
     player.stop_all();
     player.play(animation).repeat();
@@ -414,7 +414,7 @@ impl CharacterControllerBundle {
         let collider = Collider::compound(vec![(offset, Quat::IDENTITY, capsule)]);
         // Use a small sphere for the ground caster shape
         let caster_shape = Collider::sphere(0.5);
-        
+
         Self {
             character_controller: CharacterController,
             body: RigidBody::Dynamic,
@@ -424,10 +424,11 @@ impl CharacterControllerBundle {
                 Vector::ZERO,
                 Quaternion::default(),
                 Dir3::NEG_Y,
-            ).with_max_distance(0.2),
+            )
+            .with_max_distance(0.2),
             locked_axes: LockedAxes::ROTATION_LOCKED,
-            movement: MovementBundle::new(MOVEMENT_ACCELERATION, 0.9, 7.0),
-            animation_state: AnimationState { 
+            movement: MovementBundle::new(CharacterMovementConfig::MOVEMENT_ACCELERATION, 0.9, 7.0),
+            animation_state: AnimationState {
                 forward_hold_time: 0.0,
                 current_animation: 2, // Start with idle animation
             },
