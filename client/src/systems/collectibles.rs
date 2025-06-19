@@ -72,6 +72,7 @@ pub fn spawn_collectible(
     commands: &mut Commands,
     assets: &Res<ModelAssets>,
     config: CollectibleConfig,
+    scene_marker: impl Component + Clone,
 ) {
     let model_handle = match config.collectible_type {
         CollectibleType::Book => assets.book.clone(),
@@ -103,6 +104,7 @@ pub fn spawn_collectible(
             hover_speed: 2.0,
         },
         Sensor,
+        scene_marker.clone(),
     ));
 
     if let Some(rotation) = config.rotation {

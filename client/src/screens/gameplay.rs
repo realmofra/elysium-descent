@@ -2,7 +2,7 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
 
-use super::Screen;
+use super::{Screen, despawn_scene};
 use crate::assets::ModelAssets;
 use crate::systems::character_controller::{
     CharacterController, CharacterControllerBundle, CharacterControllerPlugin, setup_idle_animation,
@@ -16,7 +16,7 @@ use crate::systems::collectibles_config::COLLECTIBLES;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::GamePlay), PlayingScene::spawn_environment)
-        .add_systems(Update, camera_follow_player)
+        .add_systems(Update, camera_follow_player.run_if(in_state(Screen::GamePlay)))
         .add_systems(OnExit(Screen::GamePlay), despawn_scene::<PlayingScene>)
         .add_plugins(PhysicsPlugins::default())
         // .add_plugins(PhysicsDebugPlugin::default())
@@ -28,11 +28,6 @@ pub(super) fn plugin(app: &mut App) {
 
 // ===== SYSTEMS =====
 
-fn despawn_scene<S: Component>(mut commands: Commands, query: Query<Entity, With<S>>) {
-    for entity in &query {
-        commands.entity(entity).despawn();
-    }
-}
 
 fn camera_follow_player(
     player_query: Query<&Transform, With<CharacterController>>,
@@ -59,7 +54,7 @@ fn camera_follow_player(
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 struct PlayingScene;
 
 #[derive(Component)]
@@ -81,6 +76,7 @@ impl PlayingScene {
         commands.spawn((
             Name::new("Environment"),
             EnvironmentMarker,
+            PlayingScene, // Add scene marker to ensure cleanup
             SceneRoot(scene_handle),
             Transform {
                 translation: Vec3::new(0.0, -1.5, 0.0),
@@ -106,6 +102,7 @@ impl PlayingScene {
                 std::f32::consts::FRAC_PI_4,
                 0.0,
             )),
+            PlayingScene, // Add scene marker to ensure cleanup
         ));
 
         // Add player
@@ -124,13 +121,14 @@ impl PlayingScene {
                 GravityScale(1.0),
                 // Add enhanced input actions for this player
                 Actions::<keybinding::Player>::default(),
+                PlayingScene, // Add scene marker to ensure cleanup
                 // DebugRender::default(),
             ))
             .observe(setup_idle_animation);
 
         // Spawn collectibles using imported array
         for config in COLLECTIBLES.iter() {
-            spawn_collectible(&mut commands, &assets, config.clone());
+            spawn_collectible(&mut commands, &assets, config.clone(), PlayingScene);
         }
 
         // Add camera
