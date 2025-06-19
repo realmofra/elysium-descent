@@ -36,7 +36,7 @@ fn despawn_scene<S: Component>(mut commands: Commands, query: Query<Entity, With
 
 fn camera_follow_player(
     player_query: Query<&Transform, With<CharacterController>>,
-    mut camera_query: Query<&mut Transform, (With<Camera>, Without<CharacterController>)>,
+    mut camera_query: Query<&mut Transform, (With<Camera3d>, With<PlayingScene>, Without<CharacterController>)>,
     time: Res<Time>,
 ) {
     if let Ok(player_transform) = player_query.single() {
