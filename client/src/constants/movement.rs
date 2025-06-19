@@ -8,4 +8,11 @@ impl CharacterMovementConfig {
     pub const MOVEMENT_DECELERATION: f32 = 40.0;
     pub const MAX_SPEED: f32 = 5.0;
     pub const ROTATION_SPEED: f32 = 5.0;
+    
+    // Air and ground friction constants
+    pub const AIR_RESISTANCE: f32 = 0.98;
+    pub const GROUND_FRICTION: f32 = 0.92;
+    
+    // Movement threshold for stopping tiny residual movement
+    pub const MIN_MOVEMENT_THRESHOLD: f32 = 0.01;
 }

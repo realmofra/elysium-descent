@@ -1,5 +1,4 @@
 use crate::constants::movement::CharacterMovementConfig;
-use crate::{game::Player, rendering::cameras::player_camera::FlyCam};
 use avian3d::{math::*, prelude::*};
 use bevy::{ecs::query::Has, prelude::*};
 use bevy_gltf_animation::prelude::*;
@@ -18,7 +17,6 @@ impl Plugin for CharacterControllerPlugin {
                     update_grounded,
                     movement,
                     apply_movement_damping,
-                    camera_follow_player_system,
                     update_animations,
                 )
                     .chain(),
@@ -42,9 +40,6 @@ pub struct CharacterController;
 #[component(storage = "SparseSet")]
 pub struct Grounded;
 
-/// The damping factor used for slowing down movement.
-#[derive(Component)]
-pub struct MovementDampingFactor;
 
 /// The strength of a jump.
 #[derive(Component)]
@@ -66,14 +61,12 @@ pub struct CharacterControllerBundle {
 /// A bundle that contains components for character movement.
 #[derive(Bundle)]
 pub struct MovementBundle {
-    damping: MovementDampingFactor,
     jump_impulse: JumpImpulse,
 }
 
 impl MovementBundle {
     pub const fn new(_acceleration: Scalar, _damping: Scalar, jump_impulse: Scalar) -> Self {
         Self {
-            damping: MovementDampingFactor,
             jump_impulse: JumpImpulse(jump_impulse),
         }
     }
@@ -287,68 +280,33 @@ fn movement(
 /// Applies movement damping and ground sticking
 fn apply_movement_damping(
     mut query: Query<(
-        &MovementDampingFactor,
         &mut LinearVelocity,
         Option<&Grounded>,
-    )>,
+    ), With<CharacterController>>,
 ) {
-    for (_damping_factor, mut linear_velocity, grounded) in &mut query {
+    for (mut linear_velocity, grounded) in &mut query {
         // Apply air resistance when not grounded
         if grounded.is_none() {
-            linear_velocity.x *= 0.98;
-            linear_velocity.z *= 0.98;
+            linear_velocity.x *= CharacterMovementConfig::AIR_RESISTANCE;
+            linear_velocity.z *= CharacterMovementConfig::AIR_RESISTANCE;
         }
 
         // Apply ground friction
         if grounded.is_some() {
-            linear_velocity.x *= 0.92;
-            linear_velocity.z *= 0.92;
+            linear_velocity.x *= CharacterMovementConfig::GROUND_FRICTION;
+            linear_velocity.z *= CharacterMovementConfig::GROUND_FRICTION;
         }
 
         // Prevent tiny residual movement
-        if linear_velocity.x.abs() < 0.01 {
+        if linear_velocity.x.abs() < CharacterMovementConfig::MIN_MOVEMENT_THRESHOLD {
             linear_velocity.x = 0.0;
         }
-        if linear_velocity.z.abs() < 0.01 {
+        if linear_velocity.z.abs() < CharacterMovementConfig::MIN_MOVEMENT_THRESHOLD {
             linear_velocity.z = 0.0;
         }
     }
 }
 
-/// Update camera_follow_player_system to strictly follow player rotation
-fn camera_follow_player_system(
-    player_query: Query<&Transform, With<Player>>,
-    mut camera_query: Query<&mut Transform, (With<FlyCam>, Without<Player>)>,
-    time: Res<Time>,
-) {
-    if let Ok(player_transform) = player_query.single() {
-        for mut camera_transform in camera_query.iter_mut() {
-            let player_pos = player_transform.translation;
-            let camera_distance = 18.0;
-            let camera_height = 4.0;
-
-            // Get player's forward direction
-            let player_forward = player_transform.forward();
-
-            // Calculate camera position in front of player
-            let offset = Vec3::new(
-                player_forward.x * camera_distance,
-                camera_height,
-                player_forward.z * camera_distance,
-            );
-
-            let target_pos = player_pos + offset;
-
-            // Smoothly move camera to new position
-            camera_transform.translation = camera_transform
-                .translation
-                .lerp(target_pos, (5.0 * time.delta_secs()).min(1.0));
-
-            // Make camera look at player
-            camera_transform.look_at(player_pos, Vec3::Y);
-        }
-    }
-}
 
 #[derive(Component)]
 pub struct AnimationState {

@@ -45,13 +45,19 @@ fn global_binding(
     trigger: Trigger<Binding<SystemInput>>,
     mut systems: Query<&mut Actions<SystemInput>>,
 ) {
-    let mut actions = systems.get_mut(trigger.target()).unwrap();
-    // Toggle Fullscreen (F11)
-    actions
-        .bind::<ToggleFullScreen>()
-        .to((KeyCode::F11, (KeyCode::AltLeft, KeyCode::Enter)));
+    if let Ok(mut actions) = systems.get_mut(trigger.target()) {
+        // Toggle Fullscreen (F11)
+        actions
+            .bind::<ToggleFullScreen>()
+            .to((KeyCode::F11, (KeyCode::AltLeft, KeyCode::Enter)));
 
-    actions.bind::<ReturnToMainMenu>().to(KeyCode::Escape);
+        actions.bind::<ReturnToMainMenu>().to(KeyCode::Escape);
+    } else {
+        error!(
+            "Failed to get system actions for entity {:?}",
+            trigger.target()
+        );
+    }
 }
 
 fn apply_movement(trigger: Trigger<Fired<Move>>) {
