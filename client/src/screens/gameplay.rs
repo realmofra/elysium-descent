@@ -7,6 +7,8 @@ use crate::assets::ModelAssets;
 use crate::systems::character_controller::{
     CharacterController, CharacterControllerBundle, CharacterControllerPlugin, setup_idle_animation,
 };
+use crate::keybinding;
+use bevy_enhanced_input::prelude::*;
 use crate::systems::collectibles::{CollectiblesPlugin, spawn_collectible};
 use crate::systems::collectibles_config::COLLECTIBLES;
 
@@ -120,6 +122,8 @@ impl PlayingScene {
                 Friction::new(0.5),
                 Restitution::new(0.0),
                 GravityScale(1.0),
+                // Add enhanced input actions for this player
+                Actions::<keybinding::Player>::default(),
                 // DebugRender::default(),
             ))
             .observe(setup_idle_animation);

@@ -14,7 +14,9 @@ pub fn plugin(app: &mut App) {
         .add_observer(player_binding)
         .add_observer(global_binding)
         .add_observer(apply_movement)
-        .add_observer(jump);
+        .add_observer(jump)
+        .add_observer(sprint_started)
+        .add_observer(sprint_completed);
 }
 
 fn spawn_system_action(mut commands: Commands) {
@@ -24,15 +26,22 @@ fn spawn_system_action(mut commands: Commands) {
 fn player_binding(trigger: Trigger<Binding<Player>>, mut players: Query<&mut Actions<Player>>) {
     if let Ok(mut actions) = players.get_mut(trigger.target()) {
         // Movement (WASD, Arrow Keys, Gamepad Left Stick)
-        actions.bind::<Move>().to((
-            Cardinal::wasd_keys(),
-            Axial::left_stick(),
-            Cardinal::arrow_keys(),
-        ));
+        actions.bind::<Move>()
+            .to((
+                Cardinal::wasd_keys(),
+                Axial::left_stick(),
+                Cardinal::arrow_keys(),
+            ))
+            .with_modifiers(DeadZone::default());
         // Jump (Spacebar)
         actions
             .bind::<Jump>()
             .to((KeyCode::Space, GamepadButton::South));
+        
+        // Sprint (Shift keys)
+        actions
+            .bind::<Sprint>()
+            .to((KeyCode::ShiftLeft, KeyCode::ShiftRight));
     } else {
         error!(
             "Failed to get player actions for entity {:?}",
@@ -60,16 +69,50 @@ fn global_binding(
     }
 }
 
-fn apply_movement(trigger: Trigger<Fired<Move>>) {
-    info!("moving: {}", trigger.value);
+// Forward movement and jump events to the character controller
+fn apply_movement(
+    trigger: Trigger<Fired<Move>>,
+    mut movement_events: EventWriter<crate::systems::character_controller::MovementAction>,
+    mut last_input: ResMut<crate::systems::character_controller::LastInputDirection>,
+) {
+    let direction = trigger.value;
+    if direction != Vec2::ZERO {
+        // Convert Vec2 to avian3d Vector2
+        let avian_direction = avian3d::math::Vector2::new(direction.x, direction.y);
+        movement_events.write(crate::systems::character_controller::MovementAction::Move(avian_direction));
+        last_input.0 = direction;
+    }
 }
 
-fn jump(_trigger: Trigger<Started<Jump>>) {
-    info!("jumping");
+fn jump(
+    _trigger: Trigger<Started<Jump>>,
+    mut movement_events: EventWriter<crate::systems::character_controller::MovementAction>,
+) {
+    movement_events.write(crate::systems::character_controller::MovementAction::Jump);
+}
+
+fn sprint_started(
+    _trigger: Trigger<Started<Sprint>>,
+    mut animation_query: Query<&mut crate::systems::character_controller::AnimationState>,
+) {
+    if let Ok(mut animation_state) = animation_query.single_mut() {
+        // Set sprint animation
+        animation_state.forward_hold_time = 4.0;
+    }
+}
+
+fn sprint_completed(
+    _trigger: Trigger<Completed<Sprint>>,
+    mut animation_query: Query<&mut crate::systems::character_controller::AnimationState>,
+) {
+    if let Ok(mut animation_state) = animation_query.single_mut() {
+        // Reset to normal movement
+        animation_state.forward_hold_time = 0.0;
+    }
 }
 
 #[derive(InputContext)]
-struct Player;
+pub struct Player;
 
 #[derive(Debug, InputAction)]
 #[input_action(output = Vec2)]
@@ -78,6 +121,10 @@ pub struct Move;
 #[derive(Debug, InputAction)]
 #[input_action(output = bool)]
 pub struct Jump;
+
+#[derive(Debug, InputAction)]
+#[input_action(output = bool)]
+pub struct Sprint;
 
 /// Input context for the Elysium game
 #[derive(InputContext)]

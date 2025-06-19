@@ -12,8 +12,6 @@ impl Plugin for CharacterControllerPlugin {
             .add_systems(
                 Update,
                 (
-                    keyboard_input,
-                    gamepad_input,
                     update_grounded,
                     movement,
                     apply_movement_damping,
@@ -82,62 +80,6 @@ impl Default for MovementBundle {
 #[derive(Resource, Default, Debug, Clone, Copy)]
 pub struct LastInputDirection(pub Vec2);
 
-/// Sends [`MovementAction`] events based on keyboard input.
-fn keyboard_input(
-    mut movement_event_writer: EventWriter<MovementAction>,
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut last_input: ResMut<LastInputDirection>,
-    mut query: Query<&mut AnimationState>,
-) {
-    let up = keyboard_input.any_pressed([KeyCode::KeyW, KeyCode::ArrowUp]);
-    let down = keyboard_input.any_pressed([KeyCode::KeyS, KeyCode::ArrowDown]);
-    let left = keyboard_input.any_pressed([KeyCode::KeyA, KeyCode::ArrowLeft]);
-    let right = keyboard_input.any_pressed([KeyCode::KeyD, KeyCode::ArrowRight]);
-    let shift = keyboard_input.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
-
-    let horizontal = right as i8 - left as i8;
-    let vertical = up as i8 - down as i8;
-    let direction = Vector2::new(horizontal as Scalar, vertical as Scalar).clamp_length_max(1.0);
-
-    if let Ok(mut animation_state) = query.single_mut() {
-        // Set forward_hold_time to either max value for sprint or 0 for normal movement
-        if (up || down) && shift {
-            animation_state.forward_hold_time = 4.0;
-        } else {
-            animation_state.forward_hold_time = 0.0;
-        }
-    }
-
-    if direction != Vector2::ZERO {
-        movement_event_writer.write(MovementAction::Move(direction));
-        last_input.0 = direction.as_dvec2().as_vec2();
-    }
-
-    if keyboard_input.just_pressed(KeyCode::Space) {
-        movement_event_writer.write(MovementAction::Jump);
-    }
-}
-
-/// Sends [`MovementAction`] events based on gamepad input.
-fn gamepad_input(
-    mut movement_event_writer: EventWriter<MovementAction>,
-    gamepads: Query<&Gamepad>,
-) {
-    for gamepad in gamepads.iter() {
-        if let (Some(x), Some(y)) = (
-            gamepad.get(GamepadAxis::LeftStickX),
-            gamepad.get(GamepadAxis::LeftStickY),
-        ) {
-            movement_event_writer.write(MovementAction::Move(
-                Vector2::new(x as Scalar, y as Scalar).clamp_length_max(1.0),
-            ));
-        }
-
-        if gamepad.just_pressed(GamepadButton::South) {
-            movement_event_writer.write(MovementAction::Jump);
-        }
-    }
-}
 
 /// Updates the [`Grounded`] status and handles ground snapping
 fn update_grounded(
