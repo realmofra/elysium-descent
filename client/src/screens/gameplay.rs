@@ -15,19 +15,21 @@ use crate::systems::collectibles_config::COLLECTIBLES;
 // ===== PLUGIN SETUP =====
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(Screen::GamePlay), PlayingScene::spawn_environment)
+    app.add_systems(OnEnter(Screen::GamePlay), (PlayingScene::spawn_environment, set_gameplay_clear_color))
         .add_systems(Update, camera_follow_player.run_if(in_state(Screen::GamePlay)))
         .add_systems(OnExit(Screen::GamePlay), despawn_scene::<PlayingScene>)
         .add_plugins(PhysicsPlugins::default())
         // .add_plugins(PhysicsDebugPlugin::default())
         .add_plugins(CharacterControllerPlugin)
         .add_plugins(GltfAnimationPlugin)
-        .add_plugins(CollectiblesPlugin)
-        .insert_resource(ClearColor(Color::srgb(0.529, 0.808, 0.922))); // Sky blue color
+        .add_plugins(CollectiblesPlugin);
 }
 
 // ===== SYSTEMS =====
 
+fn set_gameplay_clear_color(mut commands: Commands) {
+    commands.insert_resource(ClearColor(Color::srgb(0.529, 0.808, 0.922))); // Sky blue color
+}
 
 fn camera_follow_player(
     player_query: Query<&Transform, With<CharacterController>>,

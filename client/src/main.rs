@@ -36,6 +36,7 @@ fn main() -> AppExit {
             ..default()
         }))
         .add_systems(Startup, setup_camera)
+        .insert_resource(ClearColor(Color::srgb(0.1, 0.1, 0.1))) // Dark background initially
         .add_plugins(UiLunexPlugins)
         .add_plugins(AudioPlugin)
         .init_resource::<DojoResource>()
