@@ -67,8 +67,6 @@ cd contracts && sozo build
 
 ### Key Components
 - **Character Controller**: Player movement and input handling
-- **Inventory System**: Item collection and management (`packages/dojo_inventory_mgmt/`)
-- **Survivor Mechanics**: Core gameplay systems (`packages/dojo_survivor/`)
 
 ## Critical Technical Notes
 
@@ -94,8 +92,7 @@ cd contracts && sozo build
 
 ### Code Organization
 - Client logic in `client/src/` with clear separation of systems, screens, and resources
-- Contract logic in `contracts/src/` following Dojo model/system patterns  
-- Shared packages in `packages/` for reusable game mechanics
+- Contract logic in `contracts/src/` following Dojo model/system patterns
 - Assets organized by type in `client/assets/`
 
 ### Blockchain Development
@@ -114,5 +111,4 @@ cd contracts && sozo build
 
 - `client/AI_DOCS/`: Contains detailed Bevy 0.16 migration documentation
 - `docs/src/gdd/`: Game Design Document
-- `packages/`: Reusable Dojo systems for inventory and survivor mechanics
 - Individual CLAUDE.md files exist in `client/` and `contracts/` subdirectories for specific guidance
