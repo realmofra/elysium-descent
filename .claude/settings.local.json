@@ -1,8 +1,9 @@
 {
-  "enableAllProjectMcpServers": true,
   "permissions": {
     "allow": [
-      "Bash(sozo test:*)"
+      "Bash(sozo test:*)",
+      "Bash(cargo:*)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true
 }
