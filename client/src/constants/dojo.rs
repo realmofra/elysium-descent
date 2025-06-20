@@ -16,23 +16,30 @@ pub struct DojoConfig {
 impl Default for DojoConfig {
     fn default() -> Self {
         Self {
-            torii_url: env::var("TORII_URL").unwrap_or_else(|_| "http://localhost:8080".to_string()),
-            katana_url: env::var("KATANA_URL").unwrap_or_else(|_| "http://0.0.0.0:5050".to_string()),
+            torii_url: env::var("TORII_URL")
+                .unwrap_or_else(|_| "http://localhost:8080".to_string()),
+            katana_url: env::var("KATANA_URL")
+                .unwrap_or_else(|_| "http://0.0.0.0:5050".to_string()),
             world_address: env::var("WORLD_ADDRESS")
                 .ok()
                 .and_then(|addr| Felt::from_hex(&addr).ok())
                 .unwrap_or_else(|| {
-                    // Default development world address - should be replaced with manifest values
-                    Felt::from_hex_unchecked("0x04d9778a74d2c9e6e7e4a24cbe913998a80de217c66ee173a604d06dea5469c3")
+                    // Real deployed world address from manifest_dev.json
+                    Felt::from_hex_unchecked(
+                        "0x1d3be0144b9a1d96f8ea55ad581c5a1ab2281837821c6e9c1aa6c37b35b7d5f",
+                    )
                 }),
             action_address: env::var("ACTION_ADDRESS")
                 .ok()
                 .and_then(|addr| Felt::from_hex(&addr).ok())
                 .unwrap_or_else(|| {
-                    // Default development action address - should be replaced with manifest values
-                    Felt::from_hex_unchecked("0x00b056c9813fdc442118bdfead6fda526e5daa5fd7d543304117ed80154ea752")
+                    // Real deployed action address from manifest_dev.json
+                    Felt::from_hex_unchecked(
+                        "0x5c8cb518b58071069bf775c0d03ebb0154e1976460c5c2e67d0fe8c23043c2c",
+                    )
                 }),
-            use_dev_account: env::var("USE_DEV_ACCOUNT").unwrap_or_else(|_| "true".to_string()) == "true",
+            use_dev_account: env::var("USE_DEV_ACCOUNT").unwrap_or_else(|_| "true".to_string())
+                == "true",
             dev_account_index: env::var("DEV_ACCOUNT_INDEX")
                 .unwrap_or_else(|_| "0".to_string())
                 .parse()
@@ -48,10 +55,18 @@ pub const TORII_URL: &str = "http://localhost:8080";
 pub const KATANA_URL: &str = "http://0.0.0.0:5050";
 #[deprecated(note = "Use DojoConfig instead")]
 pub const WORLD_ADDRESS: Felt =
-    Felt::from_hex_unchecked("0x04d9778a74d2c9e6e7e4a24cbe913998a80de217c66ee173a604d06dea5469c3");
+    Felt::from_hex_unchecked("0x1d3be0144b9a1d96f8ea55ad581c5a1ab2281837821c6e9c1aa6c37b35b7d5f");
 #[deprecated(note = "Use DojoConfig instead")]
 pub const ACTION_ADDRESS: Felt =
-    Felt::from_hex_unchecked("0x00b056c9813fdc442118bdfead6fda526e5daa5fd7d543304117ed80154ea752");
+    Felt::from_hex_unchecked("0x5c8cb518b58071069bf775c0d03ebb0154e1976460c5c2e67d0fe8c23043c2c");
 
+// Updated selectors for Elysium Descent contract functions
+pub const CREATE_GAME_SELECTOR: Felt = selector!("create_game");
+pub const START_LEVEL_SELECTOR: Felt = selector!("start_level");
+pub const PICKUP_ITEM_SELECTOR: Felt = selector!("pickup_item");
+
+// Legacy selectors - deprecated as these functions were removed
+#[deprecated(note = "spawn function removed from contracts")]
 pub const SPAWN_SELECTOR: Felt = selector!("spawn");
+#[deprecated(note = "move function removed from contracts")]
 pub const MOVE_SELECTOR: Felt = selector!("move");

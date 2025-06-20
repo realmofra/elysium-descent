@@ -2,7 +2,9 @@ use crate::constants::dojo::DojoConfig;
 use bevy::prelude::*;
 use dojo_bevy_plugin::{DojoResource, TokioRuntime};
 
-mod create_game;
+pub mod create_game;
+
+pub use create_game::CreateGameEvent;
 
 /// Component to track Dojo connection status
 #[derive(Component, Debug, Clone, PartialEq)]
@@ -31,6 +33,7 @@ pub struct DojoSystemState {
 pub fn plugin(app: &mut App) {
     app.init_resource::<DojoSystemState>()
         .add_systems(Startup, (setup_dojo_config, handle_dojo_setup).chain())
+        .add_systems(Update, log_dojo_status.run_if(resource_changed::<DojoSystemState>))
         .add_plugins(create_game::plugin);
 }
 
@@ -75,7 +78,24 @@ fn handle_dojo_setup(
     // Log overall connection status
     if dojo_state.torii_connected && (dojo_state.account_connected || !config.use_dev_account) {
         info!("Dojo blockchain integration initialized successfully");
+        info!("🎮 Press 'G' to create a new game on the blockchain!");
     } else {
         warn!("Dojo blockchain integration has connection issues - game may have limited functionality");
     }
+}
+
+/// System to log Dojo status changes for user feedback
+fn log_dojo_status(dojo_state: Res<DojoSystemState>) {
+    if let Some(error) = &dojo_state.last_error {
+        error!("❌ Dojo Error: {}", error);
+    }
+    
+    let connection_status = match (dojo_state.torii_connected, dojo_state.account_connected) {
+        (true, true) => "✅ Fully Connected - Ready for blockchain interactions",
+        (true, false) => "⚠️ Partially Connected - Torii only (manual account required)",
+        (false, true) => "⚠️ Partially Connected - Account only (Torii connection failed)",
+        (false, false) => "❌ Disconnected - No blockchain functionality available",
+    };
+    
+    info!("🔗 Dojo Status: {}", connection_status);
 }
