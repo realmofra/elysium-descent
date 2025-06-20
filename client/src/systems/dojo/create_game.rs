@@ -1,8 +1,8 @@
-use bevy::prelude::*;
-use dojo_bevy_plugin::{DojoResource, TokioRuntime, DojoEntityUpdated};
-use starknet::core::types::Call;
 use crate::constants::dojo::CREATE_GAME_SELECTOR;
 use crate::screens::Screen;
+use bevy::prelude::*;
+use dojo_bevy_plugin::{DojoEntityUpdated, DojoResource, TokioRuntime};
+use starknet::core::types::Call;
 
 /// Event to trigger game creation on the blockchain
 #[derive(Event, Debug)]
@@ -54,14 +54,18 @@ pub(super) fn plugin(app: &mut App) {
         .add_event::<GameDataReceivedEvent>()
         .init_resource::<GameState>()
         .add_systems(OnEnter(Screen::GamePlay), auto_create_game_system)
-        .add_systems(Update, (
-            handle_create_game_events,
-            handle_game_created_events,
-            handle_game_creation_failed_events,
-            subscribe_to_game_entities,
-            handle_dojo_entity_updates,
-            fetch_game_data_after_creation,
-        ).run_if(in_state(Screen::GamePlay)));
+        .add_systems(
+            Update,
+            (
+                handle_create_game_events,
+                handle_game_created_events,
+                handle_game_creation_failed_events,
+                subscribe_to_game_entities,
+                handle_dojo_entity_updates,
+                fetch_game_data_after_creation,
+            )
+                .run_if(in_state(Screen::GamePlay)),
+        );
 }
 
 /// System to automatically create a game when entering gameplay (if not already created)
@@ -90,7 +94,10 @@ fn handle_create_game_events(
         }
 
         if game_state.current_game_id.is_some() {
-            warn!("Game already exists with ID {:?}", game_state.current_game_id);
+            warn!(
+                "Game already exists with ID {:?}",
+                game_state.current_game_id
+            );
             continue;
         }
 
@@ -107,7 +114,7 @@ fn handle_create_game_events(
         // Queue the call to the blockchain
         dojo.queue_tx(&tokio, vec![call]);
         info!("Game creation call queued successfully");
-        
+
         // Subscribe to entity updates to listen for the created game
         if !game_state.subscribed_to_entities {
             // Subscribe to Game model updates - using empty string as entity ID for all entities
@@ -124,13 +131,15 @@ fn handle_game_created_events(
     mut game_state: ResMut<GameState>,
 ) {
     for event in events.read() {
-        info!("Game created successfully! Game ID: {}, Player: {}", 
-              event.game_id, event.player_address);
-        
+        info!(
+            "Game created successfully! Game ID: {}, Player: {}",
+            event.game_id, event.player_address
+        );
+
         game_state.current_game_id = Some(event.game_id);
         game_state.player_address = Some(event.player_address.clone());
         game_state.is_creating_game = false;
-        
+
         // TODO: You could trigger UI updates here, or initialize level 1
         info!("Game state updated - ready to start playing!");
     }
@@ -144,7 +153,7 @@ fn handle_game_creation_failed_events(
     for event in events.read() {
         error!("Game creation failed: {}", event.error);
         game_state.is_creating_game = false;
-        
+
         // TODO: Show error message to user
         // TODO: Optionally retry after a delay
     }
@@ -173,26 +182,29 @@ fn handle_dojo_entity_updates(
     game_state: Res<GameState>,
 ) {
     for event in dojo_events.read() {
-        info!("Received Dojo entity update for entity_id: {:?}", event.entity_id);
-        
+        info!(
+            "Received Dojo entity update for entity_id: {:?}",
+            event.entity_id
+        );
+
         // Process each model in the entity update
         for model in &event.models {
             info!("Processing model: {:?}", model.name);
-            
+
             match model.name.as_str() {
                 "Game" => {
                     info!("Game model updated - creating placeholder game entity");
-                    
+
                     // For now, create a placeholder game entity since detailed parsing requires more setup
                     let game_entity = GameEntity {
-                        game_id: 1, // TODO: Extract from model data
+                        game_id: 1,                  // TODO: Extract from model data
                         player: "0x123".to_string(), // TODO: Extract from model data
                         status: 0,
                         current_level: 1,
                         created_at: 0,
                         score: 0,
                     };
-                    
+
                     // If we're creating a game, emit GameCreatedEvent
                     if game_state.is_creating_game {
                         game_created_events.write(GameCreatedEvent {
@@ -200,11 +212,9 @@ fn handle_dojo_entity_updates(
                             player_address: game_entity.player.clone(),
                         });
                     }
-                    
+
                     // Always emit game data received event for UI updates
-                    game_data_events.write(GameDataReceivedEvent {
-                        game: game_entity,
-                    });
+                    game_data_events.write(GameDataReceivedEvent { game: game_entity });
                 }
                 "PlayerStats" => {
                     info!("Received PlayerStats update");
@@ -228,14 +238,16 @@ fn fetch_game_data_after_creation(
     game_state: Res<GameState>,
 ) {
     for event in game_data_events.read() {
-        info!("Processing game data: Game ID {}, Status {}, Level {}", 
-              event.game.game_id, event.game.status, event.game.current_level);
-        
+        info!(
+            "Processing game data: Game ID {}, Status {}, Level {}",
+            event.game.game_id, event.game.status, event.game.current_level
+        );
+
         // Update our local game state with the blockchain data
         if game_state.current_game_id == Some(event.game.game_id) {
             info!("Game data synchronized with blockchain state");
             // TODO: Update UI elements, initialize level if needed
-            
+
             // If game status is 0 (NotStarted), we might want to automatically start level 1
             if event.game.status == 0 && event.game.current_level == 0 {
                 info!("Game is ready to start - could trigger level initialization");
@@ -243,4 +255,3 @@ fn fetch_game_data_after_creation(
         }
     }
 }
-

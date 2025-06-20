@@ -9,7 +9,7 @@ use crate::systems::character_controller::{
 };
 use crate::keybinding;
 use bevy_enhanced_input::prelude::*;
-use crate::systems::collectibles::{CollectiblesPlugin, spawn_collectible};
+use crate::systems::collectibles::{CollectiblesPlugin, spawn_collectible, spawn_interactable_book, CollectibleType};
 use crate::systems::collectibles_config::COLLECTIBLES;
 
 // ===== PLUGIN SETUP =====
@@ -130,7 +130,23 @@ impl PlayingScene {
 
         // Spawn collectibles using imported array
         for config in COLLECTIBLES.iter() {
-            spawn_collectible(&mut commands, &assets, config.clone(), PlayingScene);
+            match config.collectible_type {
+                CollectibleType::Book => {
+                    // Use the special interactable book spawning function
+                    spawn_interactable_book(
+                        &mut commands,
+                        &assets,
+                        config.position,
+                        config.scale,
+                        config.on_collect.clone(),
+                        PlayingScene,
+                    );
+                }
+                _ => {
+                    // Use normal collectible spawning for other items
+                    spawn_collectible(&mut commands, &assets, config.clone(), PlayingScene);
+                }
+            }
         }
 
         // Add camera

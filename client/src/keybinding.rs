@@ -19,7 +19,8 @@ pub fn plugin(app: &mut App) {
         .add_observer(jump)
         .add_observer(sprint_started)
         .add_observer(sprint_completed)
-        .add_observer(handle_create_game);
+        .add_observer(handle_create_game)
+        .add_observer(handle_interact);
 }
 
 fn spawn_system_action(mut commands: Commands) {
@@ -46,6 +47,11 @@ fn player_binding(trigger: Trigger<Binding<Player>>, mut players: Query<&mut Act
         actions
             .bind::<Sprint>()
             .to((KeyCode::ShiftLeft, KeyCode::ShiftRight));
+        
+        // Interact (E key)
+        actions
+            .bind::<Interact>()
+            .to(KeyCode::KeyE);
     } else {
         error!(
             "Failed to get player actions for entity {:?}",
@@ -145,6 +151,10 @@ pub struct Jump;
 #[input_action(output = bool)]
 pub struct Sprint;
 
+#[derive(Debug, InputAction)]
+#[input_action(output = bool)]
+pub struct Interact;
+
 /// Input context for the Elysium game
 #[derive(InputContext)]
 pub struct SystemInput;
@@ -207,5 +217,15 @@ fn handle_create_game(
     if trigger.value {
         info!("Create game key pressed - triggering blockchain game creation");
         create_game_events.write(crate::systems::dojo::CreateGameEvent);
+    }
+}
+
+fn handle_interact(
+    trigger: Trigger<Started<Interact>>,
+    mut interaction_events: EventWriter<crate::systems::collectibles::InteractionEvent>,
+) {
+    if trigger.value {
+        info!("Interact key pressed - triggering interaction");
+        interaction_events.write(crate::systems::collectibles::InteractionEvent);
     }
 }

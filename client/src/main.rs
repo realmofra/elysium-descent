@@ -2,6 +2,8 @@ use bevy::window::{PresentMode, WindowMode, WindowResolution};
 use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_kira_audio::prelude::*;
 use bevy_lunex::prelude::*;
+use bevy_yarnspinner::prelude::*;
+// use bevy_yarnspinner_example_dialogue_view::ExampleYarnSpinnerDialogueViewPlugin;
 use dojo_bevy_plugin::{DojoPlugin, DojoResource, TokioRuntime};
 
 mod constants;
@@ -12,6 +14,8 @@ mod resources;
 mod screens;
 mod systems;
 mod ui;
+
+use systems::dialogue_view::SimpleDialogueViewPlugin;
 
 use systems::dojo;
 
@@ -39,11 +43,20 @@ fn main() -> AppExit {
         .insert_resource(ClearColor(Color::srgb(0.1, 0.1, 0.1))) // Dark background initially
         .add_plugins(UiLunexPlugins)
         .add_plugins(AudioPlugin)
+        .add_plugins(YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file(
+            "dialogue/books.yarn",
+        )))
+        .add_plugins(SimpleDialogueViewPlugin) // Our custom dialogue view - no auto-start
         .init_resource::<DojoResource>()
         .init_resource::<TokioRuntime>()
         .add_plugins(DojoPlugin)
         .add_plugins(assets::AssetsPlugin)
         .add_plugins(GameAudioPlugin)
+        .add_systems(
+            Update,
+            // Spawn the dialogue runner once the Yarn project has finished compiling
+            spawn_dialogue_runner.run_if(resource_added::<YarnProject>),
+        )
         .add_plugins((screens::plugin, keybinding::plugin, dojo::plugin))
         .run()
 }
@@ -60,4 +73,13 @@ fn setup_camera(mut commands: Commands) {
         Transform::from_translation(Vec3::Z * 1000.0),
         Name::new("UI Camera"),
     ));
+}
+
+fn spawn_dialogue_runner(mut commands: Commands, project: Res<YarnProject>) {
+    // Create a dialogue runner from the project.
+    let dialogue_runner = project.create_dialogue_runner(&mut commands);
+    // Don't start any dialogue immediately - wait for book interaction
+    commands.spawn((dialogue_runner, Name::new("Book Dialogue Runner")));
+    info!("DialogueRunner created and ready for book interactions - NO DIALOGUE STARTED");
+    warn!("If you see dialogue immediately, it's coming from somewhere else!");
 }
