@@ -3,8 +3,10 @@ use bevy::prelude::*;
 use dojo_bevy_plugin::{DojoResource, TokioRuntime};
 
 pub mod create_game;
+pub mod pickup_item;
 
 pub use create_game::{CreateGameEvent, GameCreatedEvent, GameDataReceivedEvent, GameEntity};
+pub use pickup_item::{PickupItemEvent, ItemPickedUpEvent, ItemPickupFailedEvent};
 
 /// Resource to track overall Dojo system state
 #[derive(Resource, Debug, Default)]
@@ -22,7 +24,7 @@ pub fn plugin(app: &mut App) {
             Update,
             log_dojo_status.run_if(resource_changed::<DojoSystemState>),
         )
-        .add_plugins(create_game::plugin);
+        .add_plugins((create_game::plugin, pickup_item::plugin));
 }
 
 fn setup_dojo_config(mut dojo_state: ResMut<DojoSystemState>) {

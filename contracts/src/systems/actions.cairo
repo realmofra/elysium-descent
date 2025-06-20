@@ -9,11 +9,12 @@ use starknet::{get_block_timestamp, ContractAddress};
 pub trait IActions<T> {
     fn create_game(ref self: T) -> u32;
     fn start_level(ref self: T, game_id: u32, level: u32);
-    fn pickup_item(ref self: T, game_id: u32, item_id: u32) -> bool;
+    fn pickup_item(ref self: T) -> bool;
     fn get_player_stats(self: @T, player: ContractAddress) -> PlayerStats;
     fn get_player_inventory(self: @T, player: ContractAddress) -> PlayerInventory;
     fn get_level_items(self: @T, game_id: u32, level: u32) -> LevelItems;
 }
+//fn _pickup_item(ref self: T, game_id: u32, item_id: u32) -> bool;
 
 // dojo decorator
 #[dojo::contract]
@@ -222,68 +223,68 @@ pub mod actions {
             world.emit_event(@LevelStarted { player, game_id, level, items_spawned: total_items });
         }
 
-        fn pickup_item(ref self: ContractState, game_id: u32, item_id: u32) -> bool {
+        fn pickup_item(ref self: ContractState) -> bool {
             let mut world = self.world_default();
             let player = get_caller_address();
 
             // Verify game exists and player owns it
-            let game: Game = world.read_model(game_id);
-            assert(game.player == player, 'Not your game');
-            assert(game.status == GameStatus::InProgress, 'Game not in progress');
+            //let game: Game = world.read_model(game_id);
+            //assert(game.player == player, 'Not your game');
+            //assert(game.status == GameStatus::InProgress, 'Game not in progress');
 
-            // Get the item
-            let mut world_item: WorldItem = world.read_model((game_id, item_id));
-            assert(!world_item.is_collected, 'Item already collected');
-            assert(world_item.level == game.current_level, 'Item not in current level');
+            //// Get the item
+            //let mut world_item: WorldItem = world.read_model((game_id, item_id));
+            //assert(!world_item.is_collected, 'Item already collected');
+            //assert(world_item.level == game.current_level, 'Item not in current level');
 
-            // Mark item as collected
-            world_item.is_collected = true;
-            world.write_model(@world_item);
+            //// Mark item as collected
+            //world_item.is_collected = true;
+            //world.write_model(@world_item);
 
-            // Update player inventory
-            let mut inventory: PlayerInventory = world.read_model(player);
-            match world_item.item_type {
-                ItemType::HealthPotion => { inventory.health_potions += 1; },
-                ItemType::SurvivalKit => { inventory.survival_kits += 1; },
-                ItemType::Book => { inventory.books += 1; },
-            };
-            world.write_model(@inventory);
+            //// Update player inventory
+            //let mut inventory: PlayerInventory = world.read_model(player);
+            //match world_item.item_type {
+            //    ItemType::HealthPotion => { inventory.health_potions += 1; },
+            //    ItemType::SurvivalKit => { inventory.survival_kits += 1; },
+            //    ItemType::Book => { inventory.books += 1; },
+            //};
+            //world.write_model(@inventory);
 
-            // Update level items collected count
-            let mut level_items: LevelItems = world.read_model((game_id, world_item.level));
-            match world_item.item_type {
-                ItemType::HealthPotion => { level_items.collected_health_potions += 1; },
-                ItemType::SurvivalKit => { level_items.collected_survival_kits += 1; },
-                ItemType::Book => { level_items.collected_books += 1; },
-            };
-            world.write_model(@level_items);
+            //// Update level items collected count
+            //let mut level_items: LevelItems = world.read_model((game_id, world_item.level));
+            //match world_item.item_type {
+            //    ItemType::HealthPotion => { level_items.collected_health_potions += 1; },
+            //    ItemType::SurvivalKit => { level_items.collected_survival_kits += 1; },
+            //    ItemType::Book => { level_items.collected_books += 1; },
+            //};
+            //world.write_model(@level_items);
 
-            // Update player stats
-            let mut player_stats: PlayerStats = world.read_model(player);
-            player_stats.items_collected += 1;
-            player_stats.experience += 10; // Give experience for collecting items
+            //// Update player stats
+            //let mut player_stats: PlayerStats = world.read_model(player);
+            //player_stats.items_collected += 1;
+            //player_stats.experience += 10; // Give experience for collecting items
 
-            // Simple leveling: every 100 exp = level up
-            let new_level = (player_stats.experience / 100) + 1;
-            if new_level > player_stats.level {
-                player_stats.level = new_level;
-                player_stats.max_health += 10; // Increase max health on level up
-                player_stats.health = player_stats.max_health; // Full heal on level up
-            }
+            //// Simple leveling: every 100 exp = level up
+            //let new_level = (player_stats.experience / 100) + 1;
+            //if new_level > player_stats.level {
+            //    player_stats.level = new_level;
+            //    player_stats.max_health += 10; // Increase max health on level up
+            //    player_stats.health = player_stats.max_health; // Full heal on level up
+            //}
 
-            world.write_model(@player_stats);
+            //world.write_model(@player_stats);
 
-            // Emit pickup event
-            world
-                .emit_event(
-                    @ItemPickedUp {
-                        player,
-                        game_id,
-                        item_id,
-                        item_type: world_item.item_type,
-                        level: world_item.level,
-                    },
-                );
+            //// Emit pickup event
+            //world
+            //    .emit_event(
+            //        @ItemPickedUp {
+            //            player,
+            //            game_id,
+            //            item_id,
+            //            item_type: world_item.item_type,
+            //            level: world_item.level,
+            //        },
+            //    );
 
             true
         }

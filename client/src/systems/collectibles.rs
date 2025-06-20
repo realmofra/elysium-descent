@@ -6,6 +6,7 @@ use bevy_yarnspinner::events::ExecuteCommandEvent;
 use std::sync::Arc;
 
 use crate::systems::character_controller::CharacterController;
+use crate::systems::dojo::PickupItemEvent;
 use crate::screens::Screen;
 
 // ===== COMPONENTS & RESOURCES =====
@@ -168,6 +169,7 @@ fn collect_items(
     mut collectible_counter: ResMut<CollectibleCounter>,
     player_query: Query<&Transform, With<CharacterController>>,
     collectible_query: Query<(Entity, &Transform, &CollectibleType, &Collectible), (With<Sensor>, Without<Interactable>)>,
+    mut pickup_events: EventWriter<PickupItemEvent>,
 ) {
     let Ok(player_transform) = player_query.single() else {
         return;
@@ -182,7 +184,25 @@ fn collect_items(
         if distance < 5.0 {
             // Collection radius - only for non-interactable items (like FirstAidKit)
             info!("Collected a {:?}!", collectible_type);
-            (collectible.on_collect)(&mut commands, collectible_entity);
+
+            match collectible_type {
+                CollectibleType::FirstAidKit => {
+                    // Trigger blockchain transaction for FirstAidKit
+                    info!("🏥 FirstAidKit collected - triggering blockchain transaction");
+                    pickup_events.write(PickupItemEvent {
+                        item_type: *collectible_type,
+                        item_entity: collectible_entity,
+                    });
+                    
+                    // Note: The item will be removed from the world when the blockchain transaction is confirmed
+                    // in the pickup_item system's handle_item_picked_up_events
+                }
+                _ => {
+                    // For other items (not FirstAidKit), use the old local collection method
+                    (collectible.on_collect)(&mut commands, collectible_entity);
+                }
+            }
+
             collectible_counter.collectibles_collected += 1;
             info!(
                 "Total collectibles collected: {}",
@@ -283,13 +303,14 @@ fn handle_interactions(
     interactable_query: Query<(&CollectibleType, &Collectible), With<Interactable>>,
     mut prompt_events: EventWriter<InteractionPromptEvent>,
     mut book_dialogue_events: EventWriter<StartBookDialogueEvent>,
+    mut pickup_events: EventWriter<PickupItemEvent>,
 ) {
     for _event in interaction_events.read() {
         if let Some(entity) = nearby_interactable.entity {
             if let Ok((collectible_type, collectible)) = interactable_query.get(entity) {
                 info!("Interacted with {:?}!", collectible_type);
                 
-                // Trigger dialogue for books, direct collection for other items
+                // Trigger dialogue for books, blockchain transaction for FirstAidKit, direct collection for others
                 match collectible_type {
                     CollectibleType::Book => {
                         warn!("📚 PLAYER PRESSED E ON BOOK! Starting book dialogue");
@@ -297,9 +318,13 @@ fn handle_interactions(
                             book_entity: entity,
                         });
                     }
-                    _ => {
-                        // Direct collection for non-book items
-                        (collectible.on_collect)(&mut commands, entity);
+                    CollectibleType::FirstAidKit => {
+                        // Trigger blockchain transaction for FirstAidKit
+                        info!("🏥 FirstAidKit interacted with - triggering blockchain transaction");
+                        pickup_events.write(PickupItemEvent {
+                            item_type: *collectible_type,
+                            item_entity: entity,
+                        });
                         collectible_counter.collectibles_collected += 1;
                         info!(
                             "Total collectibles collected: {}",

@@ -1328,8 +1328,8 @@
   },
   "contracts": [
     {
-      "address": "0x6c347b473b9060d4149f40771b3d471bb13ef2b657c1001090e629dc3637206",
-      "class_hash": "0x5847af912e671bbafca225fc41983eaa102e6173bb350d875ca079960cd99e9",
+      "address": "0x3e808dd3f605913362dd9acf16a9853eb824d1619c182b84199d7424464f670",
+      "class_hash": "0x5d98e4813136fb743de87bc7b7351fa37fcf4393f8a02755b96b16d9365c538",
       "abi": [
         {
           "type": "impl",
@@ -1528,16 +1528,7 @@
             {
               "type": "function",
               "name": "pickup_item",
-              "inputs": [
-                {
-                  "name": "game_id",
-                  "type": "core::integer::u32"
-                },
-                {
-                  "name": "item_id",
-                  "type": "core::integer::u32"
-                }
-              ],
+              "inputs": [],
               "outputs": [
                 {
                   "type": "core::bool"

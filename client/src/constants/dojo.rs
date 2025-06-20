@@ -35,7 +35,7 @@ impl Default for DojoConfig {
                 .unwrap_or_else(|| {
                     // Real deployed action address from manifest_dev.json
                     Felt::from_hex_unchecked(
-                        "0x06c347b473b9060d4149f40771b3d471bb13ef2b657c1001090e629dc3637206",
+                        "0x03e808dd3f605913362dd9acf16a9853eb824d1619c182b84199d7424464f670",
                     )
                 }),
             use_dev_account: env::var("USE_DEV_ACCOUNT").unwrap_or_else(|_| "true".to_string())
@@ -50,5 +50,4 @@ impl Default for DojoConfig {
 
 // Updated selectors for Elysium Descent contract functions
 pub const CREATE_GAME_SELECTOR: Felt = selector!("create_game");
-pub const START_LEVEL_SELECTOR: Felt = selector!("start_level");
 pub const PICKUP_ITEM_SELECTOR: Felt = selector!("pickup_item");
