@@ -38,6 +38,13 @@ pub struct CharacterController;
 #[component(storage = "SparseSet")]
 pub struct Grounded;
 
+/// Component to track stair climbing state for smoother transitions
+#[derive(Component)]
+pub struct StairClimbingState {
+    pub is_climbing: bool,
+    pub climb_timer: f32,
+}
+
 
 /// The strength of a jump.
 #[derive(Component)]
@@ -54,6 +61,7 @@ pub struct CharacterControllerBundle {
     pub locked_axes: LockedAxes,
     pub movement: MovementBundle,
     pub animation_state: AnimationState,
+    pub stair_climbing_state: StairClimbingState,
 }
 
 /// A bundle that contains components for character movement.
@@ -113,26 +121,29 @@ fn update_grounded(
                     velocity.y = 0.0;
                     commands.entity(entity).insert(Grounded);
 
-                    // Handle stair climbing
-                    if distance_to_ground > CharacterMovementConfig::STAIR_HEIGHT {
-                        // Try to climb the stair
-                        let forward = transform.forward();
-                        let stair_origin = ray_origin + forward * 0.6;
-                        let stair_ray = Ray3d::new(stair_origin, ray_direction);
+                    // Handle stair climbing with improved logic
+                    if distance_to_ground > CharacterMovementConfig::GROUND_SNAP_DISTANCE 
+                        && distance_to_ground <= CharacterMovementConfig::MAX_STAIR_HEIGHT {
+                        
+                        // Only try to climb stairs if character is moving forward
+                        let horizontal_velocity = Vec2::new(velocity.x, velocity.z);
+                        if horizontal_velocity.length() > 0.1 {
+                            // Try to climb the stair with multiple detection points
+                            let forward = transform.forward();
+                            let stair_origin = ray_origin + forward * CharacterMovementConfig::STAIR_DETECTION_DISTANCE;
+                            let stair_ray = Ray3d::new(stair_origin, ray_direction);
 
-                        // Perform the stair check with same settings
-                        if let Some((_, stair_hit)) =
-                            ray_cast.cast_ray(stair_ray, &settings).first()
-                        {
-                            if stair_hit.distance <= CharacterMovementConfig::STAIR_HEIGHT {
-                                // Smoothly move up the stair
-                                velocity.y = (CharacterMovementConfig::STAIR_HEIGHT
-                                    / time.delta_secs())
-                                    * 1.5;
+                            // Perform the stair check
+                            if let Some((_, stair_hit)) = ray_cast.cast_ray(stair_ray, &settings).first() {
+                                let step_height = distance_to_ground - stair_hit.distance;
+                                
+                                // Only climb if the step height is reasonable
+                                if step_height > 0.05 && step_height <= CharacterMovementConfig::MAX_STAIR_HEIGHT {
+                                    // Use controlled climbing speed instead of physics-based calculation
+                                    velocity.y = CharacterMovementConfig::STAIR_CLIMB_SPEED;
+                                }
                             }
                         }
-                    } else {
-                        commands.entity(entity).remove::<Grounded>();
                     }
                 } else {
                     commands.entity(entity).remove::<Grounded>();
@@ -307,13 +318,15 @@ pub fn setup_idle_animation(
 
 impl CharacterControllerBundle {
     pub fn new() -> Self {
-        let length = 0.8;
-        let radius = 0.3;
+        // Improved collider for better stair climbing
+        let length = 0.6;  // Reduced height for better step clearance
+        let radius = 0.25; // Slightly smaller radius
         let offset = Vec3::new(0.0, (length / 2.0) + radius, 0.0);
         let capsule = Collider::capsule(radius, length);
         let collider = Collider::compound(vec![(offset, Quat::IDENTITY, capsule)]);
-        // Use a small sphere for the ground caster shape
-        let caster_shape = Collider::sphere(0.5);
+        
+        // Smaller ground caster for more precise ground detection
+        let caster_shape = Collider::sphere(0.3);
 
         Self {
             character_controller: CharacterController,
@@ -325,12 +338,16 @@ impl CharacterControllerBundle {
                 Quaternion::default(),
                 Dir3::NEG_Y,
             )
-            .with_max_distance(0.2),
+            .with_max_distance(CharacterMovementConfig::GROUND_SNAP_DISTANCE + 0.1), // Adjusted detection distance
             locked_axes: LockedAxes::ROTATION_LOCKED,
             movement: MovementBundle::new(CharacterMovementConfig::MOVEMENT_ACCELERATION, 0.9, 7.0),
             animation_state: AnimationState {
                 forward_hold_time: 0.0,
                 current_animation: 2, // Start with idle animation
+            },
+            stair_climbing_state: StairClimbingState {
+                is_climbing: false,
+                climb_timer: 0.0,
             },
         }
     }
