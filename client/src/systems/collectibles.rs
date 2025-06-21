@@ -269,6 +269,7 @@ fn detect_nearby_interactables(
         Some((entity, distance, interactable)) => {
             if nearby_interactable.entity != Some(entity) {
                 // New interactable entered range
+                // warn!("🔍 PROXIMITY: Player entered range of interactable entity {:?} - '{}'", entity, interactable.prompt_text);
                 nearby_interactable.entity = Some(entity);
                 nearby_interactable.distance = distance;
                 prompt_events.write(InteractionPromptEvent {
@@ -283,6 +284,7 @@ fn detect_nearby_interactables(
         None => {
             if nearby_interactable.entity.is_some() {
                 // Left interaction range
+                // warn!("🚶 PROXIMITY: Player left interaction range");
                 nearby_interactable.entity = None;
                 nearby_interactable.distance = 0.0;
                 prompt_events.write(InteractionPromptEvent {
@@ -306,17 +308,22 @@ fn handle_interactions(
     mut pickup_events: EventWriter<PickupItemEvent>,
 ) {
     for _event in interaction_events.read() {
+        // warn!("🎯 INTERACTION EVENT RECEIVED! Checking for nearby interactable...");
+        
         if let Some(entity) = nearby_interactable.entity {
-            if let Ok((collectible_type, collectible)) = interactable_query.get(entity) {
-                info!("Interacted with {:?}!", collectible_type);
+            // warn!("✅ Found nearby interactable entity: {:?}", entity);
+            
+            if let Ok((collectible_type, _collectible)) = interactable_query.get(entity) {
+                // warn!("✅ Entity is valid with type: {:?}", collectible_type);
                 
                 // Trigger dialogue for books, blockchain transaction for FirstAidKit, direct collection for others
                 match collectible_type {
                     CollectibleType::Book => {
-                        warn!("📚 PLAYER PRESSED E ON BOOK! Starting book dialogue");
+                        // warn!("📚 BOOK DETECTED! Triggering StartBookDialogueEvent...");
                         book_dialogue_events.write(StartBookDialogueEvent {
                             book_entity: entity,
                         });
+                        // warn!("📚 StartBookDialogueEvent SENT!");
                     }
                     CollectibleType::FirstAidKit => {
                         // Trigger blockchain transaction for FirstAidKit
@@ -338,7 +345,11 @@ fn handle_interactions(
                     show: false,
                     text: String::new(),
                 });
+            } else {
+                // warn!("❌ Nearby entity is not a valid interactable!");
             }
+        } else {
+            // warn!("❌ No nearby interactable entity when E was pressed!");
         }
     }
 }
@@ -359,7 +370,7 @@ fn handle_book_dialogue_events(
     book_query: Query<&Collectible, With<CollectibleType>>,
 ) {
     for event in book_dialogue_events.read() {
-        warn!("🎯 BOOK INTERACTION EVENT TRIGGERED! Starting dialogue for book entity: {:?}", event.book_entity);
+        // warn!("🎯 BOOK INTERACTION EVENT TRIGGERED! Starting dialogue for book entity: {:?}", event.book_entity);
         
         // Store the current book entity so we can collect it later
         current_book.entity = Some(event.book_entity);
@@ -367,21 +378,33 @@ fn handle_book_dialogue_events(
         // Try different approaches to start dialogue
         match dialogue_runner_query.single_mut() {
             Ok(mut dialogue_runner) => {
-                warn!("✅ Found DialogueRunner, attempting to start Ancient_Tome dialogue");
+                // warn!("✅ Found DialogueRunner, attempting to start Ancient_Tome dialogue");
                 
                 // Check if dialogue is already running
                 if dialogue_runner.is_running() {
-                    warn!("⚠️  DialogueRunner is already running dialogue - continuing anyway");
+                    // warn!("⚠️  DialogueRunner is already running dialogue - stopping first");
+                    dialogue_runner.stop();
                 }
+                
+                // Detailed logging before starting dialogue
+                // warn!("🎬 STARTING DIALOGUE:");
+                // warn!("  📍 Node: 'Ancient_Tome'");
+                // warn!("  🏃 Runner state before: running={}", dialogue_runner.is_running());
                 
                 // Start the dialogue - this method doesn't return Result, just starts the node
                 dialogue_runner.start_node("Ancient_Tome");
-                warn!("🎉 SUCCESS: DialogueRunner.start_node('Ancient_Tome') called!");
-                warn!("🔄 Dialogue should now be running: {}", dialogue_runner.is_running());
+                
+                // Immediately check state after starting
+                // warn!("🎉 SUCCESS: DialogueRunner.start_node('Ancient_Tome') called!");
+                // warn!("🔄 Runner state after: running={}", dialogue_runner.is_running());
+                
+                // Force an immediate continue to ensure first line appears
+                // warn!("🔄 Calling continue_in_next_update() to trigger first event...");
+                dialogue_runner.continue_in_next_update();
             }
             Err(e) => {
                 // No DialogueRunner found - try to create one for this interaction
-                warn!("❌ No DialogueRunner found: {:?}. Available runners: {}", e, dialogue_runner_query.iter().count());
+                // warn!("❌ No DialogueRunner found: {:?}. Available runners: {}", e, dialogue_runner_query.iter().count());
                 
                 // Fallback to simple book collection
                 info!("📖 Fallback: You found an ancient tome! It contains mystical knowledge about Elysium's depths.");
@@ -450,12 +473,12 @@ fn debug_dialogue_system(
         let project_exists = yarn_project.is_some();
         
         if runner_count == 0 {
-            warn!("🔍 YARN DEBUG: DialogueRunners: {}, YarnProject exists: {}", 
-                  runner_count, project_exists);
-            warn!("❌ No DialogueRunner entities found! This is why dialogue isn't working.");
+            // warn!("🔍 YARN DEBUG: DialogueRunners: {}, YarnProject exists: {}", 
+            //       runner_count, project_exists);
+            // warn!("❌ No DialogueRunner entities found! This is why dialogue isn't working.");
         } else {
-            info!("✅ YARN DEBUG: Found {} DialogueRunner(s), YarnProject exists: {}", 
-                  runner_count, project_exists);
+            // info!("✅ YARN DEBUG: Found {} DialogueRunner(s), YarnProject exists: {}", 
+            //       runner_count, project_exists);
             
             // Check if any runners are actually running dialogue
             let mut active_runners = 0;
@@ -465,16 +488,16 @@ fn debug_dialogue_system(
                 }
             }
             
-            if active_runners > 0 {
-                info!("🎯 ACTIVE DIALOGUE: {} runner(s) currently running dialogue", active_runners);
-            } else {
-                info!("⚠️  IDLE RUNNERS: All {} runner(s) are idle (no dialogue running)", runner_count);
-            }
+            // if active_runners > 0 {
+            //     info!("🎯 ACTIVE DIALOGUE: {} runner(s) currently running dialogue", active_runners);
+            // } else {
+            //     info!("⚠️  IDLE RUNNERS: All {} runner(s) are idle (no dialogue running)", runner_count);
+            // }
             
             // YarnProject exists, dialogue should work
-            if yarn_project.is_some() {
-                info!("✅ YarnProject resource exists - dialogue system should be ready");
-            }
+            // if yarn_project.is_some() {
+            //     info!("✅ YarnProject resource exists - dialogue system should be ready");
+            // }
         }
     }
 }

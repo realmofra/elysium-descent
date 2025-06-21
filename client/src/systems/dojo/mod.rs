@@ -5,8 +5,8 @@ use dojo_bevy_plugin::{DojoResource, TokioRuntime};
 pub mod create_game;
 pub mod pickup_item;
 
-pub use create_game::{CreateGameEvent, GameCreatedEvent, GameDataReceivedEvent, GameEntity};
-pub use pickup_item::{PickupItemEvent, ItemPickedUpEvent, ItemPickupFailedEvent};
+pub use create_game::CreateGameEvent;
+pub use pickup_item::PickupItemEvent;
 
 /// Resource to track overall Dojo system state
 #[derive(Resource, Debug, Default)]

@@ -106,6 +106,7 @@ fn handle_pickup_item_events(
 fn handle_item_picked_up_events(
     mut events: EventReader<ItemPickedUpEvent>,
     mut commands: Commands,
+    world: &World,
 ) {
     for event in events.read() {
         info!(
@@ -113,10 +114,14 @@ fn handle_item_picked_up_events(
             event.item_type, event.transaction_hash
         );
 
-        // Remove the item entity from the game world
-        commands.entity(event.item_entity).despawn();
-        
-        info!("Item {:?} removed from game world", event.item_type);
+        // Check if the entity still exists before trying to despawn it
+        if world.get_entity(event.item_entity).is_ok() {
+            commands.entity(event.item_entity).despawn();
+            info!("Item {:?} successfully removed from game world", event.item_type);
+        } else {
+            info!("Item {:?} entity no longer exists (ID: {:?}) - likely already removed", 
+                  event.item_type, event.item_entity);
+        }
     }
 }
 

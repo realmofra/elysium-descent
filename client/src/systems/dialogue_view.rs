@@ -22,32 +22,50 @@ fn debug_all_dialogue_events(
     mut option_events: EventReader<PresentOptionsEvent>,
     mut complete_events: EventReader<DialogueCompleteEvent>,
     dialogue_runners: Query<&DialogueRunner>,
+    mut frame_counter: Local<u32>,
 ) {
+    *frame_counter += 1;
+    
     let line_count = line_events.len();
     let option_count = option_events.len();
     let complete_count = complete_events.len();
     let runner_count = dialogue_runners.iter().count();
     
+    // Always log if we have any events (these are critical!)
+    // if line_count > 0 || option_count > 0 || complete_count > 0 {
+    //     warn!("🚨 DIALOGUE EVENTS DETECTED ON FRAME {}! Lines: {}, Options: {}, Complete: {}, Runners: {}", 
+    //           *frame_counter, line_count, option_count, complete_count, runner_count);
+    // }
+    
     // Log individual events for detailed debugging
     for event in line_events.read() {
-        warn!("📝 LINE EVENT: '{}'", event.line.text);
+        info!("💬 DIALOGUE: {}", event.line.text);
+        // warn!("  📍 Line ID: {:?}", event.line.id);
     }
     
     for event in option_events.read() {
-        warn!("🎯 OPTIONS EVENT: {} choices available", event.options.len());
+        info!("🔸 DIALOGUE CHOICES:");
         for (i, option) in event.options.iter().enumerate() {
-            warn!("  Option {}: '{}'", i, option.line.text);
+            info!("  [{}] {}", i + 1, option.line.text);
         }
+        // warn!("🎯 OPTIONS EVENT: {} choices available", event.options.len());
+        // for (i, option) in event.options.iter().enumerate() {
+        //     warn!("  [{}] '{}' (ID: {:?})", i, option.line.text, option.line.id);
+        // }
     }
     
     for _event in complete_events.read() {
-        warn!("✅ DIALOGUE COMPLETE EVENT");
+        info!("✅ DIALOGUE COMPLETE - Book interaction finished!");
+        // warn!("✅ DIALOGUE COMPLETE EVENT on frame {}", *frame_counter);
     }
     
-    if line_count > 0 || option_count > 0 || complete_count > 0 {
-        warn!("🔍 DIALOGUE DEBUG SUMMARY: Lines: {}, Options: {}, Complete: {}, Runners: {}", 
-              line_count, option_count, complete_count, runner_count);
-    }
+    // Every 60 frames (roughly 1 second), log runner status
+    // if *frame_counter % 60 == 0 && runner_count > 0 {
+    //     for (i, runner) in dialogue_runners.iter().enumerate() {
+    //         info!("🎭 Runner #{}: running={}, current_node={:?}", 
+    //               i, runner.is_running(), runner.current_node());
+    //     }
+    // }
 }
 
 /// System to handle line presentation events
@@ -62,9 +80,9 @@ fn handle_present_line_events(
         // CRITICAL: Must call continue_in_next_update() to progress dialogue
         if let Ok(mut dialogue_runner) = dialogue_runners.single_mut() {
             dialogue_runner.continue_in_next_update();
-            info!("✅ Called continue_in_next_update() - dialogue should progress");
+            // info!("✅ Called continue_in_next_update() - dialogue should progress");
         } else {
-            warn!("❌ No DialogueRunner found when trying to continue dialogue");
+            // warn!("❌ No DialogueRunner found when trying to continue dialogue");
         }
     }
 }
@@ -87,16 +105,16 @@ fn handle_present_options_events(
             if let Ok(mut dialogue_runner) = dialogue_runners.single_mut() {
                 match dialogue_runner.select_option(OptionId(0)) {
                     Ok(_) => {
-                        info!("✅ Successfully selected option 0");
+                        // info!("✅ Successfully selected option 0");
                         // Continue dialogue after selection
                         dialogue_runner.continue_in_next_update();
                     }
                     Err(e) => {
-                        warn!("❌ Failed to select option 0: {:?}", e);
+                        // warn!("❌ Failed to select option 0: {:?}", e);
                     }
                 }
             } else {
-                warn!("❌ No DialogueRunner found when trying to select option");
+                // warn!("❌ No DialogueRunner found when trying to select option");
             }
         }
     }
