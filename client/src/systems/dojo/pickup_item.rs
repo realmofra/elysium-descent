@@ -24,7 +24,6 @@ pub struct ItemPickedUpEvent {
 #[derive(Event, Debug)]
 pub struct ItemPickupFailedEvent {
     pub item_type: CollectibleType,
-    pub item_entity: Entity,
     pub error: String,
 }
 
@@ -58,7 +57,7 @@ fn handle_pickup_item_events(
     tokio: Res<TokioRuntime>,
     dojo_config: Res<super::DojoSystemState>,
     mut pickup_state: ResMut<PickupTransactionState>,
-    game_state: Res<super::create_game::GameState>,
+    _game_state: Res<super::create_game::GameState>,
     mut item_picked_up_events: EventWriter<ItemPickedUpEvent>,
 ) {
     for event in events.read() {
@@ -145,7 +144,7 @@ fn handle_item_pickup_failed_events(
 fn handle_pickup_entity_updates(
     mut dojo_events: EventReader<DojoEntityUpdated>,
     mut item_picked_up_events: EventWriter<ItemPickedUpEvent>,
-    mut item_pickup_failed_events: EventWriter<ItemPickupFailedEvent>,
+    _item_pickup_failed_events: EventWriter<ItemPickupFailedEvent>,
     mut pickup_state: ResMut<PickupTransactionState>,
 ) {
     for event in dojo_events.read() {

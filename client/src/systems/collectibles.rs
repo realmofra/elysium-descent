@@ -139,10 +139,8 @@ pub fn spawn_collectible(
             scale: Vec3::splat(config.scale),
             ..default()
         },
-        ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+        Collider::sphere(0.5), // Simple sphere collider - won't interfere with character movement
         RigidBody::Kinematic,
-        Friction::new(0.5),
-        Restitution::new(0.0),
         Visibility::Visible,
         InheritedVisibility::default(),
         ViewVisibility::default(),
@@ -299,7 +297,7 @@ fn detect_nearby_interactables(
 /// System to handle interaction events
 fn handle_interactions(
     mut interaction_events: EventReader<InteractionEvent>,
-    mut commands: Commands,
+    _commands: Commands,
     mut collectible_counter: ResMut<CollectibleCounter>,
     nearby_interactable: Res<NearbyInteractable>,
     interactable_query: Query<(&CollectibleType, &Collectible), With<Interactable>>,
@@ -402,7 +400,7 @@ fn handle_book_dialogue_events(
                 // warn!("🔄 Calling continue_in_next_update() to trigger first event...");
                 dialogue_runner.continue_in_next_update();
             }
-            Err(e) => {
+            Err(_e) => {
                 // No DialogueRunner found - try to create one for this interaction
                 // warn!("❌ No DialogueRunner found: {:?}. Available runners: {}", e, dialogue_runner_query.iter().count());
                 
@@ -470,7 +468,7 @@ fn debug_dialogue_system(
         *debug_timer = 0.0;
         
         let runner_count = dialogue_runners.iter().count();
-        let project_exists = yarn_project.is_some();
+        let _project_exists = yarn_project.is_some();
         
         if runner_count == 0 {
             // warn!("🔍 YARN DEBUG: DialogueRunners: {}, YarnProject exists: {}", 
@@ -481,10 +479,10 @@ fn debug_dialogue_system(
             //       runner_count, project_exists);
             
             // Check if any runners are actually running dialogue
-            let mut active_runners = 0;
+            let mut _active_runners = 0;
             for runner in dialogue_runners.iter() {
                 if runner.is_running() {
-                    active_runners += 1;
+                    _active_runners += 1;
                 }
             }
             
@@ -537,12 +535,10 @@ pub fn spawn_interactable_book(
         scene_marker.clone(),
     ));
 
-    // Add physics components
+    // Add physics components - simple sphere collider to avoid character movement interference
     entity.insert((
-        ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+        Collider::sphere(0.5),
         RigidBody::Kinematic,
-        Friction::new(0.5),
-        Restitution::new(0.0),
     ));
 
     // Add visibility components

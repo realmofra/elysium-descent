@@ -97,7 +97,7 @@ fn spawn_dialogue_runner(mut commands: Commands, project: Res<YarnProject>) {
 
 /// System to debug YarnProject loading status
 fn debug_yarn_project_loading(
-    yarn_project: Option<Res<YarnProject>>,
+    _yarn_project: Option<Res<YarnProject>>,
     mut debug_timer: Local<f32>,
     time: Res<Time>,
 ) {

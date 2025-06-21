@@ -41,8 +41,7 @@ pub struct Grounded;
 /// Component to track stair climbing state for smoother transitions
 #[derive(Component)]
 pub struct StairClimbingState {
-    pub is_climbing: bool,
-    pub climb_timer: f32,
+    // Reserved for future stair climbing state tracking
 }
 
 
@@ -139,8 +138,8 @@ fn update_grounded(
                                 
                                 // Only climb if the step height is reasonable
                                 if step_height > 0.05 && step_height <= CharacterMovementConfig::MAX_STAIR_HEIGHT {
-                                    // Use controlled climbing speed instead of physics-based calculation
-                                    velocity.y = CharacterMovementConfig::STAIR_CLIMB_SPEED;
+                                    // Use physics-based calculation for smoother stair climbing
+                                    velocity.y = (step_height / time.delta_secs()) * 1.2; // Reduced multiplier for less aggressive jumping
                                 }
                             }
                         }
@@ -345,10 +344,7 @@ impl CharacterControllerBundle {
                 forward_hold_time: 0.0,
                 current_animation: 2, // Start with idle animation
             },
-            stair_climbing_state: StairClimbingState {
-                is_climbing: false,
-                climb_timer: 0.0,
-            },
+            stair_climbing_state: StairClimbingState {},
         }
     }
 }

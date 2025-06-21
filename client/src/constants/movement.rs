@@ -4,9 +4,7 @@ impl CharacterMovementConfig {
     pub const MAX_SLOPE_ANGLE: f32 = 45.0;
 
     // Improved stair climbing constants
-    pub const STAIR_HEIGHT: f32 = 0.3; // Reduced from 0.6 - more realistic step size
     pub const MAX_STAIR_HEIGHT: f32 = 0.5; // Maximum step the character can climb
-    pub const STAIR_CLIMB_SPEED: f32 = 2.0; // Controlled climbing speed
     pub const STAIR_DETECTION_DISTANCE: f32 = 0.4; // How far forward to check for stairs
 
     pub const GROUND_SNAP_DISTANCE: f32 = 0.2;

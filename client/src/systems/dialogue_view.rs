@@ -26,10 +26,10 @@ fn debug_all_dialogue_events(
 ) {
     *frame_counter += 1;
     
-    let line_count = line_events.len();
-    let option_count = option_events.len();
-    let complete_count = complete_events.len();
-    let runner_count = dialogue_runners.iter().count();
+    let _line_count = line_events.len();
+    let _option_count = option_events.len();
+    let _complete_count = complete_events.len();
+    let _runner_count = dialogue_runners.iter().count();
     
     // Always log if we have any events (these are critical!)
     // if line_count > 0 || option_count > 0 || complete_count > 0 {
@@ -109,7 +109,7 @@ fn handle_present_options_events(
                         // Continue dialogue after selection
                         dialogue_runner.continue_in_next_update();
                     }
-                    Err(e) => {
+                    Err(_e) => {
                         // warn!("❌ Failed to select option 0: {:?}", e);
                     }
                 }

@@ -37,8 +37,6 @@ pub struct GameEntity {
     pub player: String,
     pub status: u32, // GameStatus enum value
     pub current_level: u32,
-    pub created_at: u64,
-    pub score: u32,
 }
 
 /// Event emitted when game entity data is received from Torii
@@ -201,8 +199,6 @@ fn handle_dojo_entity_updates(
                         player: "0x123".to_string(), // TODO: Extract from model data
                         status: 0,
                         current_level: 1,
-                        created_at: 0,
-                        score: 0,
                     };
 
                     // If we're creating a game, emit GameCreatedEvent
