@@ -160,6 +160,6 @@ contracts/src/
 
 ## Essential References
 
-- **📖 [Shinigami Design Pattern Guide](./client/AI_DOCS/Shinigami.md)**: Complete architectural framework for building FOCGs
+- **📖 [Shinigami Design Pattern Guide](./contracts/AI_DOCS/Shinigami.md)**: Complete architectural framework for building FOCGs
 - **🎮 [Bevy 0.16 Migration Guide](./client/AI_DOCS/Bevy.md)**: Breaking changes and modern patterns
 - **🏗️ [Game Design Document](./docs/src/gdd/)**: Core game mechanics and design philosophy
