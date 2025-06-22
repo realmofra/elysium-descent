@@ -5,7 +5,11 @@
       "Bash(cargo:*)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:docs.rs)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "WebFetch(domain:dojoengine.org)",
+      "WebFetch(domain:book.dojoengine.org)"
     ]
   },
   "enableAllProjectMcpServers": true
