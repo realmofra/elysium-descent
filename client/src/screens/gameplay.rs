@@ -17,7 +17,7 @@ use crate::systems::collectibles_config::COLLECTIBLES;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::GamePlay), (PlayingScene::spawn_environment, set_gameplay_clear_color))
-        .add_systems(Update, camera_follow_player.run_if(in_state(Screen::GamePlay)))
+        .add_systems(Update, (camera_follow_player, mouse_look).run_if(in_state(Screen::GamePlay)))
         .add_systems(OnExit(Screen::GamePlay), despawn_scene::<PlayingScene>)
         .add_plugins(PhysicsPlugins::default())
         // .add_plugins(PhysicsDebugPlugin::default())
@@ -35,6 +35,7 @@ fn set_gameplay_clear_color(mut commands: Commands) {
 fn camera_follow_player(
     player_query: Query<&Transform, With<CharacterController>>,
     mut camera_query: Query<&mut Transform, (With<Camera3d>, With<PlayingScene>, Without<CharacterController>)>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
 ) {
     if let Ok(player_transform) = player_query.single() {
@@ -42,7 +43,7 @@ fn camera_follow_player(
             let player_pos = player_transform.translation;
             let player_rotation = player_transform.rotation;
 
-            // Calculate camera position behind player (inverted Z)
+            // Calculate camera position behind player (inverted Z) - ORIGINAL BEHAVIOR
             let camera_offset = player_rotation * Vec3::new(0.0, 4.0, -12.0);
             let target_pos = player_pos + camera_offset;
 
@@ -51,11 +52,41 @@ fn camera_follow_player(
                 .translation
                 .lerp(target_pos, (5.0 * time.delta_secs()).min(1.0));
 
-            // Make camera look at player
-            camera_transform.look_at(player_pos + Vec3::Y * 2.0, Vec3::Y);
+            // Only auto-look at player when mouse look is NOT active
+            if !mouse_input.pressed(MouseButton::Right) {
+                camera_transform.look_at(player_pos + Vec3::Y * 2.0, Vec3::Y);
+            }
         }
     }
 }
+
+fn mouse_look(
+    player_query: Query<&Transform, With<CharacterController>>,
+    mut camera_query: Query<&mut Transform, (With<Camera3d>, With<PlayingScene>, Without<CharacterController>)>,
+    mut mouse_motion: EventReader<bevy::input::mouse::MouseMotion>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
+) {
+    // Only apply mouse look when right mouse button is held
+    if !mouse_input.pressed(MouseButton::Right) {
+        return;
+    }
+
+    if let Ok(_player_transform) = player_query.single() {
+        for mouse_event in mouse_motion.read() {
+            for mut camera_transform in camera_query.iter_mut() {
+                let mouse_delta = mouse_event.delta;
+                let sensitivity = 0.003;
+
+                // Apply mouse rotation to camera
+                let yaw = Quat::from_rotation_y(-mouse_delta.x * sensitivity);
+                let pitch = Quat::from_rotation_x(-mouse_delta.y * sensitivity);
+                
+                camera_transform.rotation = yaw * camera_transform.rotation * pitch;
+            }
+        }
+    }
+}
+
 
 #[derive(Component, Default, Clone)]
 struct PlayingScene;

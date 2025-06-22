@@ -49,6 +49,10 @@ pub enum CollectibleType {
 #[derive(Component)]
 pub struct Sensor;
 
+/// Component to mark that an item has been collected (to prevent double collection)
+#[derive(Component)]
+pub struct Collected;
+
 /// Component marking objects that can be interacted with
 #[derive(Component)]
 pub struct Interactable {
@@ -172,7 +176,7 @@ fn collect_items(
     mut commands: Commands,
     mut collectible_counter: ResMut<CollectibleCounter>,
     player_query: Query<(Entity, &Transform), With<CharacterController>>,
-    collectible_query: Query<(Entity, &Transform, &CollectibleType, &Collectible), (With<Sensor>, Without<Interactable>)>,
+    collectible_query: Query<(Entity, &Transform, &CollectibleType, &Collectible), (With<Sensor>, Without<Interactable>, Without<Collected>)>,
     mut pickup_events: EventWriter<PickupItemEvent>,
     mut item_collected_events: EventWriter<ItemCollectedEvent>,
 ) {
@@ -191,6 +195,9 @@ fn collect_items(
         if distance < 5.0 {
             // Collection radius - only for non-interactable items (like FirstAidKit)
             info!("Collected a {:?}!", collectible_type);
+            
+            // Mark as collected to prevent multiple collections
+            commands.entity(collectible_entity).insert(Collected);
             
             // Send item collected event for inventory system
             warn!("🚀 COLLECTIBLES: Sending ItemCollectedEvent for {:?} (player: {:?}, item: {:?})", 
@@ -387,7 +394,7 @@ fn handle_book_dialogue_events(
     book_query: Query<&Collectible, With<CollectibleType>>,
 ) {
     for event in book_dialogue_events.read() {
-        // warn!("🎯 BOOK INTERACTION EVENT TRIGGERED! Starting dialogue for book entity: {:?}", event.book_entity);
+        warn!("🎯 BOOK INTERACTION EVENT TRIGGERED! Starting dialogue for book entity: {:?}", event.book_entity);
         
         // Store the current book entity so we can collect it later
         current_book.entity = Some(event.book_entity);
@@ -395,7 +402,7 @@ fn handle_book_dialogue_events(
         // Try different approaches to start dialogue
         match dialogue_runner_query.single_mut() {
             Ok(mut dialogue_runner) => {
-                // warn!("✅ Found DialogueRunner, attempting to start Ancient_Tome dialogue");
+                warn!("✅ Found DialogueRunner, attempting to start Ancient_Tome dialogue");
                 
                 // Check if dialogue is already running
                 if dialogue_runner.is_running() {
@@ -412,8 +419,8 @@ fn handle_book_dialogue_events(
                 dialogue_runner.start_node("Ancient_Tome");
                 
                 // Immediately check state after starting
-                // warn!("🎉 SUCCESS: DialogueRunner.start_node('Ancient_Tome') called!");
-                // warn!("🔄 Runner state after: running={}", dialogue_runner.is_running());
+                warn!("🎉 SUCCESS: DialogueRunner.start_node('Ancient_Tome') called!");
+                warn!("🔄 Runner state after: running={}", dialogue_runner.is_running());
                 
                 // Force an immediate continue to ensure first line appears
                 // warn!("🔄 Calling continue_in_next_update() to trigger first event...");
@@ -421,7 +428,7 @@ fn handle_book_dialogue_events(
             }
             Err(_e) => {
                 // No DialogueRunner found - try to create one for this interaction
-                // warn!("❌ No DialogueRunner found: {:?}. Available runners: {}", e, dialogue_runner_query.iter().count());
+                warn!("❌ No DialogueRunner found: {:?}. Available runners: {}", _e, dialogue_runner_query.iter().count());
                 
                 // Fallback to simple book collection
                 info!("📖 Fallback: You found an ancient tome! It contains mystical knowledge about Elysium's depths.");

@@ -49,7 +49,8 @@ impl InventoryVisibilityState {
         }
     }
     
-    /// Update the timer and return true if it should auto-hide
+    /// Update the timer and return true if it should auto-hide (unused now, kept for compatibility)
+    #[allow(dead_code)]
     pub fn should_auto_hide(&mut self, delta: std::time::Duration) -> bool {
         if !self.is_visible || self.manual_display {
             return false;

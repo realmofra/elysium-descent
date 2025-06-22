@@ -47,7 +47,18 @@ pub fn auto_hide_inventory(
     mut visibility_state: ResMut<InventoryVisibilityState>,
     time: Res<Time>,
 ) {
-    if visibility_state.should_auto_hide(time.delta()) {
+    // Only check if inventory is currently visible
+    if !visibility_state.is_visible {
+        return;
+    }
+    
+    // Tick the timer
+    visibility_state.auto_hide_timer.tick(time.delta());
+    
+    // Check if timer is finished
+    if visibility_state.auto_hide_timer.finished() {
+        info!("🎒 INVENTORY: Auto-hiding inventory after {:.2}s", 
+              visibility_state.auto_hide_timer.elapsed_secs());
         visibility_state.hide();
     }
 }
@@ -313,7 +324,7 @@ pub fn handle_item_collected_events(
             Ok(result) => {
                 // Show inventory temporarily when item is collected
                 visibility_state.show(false); // false = automatic display
-                info!("🎒 INVENTORY: Item added successfully! Showing inventory...");
+                info!("🎒 INVENTORY: Item added successfully! Showing inventory with auto-hide timer...");
 
                 // Send appropriate update event based on result
                 let update_type = match result {

@@ -87,6 +87,7 @@ pub struct ModelAssets {
     pub environment: Handle<Scene>,
 }
 
+
 // Movie/Video Assets
 // #[derive(AssetCollection, Resource)]
 // pub struct MovieAssets {

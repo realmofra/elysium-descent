@@ -4,7 +4,8 @@
       "Bash(sozo test:*)",
       "Bash(cargo:*)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:docs.rs)"
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   },
   "enableAllProjectMcpServers": true

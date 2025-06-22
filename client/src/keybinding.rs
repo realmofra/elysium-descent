@@ -94,6 +94,7 @@ fn dojo_binding(
     }
 }
 
+
 // Forward movement and jump events to the character controller
 fn apply_movement(
     trigger: Trigger<Fired<Move>>,
@@ -178,6 +179,7 @@ pub struct DojoInput;
 #[input_action(output = bool)]
 struct CreateGame;
 
+
 fn handle_toggle_fullscreen(
     trigger: Trigger<Started<ToggleFullScreen>>,
     mut windows: Query<&mut Window>,
@@ -229,3 +231,4 @@ fn handle_interact(
         interaction_events.write(crate::systems::collectibles::InteractionEvent);
     }
 }
+

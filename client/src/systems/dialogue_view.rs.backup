@@ -1,0 +1,176 @@
+use bevy::prelude::*;
+use bevy_yarnspinner::prelude::*;
+use bevy_yarnspinner::events::{PresentLineEvent, PresentOptionsEvent, DialogueCompleteEvent};
+use bevy_yarnspinner::prelude::OptionId;
+
+pub struct SimpleDialogueViewPlugin;
+
+#[derive(Resource, Default)]
+pub struct DialogueState {
+    /// Whether we're currently presenting a line (waiting for E to continue)
+    pub presenting_line: bool,
+    /// Whether we're currently presenting options (waiting for number key)
+    pub presenting_options: bool,
+    /// The available options when presenting choices
+    pub current_options: Vec<DialogueOption>,
+}
+
+impl Plugin for SimpleDialogueViewPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<DialogueState>()
+            .add_systems(Update, (
+                debug_all_dialogue_events,
+                handle_present_line_events,
+                handle_present_options_events,
+                handle_dialogue_complete_events,
+                handle_dialogue_input, // NEW: Interactive input system
+            ));
+    }
+}
+
+/// System to debug all dialogue-related events and state
+fn debug_all_dialogue_events(
+    mut line_events: EventReader<PresentLineEvent>,
+    mut option_events: EventReader<PresentOptionsEvent>,
+    mut complete_events: EventReader<DialogueCompleteEvent>,
+    _dialogue_runners: Query<&DialogueRunner>,
+    mut frame_counter: Local<u32>,
+) {
+    *frame_counter += 1;
+    
+    // Always log if we have any events (these are critical!)
+    for event in line_events.read() {
+        info!("💬 DIALOGUE: {}", event.line.text);
+        info!("👉 Press E to continue...");
+    }
+    
+    for event in option_events.read() {
+        info!("🔸 DIALOGUE CHOICES:");
+        for (i, option) in event.options.iter().enumerate() {
+            info!("  [{}] {}", i + 1, option.line.text);
+        }
+        info!("👉 Press number keys (1, 2, etc.) to choose...");
+    }
+    
+    for _event in complete_events.read() {
+        info!("✅ DIALOGUE COMPLETE - Book interaction finished!");
+    }
+}
+
+/// System to handle line presentation events - NO AUTO-ADVANCE
+fn handle_present_line_events(
+    mut line_events: EventReader<PresentLineEvent>,
+    mut dialogue_state: ResMut<DialogueState>,
+) {
+    for event in line_events.read() {
+        // Display the dialogue line to the user
+        info!("💬 DIALOGUE: {}", event.line.text);
+        info!("👉 Press E to continue...");
+        
+        // Set state to indicate we're presenting a line and waiting for input
+        dialogue_state.presenting_line = true;
+        dialogue_state.presenting_options = false;
+        dialogue_state.current_options.clear();
+        
+        // CRITICAL: We do NOT call continue_in_next_update() here!
+        // The player must press E to continue.
+    }
+}
+
+/// System to handle choice presentation events - NO AUTO-SELECT
+fn handle_present_options_events(
+    mut option_events: EventReader<PresentOptionsEvent>,
+    mut dialogue_state: ResMut<DialogueState>,
+) {
+    for event in option_events.read() {
+        info!("🔸 DIALOGUE CHOICES:");
+        for (index, option) in event.options.iter().enumerate() {
+            info!("  [{}] {}", index + 1, option.line.text);
+        }
+        info!("👉 Press number keys (1, 2, etc.) to choose...");
+        
+        // Set state to indicate we're presenting options and waiting for input
+        dialogue_state.presenting_line = false;
+        dialogue_state.presenting_options = true;
+        dialogue_state.current_options = event.options.clone();
+        
+        // CRITICAL: We do NOT call select_option() here!
+        // The player must press a number key to select.
+    }
+}
+
+/// NEW: System to handle interactive dialogue input
+fn handle_dialogue_input(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut dialogue_runners: Query<&mut DialogueRunner>,
+    mut dialogue_state: ResMut<DialogueState>,
+) {
+    // Only process input if dialogue is running
+    let Ok(mut dialogue_runner) = dialogue_runners.single_mut() else {
+        return;
+    };
+    
+    if !dialogue_runner.is_running() {
+        return;
+    }
+    
+    // Handle line continuation with E key
+    if dialogue_state.presenting_line && keyboard_input.just_pressed(KeyCode::KeyE) {
+        info!("✅ Player pressed E - continuing dialogue...");
+        dialogue_runner.continue_in_next_update();
+        dialogue_state.presenting_line = false;
+    }
+    
+    // Handle option selection with number keys
+    if dialogue_state.presenting_options {
+        let number_keys = [
+            KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3, 
+            KeyCode::Digit4, KeyCode::Digit5, KeyCode::Digit6,
+            KeyCode::Digit7, KeyCode::Digit8, KeyCode::Digit9
+        ];
+        
+        for (index, &key) in number_keys.iter().enumerate() {
+            if keyboard_input.just_pressed(key) {
+                let option_index = index; // 0-based for OptionId
+                
+                if option_index < dialogue_state.current_options.len() {
+                    info!("✅ Player selected option {} - '{}'", 
+                          index + 1, 
+                          dialogue_state.current_options[option_index].line.text);
+                    
+                    match dialogue_runner.select_option(OptionId(option_index)) {
+                        Ok(_) => {
+                            info!("✅ Successfully selected option");
+                            // Continue dialogue after selection
+                            dialogue_runner.continue_in_next_update();
+                            dialogue_state.presenting_options = false;
+                            dialogue_state.current_options.clear();
+                        }
+                        Err(e) => {
+                            warn!("❌ Failed to select option: {:?}", e);
+                        }
+                    }
+                } else {
+                    warn!("❌ Invalid option index: {} (only {} options available)", 
+                          index + 1, dialogue_state.current_options.len());
+                }
+                break; // Only process one key press per frame
+            }
+        }
+    }
+}
+
+/// System to handle dialogue completion
+fn handle_dialogue_complete_events(
+    mut complete_events: EventReader<DialogueCompleteEvent>,
+    mut dialogue_state: ResMut<DialogueState>,
+) {
+    for _event in complete_events.read() {
+        info!("✅ DIALOGUE COMPLETE - Book interaction finished!");
+        
+        // Reset dialogue state
+        dialogue_state.presenting_line = false;
+        dialogue_state.presenting_options = false;
+        dialogue_state.current_options.clear();
+    }
+}
