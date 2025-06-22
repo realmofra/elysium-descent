@@ -11,7 +11,7 @@ use crate::keybinding;
 use bevy_enhanced_input::prelude::*;
 use crate::systems::collectibles::{CollectiblesPlugin, spawn_collectible, spawn_interactable_book, CollectibleType};
 use crate::systems::collectibles_config::COLLECTIBLES;
-use crate::ui::inventory::spawn_inventory_ui;
+// Removed old inventory UI import - now handled by inventory plugin
 
 // ===== PLUGIN SETUP =====
 
@@ -162,6 +162,6 @@ impl PlayingScene {
             PlayingScene, // Add scene marker to ensure cleanup
         ));
 
-        spawn_inventory_ui::<PlayingScene>(commands);
+        // Inventory UI now handled by inventory plugin
     }
 }

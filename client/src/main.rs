@@ -61,7 +61,12 @@ fn main() -> AppExit {
                 debug_yarn_project_loading,
             ),
         )
-        .add_plugins((screens::plugin, keybinding::plugin, dojo::plugin))
+        .add_plugins((
+            screens::plugin, 
+            keybinding::plugin, 
+            dojo::plugin, 
+            systems::inventory::plugin
+        ))
         .run()
 }
 

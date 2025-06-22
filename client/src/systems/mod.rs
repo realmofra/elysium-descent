@@ -3,3 +3,4 @@ pub mod collectibles;
 pub mod collectibles_config;
 pub mod dialogue_view;
 pub mod dojo;
+pub mod inventory;

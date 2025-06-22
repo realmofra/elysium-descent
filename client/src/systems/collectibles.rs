@@ -6,7 +6,8 @@ use bevy_yarnspinner::events::ExecuteCommandEvent;
 use std::sync::Arc;
 
 use crate::systems::dojo::PickupItemEvent;
-use crate::{systems::character_controller::CharacterController, ui::inventory};
+use crate::systems::character_controller::CharacterController;
+use crate::systems::inventory::events::ItemCollectedEvent;
 use crate::screens::Screen;
 
 // ===== COMPONENTS & RESOURCES =====
@@ -35,15 +36,14 @@ pub struct FloatingItem {
     pub hover_speed: f32,
 }
 
-#[derive(Component, Clone, Copy, Debug, PartialEq)]
+#[derive(Component, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CollectibleType {
     Book,
     FirstAidKit,
 }
 
 
-#[derive(Resource)]
-pub struct NextItemToAdd(pub CollectibleType);
+// Removed NextItemToAdd resource - replaced with proper event system
 
 
 #[derive(Component)]
@@ -102,9 +102,9 @@ impl Plugin for CollectiblesPlugin {
         .add_event::<InteractionEvent>()
         .add_event::<InteractionPromptEvent>()
         .add_event::<StartBookDialogueEvent>()
+        .add_event::<ItemCollectedEvent>()
         .init_resource::<NearbyInteractable>()
         .init_resource::<CurrentBookEntity>()
-        .insert_resource(inventory::InventoryVisibilityState::default())
         .add_systems(
             Update,
             (
@@ -117,8 +117,6 @@ impl Plugin for CollectiblesPlugin {
                 handle_dialogue_commands,
                 debug_dialogue_system,
                 update_interaction_prompts,
-                inventory::add_item_to_inventory.run_if(in_state(Screen::GamePlay)),
-                inventory::toggle_inventory_visibility.run_if(in_state(Screen::GamePlay)),
             )
                 .run_if(in_state(Screen::GamePlay)),
         );
@@ -173,11 +171,14 @@ pub fn spawn_collectible(
 fn collect_items(
     mut commands: Commands,
     mut collectible_counter: ResMut<CollectibleCounter>,
-    player_query: Query<&Transform, With<CharacterController>>,
+    player_query: Query<(Entity, &Transform), With<CharacterController>>,
     collectible_query: Query<(Entity, &Transform, &CollectibleType, &Collectible), (With<Sensor>, Without<Interactable>)>,
     mut pickup_events: EventWriter<PickupItemEvent>,
+    mut item_collected_events: EventWriter<ItemCollectedEvent>,
 ) {
-    let Ok(player_transform) = player_query.single() else {
+    // Proper Bevy 0.16 error handling with expect for single player
+    let Ok((player_entity, player_transform)) = player_query.single() else {
+        // No warning needed - it's normal to not have a player during startup
         return;
     };
 
@@ -190,7 +191,15 @@ fn collect_items(
         if distance < 5.0 {
             // Collection radius - only for non-interactable items (like FirstAidKit)
             info!("Collected a {:?}!", collectible_type);
-            commands.insert_resource(NextItemToAdd(*collectible_type));
+            
+            // Send item collected event for inventory system
+            warn!("🚀 COLLECTIBLES: Sending ItemCollectedEvent for {:?} (player: {:?}, item: {:?})", 
+                  collectible_type, player_entity, collectible_entity);
+            item_collected_events.write(ItemCollectedEvent::new(
+                *collectible_type,
+                player_entity,
+                collectible_entity,
+            ));
 
             match collectible_type {
                 CollectibleType::FirstAidKit => {
@@ -205,7 +214,7 @@ fn collect_items(
                     // in the pickup_item system's handle_item_picked_up_events
                 }
                 _ => {
-                    // For other items (not FirstAidKit), use the old local collection method
+                    // For other items (not FirstAidKit), use the local collection method and despawn immediately
                     (collectible.on_collect)(&mut commands, collectible_entity);
                 }
             }
