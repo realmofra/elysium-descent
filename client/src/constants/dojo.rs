@@ -35,7 +35,7 @@ impl Default for DojoConfig {
                 .unwrap_or_else(|| {
                     // Real deployed action address from manifest_dev.json
                     Felt::from_hex_unchecked(
-                        "0x03e808dd3f605913362dd9acf16a9853eb824d1619c182b84199d7424464f670",
+                        "0x03b157fb321cd8a0edfcfd47ea1217396bd6c5b534d2766345938eeb78a9d3ec",
                     )
                 }),
             use_dev_account: env::var("USE_DEV_ACCOUNT").unwrap_or_else(|_| "true".to_string())
