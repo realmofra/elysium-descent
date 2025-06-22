@@ -1328,8 +1328,8 @@
   },
   "contracts": [
     {
-      "address": "0x3e808dd3f605913362dd9acf16a9853eb824d1619c182b84199d7424464f670",
-      "class_hash": "0x5d98e4813136fb743de87bc7b7351fa37fcf4393f8a02755b96b16d9365c538",
+      "address": "0x3b157fb321cd8a0edfcfd47ea1217396bd6c5b534d2766345938eeb78a9d3ec",
+      "class_hash": "0xe40b7d93ca9f59353183b93fd736092d7a41b88eccb82c614e74710e1121ae",
       "abi": [
         {
           "type": "impl",
@@ -1402,7 +1402,7 @@
         },
         {
           "type": "struct",
-          "name": "elysium_descent::models::PlayerStats",
+          "name": "elysium_descent::models::Player",
           "members": [
             {
               "name": "player",
@@ -1528,7 +1528,16 @@
             {
               "type": "function",
               "name": "pickup_item",
-              "inputs": [],
+              "inputs": [
+                {
+                  "name": "game_id",
+                  "type": "core::integer::u32"
+                },
+                {
+                  "name": "item_id",
+                  "type": "core::integer::u32"
+                }
+              ],
               "outputs": [
                 {
                   "type": "core::bool"
@@ -1547,7 +1556,7 @@
               ],
               "outputs": [
                 {
-                  "type": "elysium_descent::models::PlayerStats"
+                  "type": "elysium_descent::models::Player"
                 }
               ],
               "state_mutability": "view"
@@ -1738,15 +1747,15 @@
     },
     {
       "members": [],
-      "class_hash": "0x41634bb8266abacb5c8ae1b09c9f1462ae62618720bba0ceb68618b59b2c56f",
-      "tag": "elysium_001-PlayerInventory",
-      "selector": "0x58734cc349cd6a0779b7b50b4330bb2a07a997d903675b890847d0f9da79e"
+      "class_hash": "0x1b5335a27e5565df4af67cebad4df3fa86af144a7a790932da033b67e38f3e7",
+      "tag": "elysium_001-Player",
+      "selector": "0x3832748cdc63e40fd930b5f4912a6b569685acccba8ec209588d72c107e12b4"
     },
     {
       "members": [],
-      "class_hash": "0x9141def6661467339be326d1fe83907380648097a8de4e1cba85f7d79170fc",
-      "tag": "elysium_001-PlayerStats",
-      "selector": "0x575e5002176ad15c9c2347a2b2ad6361fdf55c4632a94a14aef299c8845b317"
+      "class_hash": "0x41634bb8266abacb5c8ae1b09c9f1462ae62618720bba0ceb68618b59b2c56f",
+      "tag": "elysium_001-PlayerInventory",
+      "selector": "0x58734cc349cd6a0779b7b50b4330bb2a07a997d903675b890847d0f9da79e"
     },
     {
       "members": [],
@@ -1758,19 +1767,19 @@
   "events": [
     {
       "members": [],
-      "class_hash": "0x74542073f0069ea28b4cf8dd7d5cf55eb219a7f353841a872c511b87a637e",
+      "class_hash": "0x3170f8ad5ee15a6acf74b0638e286479b0d6d493036cda75c3a695cd7d390cf",
       "tag": "elysium_001-GameCreated",
       "selector": "0xabe434a56ead8d669a4a03d1a7d0f96947e6f0a1f84ff92767132f38a9ee0"
     },
     {
       "members": [],
-      "class_hash": "0x34d8eee2566245293deca7cec62e6aadb8ca5044328945c5568f25174478266",
+      "class_hash": "0x378089535e90ca95b8222c3ad9e37ffe00f996319a3fd6d0e0cebcf0b9d5117",
       "tag": "elysium_001-ItemPickedUp",
       "selector": "0x596fa771166fd5f4dfec561ed98b878f7518675926c61a86d8671dd1a86243b"
     },
     {
       "members": [],
-      "class_hash": "0x51ab76764b272c5abb441d54b44efddd4152bc85dc1eba5a7e867533c119b42",
+      "class_hash": "0x3c69280f559b8a138563475a39027cb8b4be86c9d98f100a12b5f29beee99ad",
       "tag": "elysium_001-LevelStarted",
       "selector": "0x6baa58d422637916a19f2a55ecb8780ec1b0262d5f982aa76487a935ec58cd9"
     }

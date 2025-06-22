@@ -9,7 +9,8 @@
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
       "WebFetch(domain:dojoengine.org)",
-      "WebFetch(domain:book.dojoengine.org)"
+      "WebFetch(domain:book.dojoengine.org)",
+      "Bash(sozo build:*)"
     ]
   },
   "enableAllProjectMcpServers": true
