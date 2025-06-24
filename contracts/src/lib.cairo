@@ -16,6 +16,7 @@ pub mod models {
     pub mod inventory;
     pub mod game;
     pub mod world_state;
+    pub mod index;
 }
 
 pub mod types {
@@ -27,4 +28,6 @@ pub mod types {
 #[cfg(test)]
 mod tests {
     mod test_world;
+    mod test_simple;
+    mod test_comprehensive;
 }

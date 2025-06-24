@@ -10,7 +10,13 @@
       "mcp__context7__get-library-docs",
       "WebFetch(domain:dojoengine.org)",
       "WebFetch(domain:book.dojoengine.org)",
-      "Bash(sozo build:*)"
+      "Bash(sozo build:*)",
+      "mcp__sensei__dojo_sensei",
+      "mcp__sensei__dojo_model",
+      "mcp__sensei__dojo_logic",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)"
     ]
   },
   "enableAllProjectMcpServers": true

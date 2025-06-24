@@ -228,7 +228,10 @@ pub impl GameComponentImpl of GameComponentTrait {
         let hash = poseidon_hash_span(
             array![game_id.into(), level.into(), item_counter.into()].span(),
         );
-        hash.try_into().unwrap()
+        // Use modulo to ensure the value fits in u32 range
+        let hash_u256: u256 = hash.into();
+        let item_id = (hash_u256 % 0x100000000_u256).try_into().unwrap(); // Max u32 value
+        item_id
     }
     
     fn generate_item_position(game_id: u32, level: u32, item_counter: u32) -> (u32, u32) {
