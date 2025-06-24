@@ -59,8 +59,8 @@ pub impl InventoryComponentImpl of InventoryComponentTrait {
         };
 
         // Persist updated inventory and item states
-        store.update_player_inventory(updated_inventory);
-        store.write_world_item(updated_item);
+        store.set_player_inventory(updated_inventory);
+        store.set_world_item(updated_item);
 
         // Calculate player experience and level progression
         let player_stats = store.get_player(player);
@@ -87,7 +87,7 @@ pub impl InventoryComponentImpl of InventoryComponentTrait {
             items_collected: new_items_collected,
         };
 
-        store.update_player(updated_player);
+        store.set_player(updated_player);
 
         // Notify external systems of successful item pickup
         store.emit_item_picked_up(player, game_id, item_id, world_item.item_type, world_item.level);
@@ -145,8 +145,8 @@ pub impl InventoryComponentImpl of InventoryComponentTrait {
         }
 
         // Save updated inventory and player progression
-        store.update_player_inventory(inventory);
-        store.update_player(player_stats);
+        store.set_player_inventory(inventory);
+        store.set_player(player_stats);
 
         true
     }
@@ -207,8 +207,8 @@ pub impl InventoryComponentImpl of InventoryComponentTrait {
         };
 
         // Persist changes to both player inventories
-        store.update_player_inventory(from_inventory);
-        store.update_player_inventory(to_inventory);
+        store.set_player_inventory(from_inventory);
+        store.set_player_inventory(to_inventory);
 
         true
     }

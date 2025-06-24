@@ -45,7 +45,7 @@ pub impl StoreImpl of StoreTrait {
         self.world.read_model(player)
     }
 
-    fn update_player(ref self: Store, player: Player) {
+    fn set_player(ref self: Store, player: Player) {
         self.world.write_model(@player);
     }
 
@@ -53,7 +53,7 @@ pub impl StoreImpl of StoreTrait {
         self.world.read_model(player)
     }
 
-    fn update_player_inventory(ref self: Store, inventory: PlayerInventory) {
+    fn set_player_inventory(ref self: Store, inventory: PlayerInventory) {
         self.world.write_model(@inventory);
     }
 
@@ -62,7 +62,7 @@ pub impl StoreImpl of StoreTrait {
         self.world.read_model((game_id, item_id))
     }
 
-    fn write_world_item(ref self: Store, item: WorldItem) {
+    fn set_world_item(ref self: Store, item: WorldItem) {
         self.world.write_model(@item);
     }
 
@@ -71,7 +71,7 @@ pub impl StoreImpl of StoreTrait {
         self.world.read_model((game_id, level))
     }
 
-    fn write_level_items(ref self: Store, level_items: LevelItems) {
+    fn set_level_items(ref self: Store, level_items: LevelItems) {
         self.world.write_model(@level_items);
     }
 

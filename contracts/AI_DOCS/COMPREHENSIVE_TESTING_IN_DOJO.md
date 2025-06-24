@@ -175,7 +175,7 @@ fn setup_namespace() -> NamespaceDef {
 #### Why Centralized Setup is Essential
 
 **Problem**: Test files duplicating 40+ lines of identical setup code including:
-- Namespace definitions with resource registration  
+- Namespace definitions with resource registration
 - Contract permissions setup
 - System dispatcher creation
 - Test context and helper functions
@@ -191,7 +191,7 @@ fn setup_namespace() -> NamespaceDef {
 use super::setup::{spawn, Systems, Context};
 use crate::models::Player;
 
-// ✅ CORRECT - Cairo absolute path imports  
+// ✅ CORRECT - Cairo absolute path imports
 use elysium_descent::tests::setup::{spawn, Systems, Context};
 use elysium_descent::models::index::Player;
 ```
@@ -210,7 +210,7 @@ mod tests {
             // ... 20+ more lines identical across files
         ].span(),
     };
-    
+
     // 10+ lines of duplicate permissions setup...
     // 5+ lines of duplicate dispatcher creation...
 }
@@ -220,7 +220,7 @@ mod tests {
 mod tests {
     use elysium_descent::tests::setup::{spawn, Player, Game};
     use elysium_descent::systems::actions::IActionsDispatcherTrait;
-    
+
     #[test]
     fn test_game_logic() {
         let (world, systems, context) = spawn(); // One line setup!
@@ -366,15 +366,15 @@ Instead of creating multiple helper functions for model access, use the existing
 #[test]
 fn test_with_store_pattern() {
     let (world, systems, context) = spawn();
-    
+
     // Use Store for clean model access
     let store: Store = StoreTrait::new(world);  // Explicit type annotation
-    
+
     // Clean, semantic operations - Store uses ModelStorage internally
     let player = store.get_player(context.player1);
     let game = store.get_game(game_id);
     let inventory = store.get_player_inventory(context.player1);
-    
+
     // Store methods provide better readability than generic helpers
     assert(player.health > 0, 'Player should be alive');
     assert(game.status == GameStatus::InProgress, 'Game should be active');
@@ -568,7 +568,7 @@ Test Dojo components using mock contracts:
 #[starknet::interface]
 pub trait ITestSystem<TContractState> {
     fn create_player(self: @TContractState, name: ByteArray) -> felt252;
-    fn update_player(self: @TContractState, player_id: felt252, name: ByteArray);
+    fn set_player(self: @TContractState, player_id: felt252, name: ByteArray);
 }
 
 #[dojo::contract]
@@ -600,8 +600,8 @@ pub mod TestSystem {
             self.playable.create_player(self.world_storage(), name)
         }
 
-        fn update_player(self: @ContractState, player_id: felt252, name: ByteArray) {
-            self.playable.update_player(self.world_storage(), player_id, name)
+        fn set_player(self: @ContractState, player_id: felt252, name: ByteArray) {
+            self.playable.set_player(self.world_storage(), player_id, name)
         }
     }
 
@@ -1029,25 +1029,25 @@ Following Cairo's strict commenting conventions, all test modules must adhere to
 #### Test Module Documentation Pattern
 ```cairo
 //! # Comprehensive Test Suite for PlayerSystem
-//! 
+//!
 //! This module provides complete test coverage for the PlayerSystem component,
 //! following Dojo v1.5.0 testing patterns and the Shinigami Design Pattern.
-//! 
+//!
 //! ## Test Categories
-//! 
+//!
 //! - **Unit Tests**: Individual function validation
 //! - **Integration Tests**: Multi-component workflows
 //! - **Error Handling**: Expected failures and edge cases
 //! - **Performance Tests**: Gas optimization and limits
-//! 
+//!
 //! ## Shinigami Layer Testing
-//! 
+//!
 //! ```text
 //! Systems → Components → Models → Types → Elements
 //!            ↑
 //!       Test Focus
 //! ```
-//! 
+//!
 //! ## Key Test Patterns
 //! - Resource registration (Events vs Models)
 //! - Store pattern for model access
@@ -1060,20 +1060,20 @@ mod tests {
     use super::*;
     use dojo_cairo_test::*;
     use your_project::tests::setup::setup::{spawn, Context, Systems};
-    
+
     /// Test constants following naming conventions
     const PLAYER_ID: felt252 = 1;
     const PLAYER_NAME: ByteArray = "TestPlayer";
     const DEFAULT_EXPERIENCE: u64 = 100;
-    
+
     /// Test data factory for consistent test setup
     #[generate_trait]
     pub impl TestDataFactory of TestDataFactoryTrait {
         /// Creates a standardized test player with default values
-        /// 
+        ///
         /// # Arguments
         /// * `id` - Unique player identifier
-        /// 
+        ///
         /// # Returns
         /// Player instance with level 1 and zero experience
         fn create_test_player(id: felt252) -> Player {
@@ -1086,9 +1086,9 @@ mod tests {
             }
         }
     }
-    
+
     /// Tests basic player creation functionality
-    /// 
+    ///
     /// Validates that PlayerTrait::new() creates a player with correct
     /// initial values and proper validation of input parameters.
     #[test]
@@ -1099,9 +1099,9 @@ mod tests {
         assert_eq!(player.experience, 0);
         assert_eq!(player.active, true);
     }
-    
+
     /// Tests player name validation with empty string
-    /// 
+    ///
     /// Ensures that PlayerAssert::assert_valid_name() properly rejects
     /// empty strings and provides clear error messages.
     #[test]
@@ -1115,22 +1115,22 @@ mod tests {
 #### Integration Test Documentation Pattern
 ```cairo
 //! # Integration Test Suite
-//! 
+//!
 //! Tests complete workflows across multiple Shinigami layers,
 //! validating system interactions and data flow patterns.
 
 /// Complete game workflow integration test
-/// 
+///
 /// Tests the full player lifecycle from creation through gameplay,
 /// including state persistence, event emission, and multi-system
 /// coordination following the Shinigami pattern.
-/// 
+///
 /// # Test Scenario
 /// 1. Create game instance
 /// 2. Create player and join game
 /// 3. Perform game actions
 /// 4. Validate state changes and events
-/// 
+///
 /// # Validation Points
 /// - Model persistence across operations
 /// - Event emission for state changes
@@ -1140,20 +1140,20 @@ mod tests {
 #[available_gas(6000000)]
 fn test_complete_game_workflow() {
     let (world, systems, context) = spawn();
-    
+
     // Create game instance with proper validation
     let game_id = systems.game_system.create_game(
         "TestGame",
         "Integration test game",
         100  // max_players
     );
-    
+
     // Verify game creation using Store pattern
     let store: Store = StoreTrait::new(world);
     let game = store.get_game(game_id);
     assert_eq!(game.name, "TestGame");
     assert_eq!(game.active, true);
-    
+
     // Continue with workflow validation...
 }
 ```
@@ -1161,27 +1161,27 @@ fn test_complete_game_workflow() {
 #### Test Setup Documentation Standards
 ```cairo
 /// Test setup and configuration module
-/// 
+///
 /// Provides standardized test environment initialization following
 /// Dojo v1.5.0 patterns and proper resource registration.
 pub mod setup {
     /// Spawns complete test environment with proper resource registration
-    /// 
+    ///
     /// Creates a test world with all necessary models, events, and contracts
     /// registered. Uses the Store pattern for model access and provides
     /// consistent system dispatchers.
-    /// 
+    ///
     /// # Resource Registration
     /// - **Models**: Persistent state using `TestResource::Model`
-    /// - **Events**: Emitted logs using `TestResource::Event`  
+    /// - **Events**: Emitted logs using `TestResource::Event`
     /// - **Contracts**: System implementations using `TestResource::Contract`
-    /// 
+    ///
     /// # Returns
     /// Tuple containing:
     /// - `WorldStorage`: Configured test world
     /// - `Systems`: Dispatcher struct for system access
     /// - `Context`: Test context with default values
-    /// 
+    ///
     /// # Example
     /// ```cairo
     /// let (world, systems, context) = spawn();
@@ -1216,10 +1216,10 @@ fn test_player_creation() { }
 
 // ✅ CORRECT - Proper test documentation
 /// Tests player creation with valid input parameters
-/// 
+///
 /// Validates that PlayerTrait::new() creates a player with proper
 /// initial state and correctly handles input validation.
-/// 
+///
 /// # Test Conditions
 /// - Valid player name (non-empty, within length limits)
 /// - Default level set to 1
@@ -1240,10 +1240,10 @@ mod tests {
     // Unit tests mixed with integration tests
     #[test]
     fn test_player_creation() { }
-    
-    #[test] 
+
+    #[test]
     fn test_complete_game_workflow() { }
-    
+
     #[test]
     fn test_player_validation() { }
 }
@@ -1253,10 +1253,10 @@ mod tests {
 mod unit_tests {
     /// Unit tests for individual PlayerTrait functions
     use super::*;
-    
+
     #[test]
     fn test_player_creation() { }
-    
+
     #[test]
     fn test_player_validation() { }
 }
@@ -1265,10 +1265,10 @@ mod unit_tests {
 mod integration_tests {
     /// Integration tests for complete system workflows
     use super::*;
-    
+
     #[test]
     fn test_complete_game_workflow() { }
-    
+
     #[test]
     fn test_multi_player_interactions() { }
 }

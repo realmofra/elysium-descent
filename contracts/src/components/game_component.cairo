@@ -42,13 +42,13 @@ pub impl GameComponentImpl of GameComponentTrait {
         let player_stats = Player {
             player, health: 100, max_health: 100, level: 1, experience: 0, items_collected: 0,
         };
-        store.update_player(player_stats);
+        store.set_player(player_stats);
 
         // Create empty player inventory with default capacity
         let inventory = PlayerInventory {
             player, health_potions: 0, survival_kits: 0, books: 0, capacity: 50,
         };
-        store.update_player_inventory(inventory);
+        store.set_player_inventory(inventory);
 
         // Emit game creation event for external systems
         store.emit_game_created(player, game_id, timestamp);
@@ -88,7 +88,7 @@ pub impl GameComponentImpl of GameComponentTrait {
             collected_survival_kits: 0,
             collected_books: 0,
         };
-        store.write_level_items(level_items);
+        store.set_level_items(level_items);
 
         // Spawn physical world items for collection
         let mut item_counter = 0_u32;
@@ -144,7 +144,7 @@ pub impl GameComponentImpl of GameComponentTrait {
                 experience: player_stats.experience + 100, // Flat bonus for level completion
                 items_collected: player_stats.items_collected,
             };
-            store.update_player(updated_player);
+            store.set_player(updated_player);
         }
 
         items_completed
@@ -225,7 +225,7 @@ pub impl GameComponentImpl of GameComponentTrait {
                 level,
             };
 
-            store.write_world_item(world_item);
+            store.set_world_item(world_item);
 
             item_counter += 1;
             i += 1;

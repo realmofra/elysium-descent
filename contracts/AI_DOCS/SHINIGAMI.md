@@ -215,7 +215,7 @@ impl PlayerImpl of PlayerTrait {
 trait IPlayerStore {
     fn create_player(ref self: TContractState, player_id: felt252, name: ByteArray);
     fn get_player(self: @TContractState, player_id: felt252) -> Player;
-    fn update_player(ref self: TContractState, player: Player);
+    fn set_player(ref self: TContractState, player: Player);
     fn delete_player(ref self: TContractState, player_id: felt252);
 }
 ```
