@@ -31,6 +31,26 @@ pub struct LevelItems {
     pub collected_books: u32,
 }
 
+// Helper functions to get count by item type - uses imported ItemType
+#[generate_trait]
+impl LevelItemsImpl of LevelItemsTrait {
+    fn get_total_by_type(self: @LevelItems, item_type: ItemType) -> u32 {
+        match item_type {
+            ItemType::HealthPotion => *self.total_health_potions,
+            ItemType::SurvivalKit => *self.total_survival_kits,
+            ItemType::Book => *self.total_books,
+        }
+    }
+
+    fn get_collected_by_type(self: @LevelItems, item_type: ItemType) -> u32 {
+        match item_type {
+            ItemType::HealthPotion => *self.collected_health_potions,
+            ItemType::SurvivalKit => *self.collected_survival_kits,
+            ItemType::Book => *self.collected_books,
+        }
+    }
+}
+
 // Global game counter for unique game IDs
 #[derive(Copy, Drop, Serde)]
 #[dojo::model]
@@ -42,7 +62,4 @@ pub struct GameCounter {
 
 // Constants for special identifiers
 pub const GAME_COUNTER_ID: u32 = 999999999;
-
-
-
 

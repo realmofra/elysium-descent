@@ -14,12 +14,12 @@ pub enum GameStatus {
 // Game Mode Types for different gameplay experiences
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 pub enum GameMode {
-    Tutorial,     // Guided learning experience
-    Standard,     // Normal gameplay
-    Hardcore,     // Permadeath, no saves
-    Speedrun,     // Timed challenges
-    Creative,     // Unlimited resources
-    Multiplayer,  // Shared world state
+    Tutorial, // Guided learning experience
+    Standard, // Normal gameplay
+    Hardcore, // Permadeath, no saves
+    Speedrun, // Timed challenges
+    Creative, // Unlimited resources
+    Multiplayer // Shared world state
 }
 
 // Difficulty Levels
@@ -34,11 +34,11 @@ pub enum Difficulty {
 // Player Class System
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 pub enum PlayerClass {
-    Explorer,     // Balanced stats, bonus to item discovery
-    Survivor,     // High health, resistance bonuses
-    Scholar,      // Bonus experience, faster learning
-    Collector,    // Larger inventory, better loot chances
-    Speedrunner,  // Movement bonuses, time advantages
+    Explorer, // Balanced stats, bonus to item discovery
+    Survivor, // High health, resistance bonuses
+    Scholar, // Bonus experience, faster learning
+    Collector, // Larger inventory, better loot chances
+    Speedrunner // Movement bonuses, time advantages
 }
 
 // Game Configuration Structure
@@ -145,21 +145,21 @@ pub impl GameStatusImpl of GameStatusTrait {
             _ => false,
         }
     }
-    
+
     fn is_ended(self: @GameStatus) -> bool {
         match self {
             GameStatus::Completed | GameStatus::Abandoned | GameStatus::Failed => true,
             _ => false,
         }
     }
-    
+
     fn can_pause(self: @GameStatus) -> bool {
         match self {
             GameStatus::InProgress => true,
             _ => false,
         }
     }
-    
+
     fn can_resume(self: @GameStatus) -> bool {
         match self {
             GameStatus::Paused => true,
@@ -177,21 +177,21 @@ pub impl GameModeImpl of GameModeTrait {
             _ => true,
         }
     }
-    
+
     fn has_time_limit(self: @GameMode) -> bool {
         match self {
             GameMode::Speedrun => true,
             _ => false,
         }
     }
-    
+
     fn allows_multiplayer(self: @GameMode) -> bool {
         match self {
             GameMode::Multiplayer => true,
             _ => false,
         }
     }
-    
+
     fn get_default_config(self: @GameMode) -> GameConfig {
         match self {
             GameMode::Tutorial => GameConfig {
@@ -285,7 +285,7 @@ pub impl PlayerClassImpl of PlayerClassTrait {
             _ => 0,
         }
     }
-    
+
     fn get_inventory_bonus(self: @PlayerClass) -> u32 {
         match self {
             PlayerClass::Collector => 10,
@@ -293,7 +293,7 @@ pub impl PlayerClassImpl of PlayerClassTrait {
             _ => 0,
         }
     }
-    
+
     fn get_experience_multiplier(self: @PlayerClass) -> u32 {
         match self {
             PlayerClass::Scholar => 150,
@@ -301,7 +301,7 @@ pub impl PlayerClassImpl of PlayerClassTrait {
             _ => 100,
         }
     }
-    
+
     fn get_item_find_bonus(self: @PlayerClass) -> u32 {
         match self {
             PlayerClass::Collector => 25,
@@ -309,7 +309,7 @@ pub impl PlayerClassImpl of PlayerClassTrait {
             _ => 0,
         }
     }
-    
+
     fn get_movement_speed_bonus(self: @PlayerClass) -> u32 {
         match self {
             PlayerClass::Speedrunner => 50,

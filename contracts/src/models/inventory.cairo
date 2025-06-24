@@ -1,4 +1,5 @@
 use starknet::ContractAddress;
+use super::super::types::item_types::ItemType;
 
 // Simplified player inventory for current implementation
 #[derive(Copy, Drop, Serde)]
@@ -12,6 +13,52 @@ pub struct PlayerInventory {
     pub capacity: u32,
 }
 
+// Helper functions for PlayerInventory - explicitly uses ItemType
+#[generate_trait]
+impl PlayerInventoryImpl of PlayerInventoryTrait {
+    fn get_item_count(self: @PlayerInventory, item_type: ItemType) -> u32 {
+        match item_type {
+            ItemType::HealthPotion => *self.health_potions,
+            ItemType::SurvivalKit => *self.survival_kits,
+            ItemType::Book => *self.books,
+        }
+    }
 
+    fn add_item(ref self: PlayerInventory, item_type: ItemType, quantity: u32) {
+        match item_type {
+            ItemType::HealthPotion => self.health_potions += quantity,
+            ItemType::SurvivalKit => self.survival_kits += quantity,
+            ItemType::Book => self.books += quantity,
+        }
+    }
 
+    fn remove_item(ref self: PlayerInventory, item_type: ItemType, quantity: u32) -> bool {
+        match item_type {
+            ItemType::HealthPotion => {
+                if self.health_potions >= quantity {
+                    self.health_potions -= quantity;
+                    true
+                } else {
+                    false
+                }
+            },
+            ItemType::SurvivalKit => {
+                if self.survival_kits >= quantity {
+                    self.survival_kits -= quantity;
+                    true
+                } else {
+                    false
+                }
+            },
+            ItemType::Book => {
+                if self.books >= quantity {
+                    self.books -= quantity;
+                    true
+                } else {
+                    false
+                }
+            },
+        }
+    }
+}
 

@@ -1,4 +1,3 @@
-
 // Item Categories - following Shinigami's hierarchical approach
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 pub enum ItemCategory {
@@ -86,14 +85,14 @@ pub impl ItemTypeImpl of ItemTypeTrait {
             ItemType::Book => ItemCategory::Special,
         }
     }
-    
+
     fn is_stackable(self: @ItemType) -> bool {
         match self {
             ItemType::HealthPotion | ItemType::SurvivalKit => true,
             ItemType::Book => false,
         }
     }
-    
+
     fn get_max_stack_size(self: @ItemType) -> u32 {
         match self {
             ItemType::HealthPotion => 99,
@@ -101,7 +100,7 @@ pub impl ItemTypeImpl of ItemTypeTrait {
             ItemType::Book => 1,
         }
     }
-    
+
     fn is_consumable(self: @ItemType) -> bool {
         match self {
             ItemType::HealthPotion | ItemType::SurvivalKit | ItemType::Book => true,

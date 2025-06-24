@@ -8,9 +8,7 @@ mod comprehensive_tests {
     use elysium_descent::systems::actions::{IActionsDispatcher, IActionsDispatcherTrait};
 
     // Model imports for direct usage
-    use elysium_descent::models::index::{
-        Player, Game, GameCounter, LevelItems, PlayerInventory,
-    };
+    use elysium_descent::models::index::{Player, Game, GameCounter, LevelItems, PlayerInventory};
 
     // Type imports
     use elysium_descent::types::game_types::GameStatus;

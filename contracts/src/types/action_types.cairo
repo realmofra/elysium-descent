@@ -9,14 +9,12 @@ pub enum GameAction {
     DropItem: DropAction,
     UseItem: UseAction,
     TransferItem: TransferAction,
-    
     // Game Management Actions
     CreateGame,
     StartLevel: LevelAction,
     PauseGame,
     ResumeGame,
     EndGame,
-    
     // Player Actions
     Move: MoveAction,
     Interact: InteractAction,
@@ -44,7 +42,7 @@ pub struct DropAction {
 pub struct UseAction {
     pub item_type: ItemType,
     pub quantity: u32,
-    pub target: Option<ContractAddress>, // For items that target other players
+    pub target: Option<ContractAddress>,
 }
 
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
@@ -164,21 +162,23 @@ pub impl GameActionImpl of GameActionTrait {
             _ => true,
         }
     }
-    
+
     fn requires_valid_position(self: @GameAction) -> bool {
         match self {
-            GameAction::PickupItem(_) | GameAction::DropItem(_) | GameAction::Move(_) | GameAction::Interact(_) => true,
+            GameAction::PickupItem(_) | GameAction::DropItem(_) | GameAction::Move(_) |
+            GameAction::Interact(_) => true,
             _ => false,
         }
     }
-    
+
     fn modifies_inventory(self: @GameAction) -> bool {
         match self {
-            GameAction::PickupItem(_) | GameAction::DropItem(_) | GameAction::UseItem(_) | GameAction::TransferItem(_) => true,
+            GameAction::PickupItem(_) | GameAction::DropItem(_) | GameAction::UseItem(_) |
+            GameAction::TransferItem(_) => true,
             _ => false,
         }
     }
-    
+
     fn get_cooldown_seconds(self: @GameAction) -> u64 {
         match self {
             GameAction::UseItem(_) => 2,

@@ -2,7 +2,8 @@ use starknet::{ContractAddress, contract_address_const, testing::set_contract_ad
 use dojo::world::{WorldStorage, WorldStorageTrait};
 use dojo::model::{ModelStorage};
 use dojo_cairo_test::{
-    spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, ContractDef, WorldStorageTestTrait,
+    spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, ContractDef,
+    WorldStorageTestTrait,
 };
 
 // System imports
@@ -68,15 +69,14 @@ fn setup_namespace() -> NamespaceDef {
             TestResource::Model(m_LevelItems::TEST_CLASS_HASH),
             TestResource::Model(m_PlayerInventory::TEST_CLASS_HASH),
             TestResource::Model(m_WorldItem::TEST_CLASS_HASH),
-            
             // Events
             TestResource::Event(e_GameCreated::TEST_CLASS_HASH),
             TestResource::Event(e_LevelStarted::TEST_CLASS_HASH),
             TestResource::Event(e_ItemPickedUp::TEST_CLASS_HASH),
-            
             // Contracts
             TestResource::Contract(actions::TEST_CLASS_HASH),
-        ].span(),
+        ]
+            .span(),
     }
 }
 
@@ -86,7 +86,8 @@ fn setup_contracts() -> Span<ContractDef> {
     [
         ContractDefTrait::new(@"elysium_001", @"actions")
             .with_writer_of([dojo::utils::bytearray_hash(@"elysium_001")].span())
-    ].span()
+    ]
+        .span()
 }
 
 // Main spawn function that initializes the test world
@@ -94,30 +95,25 @@ fn setup_contracts() -> Span<ContractDef> {
 pub fn spawn() -> (WorldStorage, Systems, Context) {
     // Set the caller to OWNER for world setup
     set_contract_address(OWNER());
-    
+
     // Create test world with namespace
     let namespace_def = setup_namespace();
     let mut world = spawn_test_world([namespace_def].span());
-    
+
     // Sync permissions and initialize contracts
     world.sync_perms_and_inits(setup_contracts());
-    
+
     // Get system addresses using DNS
     let (actions_address, _) = world.dns(@"actions").unwrap();
-    
+
     // Create Systems dispatcher
-    let systems = Systems {
-        actions: IActionsDispatcher { contract_address: actions_address }
-    };
-    
+    let systems = Systems { actions: IActionsDispatcher { contract_address: actions_address } };
+
     // Create test context
     let context = Context {
-        player1: PLAYER1(),
-        player2: PLAYER2(),
-        admin: ADMIN(),
-        owner: OWNER(),
+        player1: PLAYER1(), player2: PLAYER2(), admin: ADMIN(), owner: OWNER(),
     };
-    
+
     (world, systems, context)
 }
 
@@ -153,4 +149,17 @@ pub fn clear_events(address: ContractAddress) {
 // Helper function to get test timestamp
 pub fn get_test_timestamp() -> u64 {
     1000_u64 // Fixed timestamp for consistent testing
+}
+
+// Helper functions that explicitly use ModelStorage
+pub fn read_player_model(world: WorldStorage, player: ContractAddress) -> Player {
+    world.read_model(player)
+}
+
+pub fn read_game_model(world: WorldStorage, game_id: u32) -> Game {
+    world.read_model(game_id)
+}
+
+pub fn read_inventory_model(world: WorldStorage, player: ContractAddress) -> PlayerInventory {
+    world.read_model(player)
 }

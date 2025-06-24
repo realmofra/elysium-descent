@@ -32,18 +32,14 @@ pub impl StoreImpl of StoreTrait {
         // Get next game ID
         let mut counter: GameCounter = self.world.read_model(GAME_COUNTER_ID);
         if counter.next_game_id == 0 {
-            let new_counter = GameCounter {
-                counter_id: GAME_COUNTER_ID,
-                next_game_id: 1,
-            };
+            let new_counter = GameCounter { counter_id: GAME_COUNTER_ID, next_game_id: 1 };
             self.world.write_model(@new_counter);
             counter = new_counter;
         }
-        
+
         let game_id = counter.next_game_id;
         let updated_counter = GameCounter {
-            counter_id: GAME_COUNTER_ID,
-            next_game_id: counter.next_game_id + 1,
+            counter_id: GAME_COUNTER_ID, next_game_id: counter.next_game_id + 1,
         };
         self.world.write_model(@updated_counter);
 
@@ -60,22 +56,13 @@ pub impl StoreImpl of StoreTrait {
 
         // Initialize player
         let player_stats = Player {
-            player, 
-            health: 100, 
-            max_health: 100, 
-            level: 1, 
-            experience: 0, 
-            items_collected: 0,
+            player, health: 100, max_health: 100, level: 1, experience: 0, items_collected: 0,
         };
         self.world.write_model(@player_stats);
 
         // Initialize inventory
         let inventory = PlayerInventory {
-            player,
-            health_potions: 0,
-            survival_kits: 0,
-            books: 0,
-            capacity: 50,
+            player, health_potions: 0, survival_kits: 0, books: 0, capacity: 50,
         };
         self.world.write_model(@inventory);
 
@@ -135,11 +122,20 @@ pub impl StoreImpl of StoreTrait {
     }
 
     // Event helpers
-    fn emit_level_started(ref self: Store, player: ContractAddress, game_id: u32, level: u32, items_spawned: u32) {
+    fn emit_level_started(
+        ref self: Store, player: ContractAddress, game_id: u32, level: u32, items_spawned: u32,
+    ) {
         self.world.emit_event(@LevelStarted { player, game_id, level, items_spawned });
     }
 
-    fn emit_item_picked_up(ref self: Store, player: ContractAddress, game_id: u32, item_id: u32, item_type: ItemType, level: u32) {
+    fn emit_item_picked_up(
+        ref self: Store,
+        player: ContractAddress,
+        game_id: u32,
+        item_id: u32,
+        item_type: ItemType,
+        level: u32,
+    ) {
         self.world.emit_event(@ItemPickedUp { player, game_id, item_id, item_type, level });
     }
 }
