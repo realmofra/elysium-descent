@@ -6,101 +6,45 @@
 
 #[cfg(test)]
 mod integration_tests {
-    use starknet::{ContractAddress, contract_address_const};
-    use dojo::world::{WorldStorage, WorldStorageTrait};
+    use starknet::testing::set_contract_address;
+    use dojo::world::WorldStorage;
     use dojo::model::{ModelStorage, ModelStorageTest};
-    use dojo_cairo_test::{
-        spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, ContractDef,
-        WorldStorageTestTrait,
+    use elysium_descent::systems::actions::IActionsDispatcherTrait;
+
+    // Use centralized setup instead of duplicating 40+ lines!
+    use elysium_descent::tests::setup::{
+        spawn, 
+        Player, Game, LevelItems, GameCounter, PlayerInventory, WorldItem
     };
-
-    use elysium_descent::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
-    use elysium_descent::systems::actions::{e_GameCreated, e_LevelStarted, e_ItemPickedUp};
-    use elysium_descent::models::player::{Player, m_Player};
-    use elysium_descent::models::game::{
-        Game, LevelItems, GameCounter, m_Game, m_LevelItems, m_GameCounter,
-    };
-    use elysium_descent::models::inventory::{PlayerInventory, m_PlayerInventory};
-    use elysium_descent::models::world_state::{WorldItem, m_WorldItem};
-
-    // Test constants
-    fn PLAYER() -> ContractAddress {
-        contract_address_const::<'PLAYER'>()
-    }
-
-    fn PLAYER2() -> ContractAddress {
-        contract_address_const::<'PLAYER2'>()
-    }
-
-    // Basic setup function for simple tests
-    fn setup_test_world() -> (WorldStorage, IActionsDispatcher) {
-        let namespace_def = NamespaceDef {
-            namespace: "elysium_001",
-            resources: [
-                TestResource::Model(m_Player::TEST_CLASS_HASH),
-                TestResource::Model(m_Game::TEST_CLASS_HASH),
-                TestResource::Model(m_LevelItems::TEST_CLASS_HASH),
-                TestResource::Model(m_GameCounter::TEST_CLASS_HASH),
-                TestResource::Model(m_PlayerInventory::TEST_CLASS_HASH),
-                TestResource::Model(m_WorldItem::TEST_CLASS_HASH),
-                TestResource::Event(e_GameCreated::TEST_CLASS_HASH),
-                TestResource::Event(e_LevelStarted::TEST_CLASS_HASH),
-                TestResource::Event(e_ItemPickedUp::TEST_CLASS_HASH),
-                TestResource::Contract(actions::TEST_CLASS_HASH),
-            ]
-                .span(),
-        };
-
-        let mut world = spawn_test_world([namespace_def].span());
-
-        // Sync permissions and initialize contracts using ContractDef
-        let contracts = setup_contract_definitions();
-        world.sync_perms_and_inits(contracts);
-
-        // Get system addresses using DNS
-        let (actions_address, _) = world.dns(@"actions").unwrap();
-        let actions = IActionsDispatcher { contract_address: actions_address };
-
-        (world, actions)
-    }
-
-    // Helper function that explicitly uses ContractDef type
-    fn setup_contract_definitions() -> Span<ContractDef> {
-        [
-            ContractDefTrait::new(@"elysium_001", @"actions")
-                .with_writer_of([dojo::utils::bytearray_hash(@"elysium_001")].span())
-        ]
-            .span()
-    }
 
     #[test]
     fn test_world_setup_works() {
-        // Basic test to ensure our test setup is working
-        let (world, actions) = setup_test_world();
+        // Use centralized setup - no duplication!
+        let (world, systems, context) = spawn();
 
         // Verify we can create a game
-        starknet::testing::set_contract_address(PLAYER());
-        let game_id = actions.create_game();
+        set_contract_address(context.player1);
+        let game_id = systems.actions.create_game();
 
         assert(game_id == 1, 'First game ID should be 1');
 
         // Verify game was created
         let game: Game = world.read_model(game_id);
-        assert(game.player == PLAYER(), 'Game player should match');
+        assert(game.player == context.player1, 'Game player should match');
     }
 
     #[test]
     fn test_multiple_players_isolated() {
-        // Test that multiple players can use the system independently
-        let (world, actions) = setup_test_world();
+        // Use centralized setup - clean and simple!
+        let (world, systems, context) = spawn();
 
         // Player 1 creates game
-        starknet::testing::set_contract_address(PLAYER());
-        let game_id_1 = actions.create_game();
+        set_contract_address(context.player1);
+        let game_id_1 = systems.actions.create_game();
 
         // Player 2 creates game
-        starknet::testing::set_contract_address(PLAYER2());
-        let game_id_2 = actions.create_game();
+        set_contract_address(context.player2);
+        let game_id_2 = systems.actions.create_game();
 
         // Verify games are independent
         assert(game_id_1 != game_id_2, 'Game IDs should be different');
@@ -108,15 +52,15 @@ mod integration_tests {
         let game_1: Game = world.read_model(game_id_1);
         let game_2: Game = world.read_model(game_id_2);
 
-        assert(game_1.player == PLAYER(), 'Game 1 belongs to player 1');
-        assert(game_2.player == PLAYER2(), 'Game 2 belongs to player 2');
+        assert(game_1.player == context.player1, 'Game 1 belongs to player 1');
+        assert(game_2.player == context.player2, 'Game 2 belongs to player 2');
 
         // Test additional models to use the imported types
-        test_additional_models(world);
+        test_additional_models(world, context.player1);
     }
 
     // Helper function to test additional model types that were imported
-    fn test_additional_models(mut world: WorldStorage) {
+    fn test_additional_models(mut world: WorldStorage, player: starknet::ContractAddress) {
         // Test GameCounter model usage using ModelStorageTest
         let counter = GameCounter { counter_id: 999999999, next_game_id: 3 };
         world.write_model_test(@counter);
@@ -140,7 +84,7 @@ mod integration_tests {
 
         // Test Player model explicitly
         let player_model = Player {
-            player: PLAYER(),
+            player,
             health: 80,
             max_health: 100,
             level: 2,
@@ -148,15 +92,15 @@ mod integration_tests {
             items_collected: 3,
         };
         world.write_model_test(@player_model);
-        let read_player: Player = world.read_model(PLAYER());
+        let read_player: Player = world.read_model(player);
         assert(read_player.level == 2, 'Player level should be 2');
 
         // Test PlayerInventory model
         let inventory = PlayerInventory {
-            player: PLAYER(), health_potions: 3, survival_kits: 1, books: 1, capacity: 15,
+            player, health_potions: 3, survival_kits: 1, books: 1, capacity: 15,
         };
         world.write_model_test(@inventory);
-        let read_inventory: PlayerInventory = world.read_model(PLAYER());
+        let read_inventory: PlayerInventory = world.read_model(player);
         assert(read_inventory.health_potions == 3, 'Inventory mismatch');
 
         // Test WorldItem model
