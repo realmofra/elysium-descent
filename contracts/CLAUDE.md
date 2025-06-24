@@ -316,36 +316,93 @@ TestResource::Contract(actions::TEST_CLASS_HASH),    // For contracts
 
 **❌ WRONG**: Never register events as models or vice versa - this causes "Resource is registered but not as event" errors.
 
-### Essential Test Imports
+### Test Organization Best Practices
 
-#### Required Core Imports
+#### Centralized Setup Pattern (Recommended)
+
+**CRITICAL**: Never duplicate test setup code. Use a centralized setup module that other tests import from.
+
 ```cairo
+// src/tests/setup.cairo - Centralized test infrastructure
+pub fn spawn() -> (WorldStorage, Systems, Context) {
+    // Complete namespace definition with all resources
+    // Contract permissions setup
+    // System dispatcher creation
+    // Test context with addresses
+}
+
+// Other test files - Use centralized setup
 #[cfg(test)]
 mod tests {
-    // Starknet testing utilities
-    use starknet::{ContractAddress, contract_address_const, testing::set_contract_address};
-    
-    // Dojo core testing framework
-    use dojo::world::{WorldStorage, WorldStorageTrait};
+    use starknet::testing::set_contract_address;
+    use dojo::world::WorldStorage;
     use dojo::model::{ModelStorage, ModelStorageTest};
-    use dojo_cairo_test::{
-        spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, WorldStorageTestTrait
+    use elysium_descent::systems::actions::IActionsDispatcherTrait;
+
+    // CORRECT: Use absolute Cairo imports, not Rust-style relative imports
+    use elysium_descent::tests::setup::{
+        spawn, 
+        Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem,
+        Store, StoreTrait
     };
-    
-    // Your project imports - Models (direct)
-    use elysium_descent::models::index::{Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem};
-    
-    // Your project imports - Model TEST_CLASS_HASH (with m_ prefix)
-    use elysium_descent::models::player::m_Player;
-    use elysium_descent::models::game::{m_Game, m_GameCounter, m_LevelItems};
-    use elysium_descent::models::inventory::m_PlayerInventory;
-    use elysium_descent::models::world_state::m_WorldItem;
-    
-    // Your project imports - Systems
-    use elysium_descent::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
-    
-    // Your project imports - Events (with e_ prefix)
-    use elysium_descent::systems::actions::{e_GameCreated, e_LevelStarted, e_ItemPickedUp};
+
+    #[test]
+    fn test_basic_operations() {
+        // One line setup - no duplication!
+        let (world, systems, context) = spawn();
+        
+        // Test logic using centralized infrastructure
+        set_contract_address(context.player1);
+        let game_id = systems.actions.create_game();
+        // ...
+    }
+}
+```
+
+#### Import Syntax Rules
+
+**CRITICAL**: Cairo uses absolute paths, not Rust-style relative imports.
+
+```cairo
+// ❌ WRONG - Rust-style relative imports (compilation error)
+use super::setup::{spawn, Systems, Context};
+use crate::models::Player;
+
+// ✅ CORRECT - Cairo absolute path imports
+use elysium_descent::tests::setup::{spawn, Systems, Context};
+use elysium_descent::models::index::Player;
+```
+
+#### Benefits of Centralized Setup
+
+1. **No Code Duplication**: Setup logic exists in one place only
+2. **Easy Maintenance**: Changes to namespace or resources need only one update
+3. **Consistent Testing**: All tests use identical, tested infrastructure
+4. **Clean Test Files**: Focus on test logic, not boilerplate setup
+5. **Import Reduction**: Fewer imports needed in each test file
+
+#### Test Organization Anti-Patterns
+
+```cairo
+// ❌ WRONG - Duplicating setup across test files
+#[test]
+fn test_something() {
+    let namespace_def = NamespaceDef {
+        namespace: "elysium_001",
+        resources: [
+            TestResource::Model(m_Player::TEST_CLASS_HASH),
+            // 20+ lines of identical setup...
+        ].span(),
+    };
+    let mut world = spawn_test_world([namespace_def].span());
+    // More duplicated setup...
+}
+
+// ✅ CORRECT - Use centralized setup
+#[test]
+fn test_something() {
+    let (world, systems, context) = spawn();
+    // Focus on test logic
 }
 ```
 
@@ -354,6 +411,7 @@ mod tests {
 2. **Test Hash Imports**: Import with prefixes for testing (`m_Player`, `e_GameCreated`, etc.)
 3. **Separate Event Imports**: Events require separate import lines with `e_` prefix
 4. **Contract Imports**: Import both the module and dispatcher trait
+5. **Absolute Paths**: Always use full project paths, never relative imports
 
 ### Namespace Definition Template
 
@@ -745,6 +803,17 @@ fn test_invalid_pickup() {
 ```
 
 **Key Pattern**: Cairo uses panic-based error handling with `assert()` - functions either succeed or panic, they rarely return boolean failure states.
+
+### Critical Lessons Learned
+
+#### Test Organization 
+- **NEVER duplicate setup code** across test files - use centralized `setup.cairo` module
+- **Use absolute imports**: `use elysium_descent::tests::setup::{spawn}` not `use super::setup::{spawn}`
+- **One line setup**: `let (world, systems, context) = spawn();` eliminates 40+ lines of boilerplate
+
+#### Cairo vs Rust Syntax
+- **Imports**: Cairo uses absolute paths only, never `super::`, `crate::`, or `self::`
+- **Module system**: Different from Rust - use project name as root, not `crate`
 
 #### 3. Type Conversion Safety
 ```cairo

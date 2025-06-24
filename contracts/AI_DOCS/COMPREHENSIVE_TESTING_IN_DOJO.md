@@ -168,7 +168,68 @@ fn setup_namespace() -> NamespaceDef {
 }
 ```
 
-### 2. Setup Module Pattern
+### 2. Centralized Setup Module Pattern (CRITICAL)
+
+**The #1 rule of Dojo testing**: Never duplicate setup code across test files. Use a centralized setup module that provides all test infrastructure.
+
+#### Why Centralized Setup is Essential
+
+**Problem**: Test files duplicating 40+ lines of identical setup code including:
+- Namespace definitions with resource registration  
+- Contract permissions setup
+- System dispatcher creation
+- Test context and helper functions
+
+**Solution**: Single setup module that all tests import from.
+
+#### Proper Cairo Import Syntax
+
+**CRITICAL**: Cairo uses absolute paths, not Rust-style relative imports.
+
+```cairo
+// ❌ WRONG - Rust-style relative imports (compilation error)
+use super::setup::{spawn, Systems, Context};
+use crate::models::Player;
+
+// ✅ CORRECT - Cairo absolute path imports  
+use elysium_descent::tests::setup::{spawn, Systems, Context};
+use elysium_descent::models::index::Player;
+```
+
+#### Test File Organization Anti-Patterns
+
+```cairo
+// ❌ WRONG - Duplicating setup across test files (30% wasted code)
+#[cfg(test)]
+mod tests {
+    // 40+ lines of duplicate namespace definition...
+    let namespace_def = NamespaceDef {
+        namespace: "elysium_001",
+        resources: [
+            TestResource::Model(m_Player::TEST_CLASS_HASH),
+            // ... 20+ more lines identical across files
+        ].span(),
+    };
+    
+    // 10+ lines of duplicate permissions setup...
+    // 5+ lines of duplicate dispatcher creation...
+}
+
+// ✅ CORRECT - Use centralized setup (clean, maintainable)
+#[cfg(test)]
+mod tests {
+    use elysium_descent::tests::setup::{spawn, Player, Game};
+    use elysium_descent::systems::actions::IActionsDispatcherTrait;
+    
+    #[test]
+    fn test_game_logic() {
+        let (world, systems, context) = spawn(); // One line setup!
+        // Focus on actual test logic
+    }
+}
+```
+
+#### Centralized Setup Implementation
 
 Every test suite should include a consistent setup module with modern Store pattern:
 
@@ -1365,11 +1426,13 @@ Before deploying, ensure your tests cover:
 This comprehensive guide provides the foundation for testing any Dojo application. Adapt the patterns and examples to fit your specific project needs, and always ensure your tests cover both successful operations and error conditions.
 
 **Key Insight**: The most critical testing issues in Dojo stem from:
-1. **Type overflow in poseidon hashing** - Always use modulo constraints
-2. **Misunderstanding Cairo error patterns** - Functions panic, they don't return false
-3. **Insufficient gas limits** - Complex tests need 6-30M gas
-4. **Incorrect resource registration** - Events vs Models must be registered correctly
-5. **Cairo commenting syntax violations** - Inline comments on attributes cause compilation errors
+1. **Code duplication across test files** - Use centralized setup modules to eliminate repetition
+2. **Incorrect Cairo import syntax** - Use absolute paths, never relative imports like `super::`
+3. **Type overflow in poseidon hashing** - Always use modulo constraints
+4. **Misunderstanding Cairo error patterns** - Functions panic, they don't return false
+5. **Insufficient gas limits** - Complex tests need 6-30M gas
+6. **Incorrect resource registration** - Events vs Models must be registered correctly
+7. **Cairo commenting syntax violations** - Inline comments on attributes cause compilation errors
 
 ## Cairo Testing Documentation Checklist
 
@@ -1383,6 +1446,8 @@ Before finalizing any test module, ensure compliance with Cairo documentation st
 - [ ] **Consistent formatting** following Cairo book documentation guidelines
 
 ### ✅ Test Structure Requirements
+- [ ] **Centralized setup usage** - Import from setup module, never duplicate namespace definitions
+- [ ] **Absolute Cairo imports** - Use `elysium_descent::tests::setup`, never `super::setup`
 - [ ] **Clear test categorization** (unit, integration, error handling, performance)
 - [ ] **Comprehensive error testing** using `#[should_panic(expected: 'message')]`
 - [ ] **Proper resource registration** (Events vs Models correctly identified)

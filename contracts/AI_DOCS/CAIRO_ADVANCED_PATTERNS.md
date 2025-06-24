@@ -562,6 +562,80 @@ fn bounded_search<T, +PartialEq<T>>(
 }
 ```
 
+## 9. Cairo Module System and Import Patterns
+
+### Absolute Path Import Rules
+
+Cairo uses absolute module paths, not Rust-style relative imports:
+
+```cairo
+// ❌ WRONG - Rust-style relative imports (compilation error)
+use super::utils::{Helper, validate};
+use crate::models::Player;
+use self::config::Settings;
+
+// ✅ CORRECT - Cairo absolute path imports
+use my_project::utils::{Helper, validate};
+use my_project::models::Player;
+use my_project::config::Settings;
+```
+
+### Module Organization Patterns
+
+```cairo
+// Proper module declaration
+pub mod utils {
+    pub mod math;
+    pub mod validation;
+    pub mod formatting;
+}
+
+// Re-exports for convenience
+pub use utils::math::{add, multiply};
+pub use utils::validation::validate_input;
+```
+
+### Import Grouping and Organization
+
+```cairo
+// Group imports logically
+mod my_module {
+    // Standard library imports first
+    use starknet::{ContractAddress, get_caller_address};
+    
+    // External crate imports second
+    use dojo::world::{WorldStorage, WorldStorageTrait};
+    use dojo::model::ModelStorage;
+    
+    // Local project imports third
+    use my_project::models::{Player, Game};
+    use my_project::utils::validation;
+    use my_project::types::item_types::ItemType;
+    
+    // Implementation code follows...
+}
+```
+
+### Testing Import Patterns
+
+```cairo
+#[cfg(test)]
+mod tests {
+    // Test framework imports
+    use starknet::testing::set_contract_address;
+    use dojo_cairo_test::{spawn_test_world, NamespaceDef};
+    
+    // Centralized test infrastructure (absolute path required)
+    use my_project::tests::setup::{
+        spawn, Systems, Context, 
+        Player, Game, Store, StoreTrait
+    };
+    
+    // System trait imports for method access
+    use my_project::systems::actions::IActionsDispatcherTrait;
+}
+```
+
 ## Key Cairo Architectural Principles
 
 1. **Trait Composition Over Inheritance**: Use traits and composition instead of hierarchical structures
@@ -571,5 +645,6 @@ fn bounded_search<T, +PartialEq<T>>(
 5. **Robust Error Handling**: Combine assertions for invariants with Result types for recoverable errors
 6. **Documentation as Code**: Write documentation that compiles and serves as executable examples
 7. **Generic Programming**: Use generics and trait bounds for reusable, type-safe code
+8. **Absolute Import Paths**: Always use full project paths, never relative imports like `super::` or `crate::`
 
 This pattern collection provides a foundation for writing sophisticated, efficient, and maintainable Cairo code that leverages the language's unique features and constraints.
