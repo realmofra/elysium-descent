@@ -16,6 +16,9 @@ mod comprehensive_tests {
     // Test constants - use centralized setup functions
     use elysium_descent::tests::setup::{PLAYER1, PLAYER2, ADMIN};
 
+    // Store pattern for semantic model access
+    use elysium_descent::helpers::store::{Store, StoreTrait};
+
     // Setup function - delegates to centralized setup
     fn setup_comprehensive_world() -> (WorldStorage, IActionsDispatcher) {
         elysium_descent::tests::setup::setup_comprehensive_world()
@@ -33,15 +36,18 @@ mod comprehensive_tests {
         let game_id = actions.create_game();
         assert(game_id == 1, 'Game ID wrong');
 
+        // Use Store pattern for semantic model access
+        let store: Store = StoreTrait::new(world);
+
         // Verify game state
-        let game: Game = world.read_model(game_id);
+        let game: Game = store.get_game(game_id);
         assert(game.player == PLAYER1(), 'Game player wrong');
         assert(game.status == GameStatus::InProgress, 'Game status wrong');
         assert(game.current_level == 0, 'Initial level wrong');
         assert(game.score == 0, 'Initial score wrong');
 
         // Verify player initialization
-        let player: Player = world.read_model(PLAYER1());
+        let player: Player = store.get_player(PLAYER1());
         assert(player.health == 100, 'Initial health wrong');
         assert(player.max_health == 100, 'Max health wrong');
         assert(player.level == 1, 'Player level wrong');
@@ -49,7 +55,7 @@ mod comprehensive_tests {
         assert(player.items_collected == 0, 'Items count wrong');
 
         // Verify inventory initialization
-        let inventory: PlayerInventory = world.read_model(PLAYER1());
+        let inventory: PlayerInventory = store.get_player_inventory(PLAYER1());
         assert(inventory.health_potions == 0, 'Health potions wrong');
         assert(inventory.survival_kits == 0, 'Survival kits wrong');
         assert(inventory.books == 0, 'Books wrong');
@@ -59,16 +65,16 @@ mod comprehensive_tests {
         actions.start_level(game_id, 1);
 
         // Verify level started
-        let updated_game: Game = world.read_model(game_id);
+        let updated_game: Game = store.get_game(game_id);
         assert(updated_game.current_level == 1, 'Level not updated');
 
-        // Verify level items created
-        let level_items: LevelItems = world.read_model((game_id, 1_u32));
+        // Verify level items created with proper spawn calculations
+        let level_items: LevelItems = store.get_level_items(game_id, 1);
         assert(level_items.game_id == game_id, 'Level game ID wrong');
         assert(level_items.level == 1, 'Level wrong');
-        assert(level_items.total_health_potions == 4, 'Health potions wrong'); // 3 + 1
-        assert(level_items.total_survival_kits == 1, 'Survival kits wrong'); // (1+1)/2 = 1
-        assert(level_items.total_books == 0, 'Books wrong'); // 1/3 = 0
+        assert(level_items.total_health_potions == 4, 'Health potions wrong');
+        assert(level_items.total_survival_kits == 1, 'Survival kits wrong');
+        assert(level_items.total_books == 0, 'Books wrong');
 
         // Test 3: Item Collection - collect some items
         let mut collected_items: u32 = 0;
@@ -89,8 +95,8 @@ mod comprehensive_tests {
         };
 
         // Verify that we collected at least one item (if items were generated)
-        let updated_player: Player = world.read_model(PLAYER1());
-        let updated_inventory: PlayerInventory = world.read_model(PLAYER1());
+        let updated_player: Player = store.get_player(PLAYER1());
+        let updated_inventory: PlayerInventory = store.get_player_inventory(PLAYER1());
 
         if collected_items > 0 {
             assert(updated_player.items_collected > 0, 'Items not collected');
@@ -106,37 +112,38 @@ mod comprehensive_tests {
     #[available_gas(100000000)]
     fn test_level_progression_mechanics() {
         let (world, actions) = setup_comprehensive_world();
+        let store: Store = StoreTrait::new(world);
 
         set_contract_address(PLAYER1());
         let game_id = actions.create_game();
 
         // Test level 1 calculations
         actions.start_level(game_id, 1);
-        let level1_items: LevelItems = world.read_model((game_id, 1_u32));
-        assert(level1_items.total_health_potions == 4, 'L1 potions wrong'); // 3 + 1
-        assert(level1_items.total_survival_kits == 1, 'L1 kits wrong'); // (1+1)/2
-        assert(level1_items.total_books == 0, 'L1 books wrong'); // 1/3 = 0
+        let level1_items: LevelItems = store.get_level_items(game_id, 1);
+        assert(level1_items.total_health_potions == 4, 'L1 potions wrong');
+        assert(level1_items.total_survival_kits == 1, 'L1 kits wrong');
+        assert(level1_items.total_books == 0, 'L1 books wrong');
 
         // Test level 3 calculations
         actions.start_level(game_id, 3);
-        let level3_items: LevelItems = world.read_model((game_id, 3_u32));
-        assert(level3_items.total_health_potions == 6, 'L3 potions wrong'); // 3 + 3
-        assert(level3_items.total_survival_kits == 2, 'L3 kits wrong'); // (3+1)/2 = 2
-        assert(level3_items.total_books == 1, 'L3 books wrong'); // 3/3 = 1
+        let level3_items: LevelItems = store.get_level_items(game_id, 3);
+        assert(level3_items.total_health_potions == 6, 'L3 potions wrong');
+        assert(level3_items.total_survival_kits == 2, 'L3 kits wrong');
+        assert(level3_items.total_books == 1, 'L3 books wrong');
 
         // Test level 6 calculations
         actions.start_level(game_id, 6);
-        let level6_items: LevelItems = world.read_model((game_id, 6_u32));
-        assert(level6_items.total_health_potions == 9, 'L6 potions wrong'); // 3 + 6
-        assert(level6_items.total_survival_kits == 3, 'L6 kits wrong'); // (6+1)/2 = 3
-        assert(level6_items.total_books == 2, 'L6 books wrong'); // 6/3 = 2
+        let level6_items: LevelItems = store.get_level_items(game_id, 6);
+        assert(level6_items.total_health_potions == 9, 'L6 potions wrong');
+        assert(level6_items.total_survival_kits == 3, 'L6 kits wrong');
+        assert(level6_items.total_books == 2, 'L6 books wrong');
 
         // Test maximum limits
         actions.start_level(game_id, 15);
-        let level15_items: LevelItems = world.read_model((game_id, 15_u32));
-        assert(level15_items.total_health_potions == 10, 'Max potions wrong'); // Max limit
-        assert(level15_items.total_survival_kits == 3, 'Max kits wrong'); // Max limit
-        assert(level15_items.total_books == 2, 'Max books wrong'); // Max limit
+        let level15_items: LevelItems = store.get_level_items(game_id, 15);
+        assert(level15_items.total_health_potions == 10, 'Max potions wrong');
+        assert(level15_items.total_survival_kits == 3, 'Max kits wrong');
+        assert(level15_items.total_books == 2, 'Max books wrong');
     }
 
 
@@ -257,8 +264,9 @@ mod comprehensive_tests {
         // Player 2 tries to start a level in Player 1's game (should fail)
         set_contract_address(PLAYER2());
 
-        // Verify the game state
-        let game: Game = world.read_model(game_id);
+        // Use Store pattern for game state verification
+        let store: Store = StoreTrait::new(world);
+        let game: Game = store.get_game(game_id);
         assert(game.player == PLAYER1(), 'Game owner wrong');
         assert(game.player != PLAYER2(), 'Wrong player access');
 
@@ -266,7 +274,7 @@ mod comprehensive_tests {
         let player2_game_id = actions.create_game();
         assert(player2_game_id == 2, 'Game ID wrong');
 
-        let player2_game: Game = world.read_model(player2_game_id);
+        let player2_game: Game = store.get_game(player2_game_id);
         assert(player2_game.player == PLAYER2(), 'Game 2 owner wrong');
     }
 
@@ -296,8 +304,7 @@ mod comprehensive_tests {
 
         let unchanged_inventory = actions.get_player_inventory(PLAYER1());
         assert(unchanged_inventory.health_potions == 0, 'Inventory should be unchanged');
-        // Test framework validates that the pickup validation system exists
-    // (actual invalid pickup tests would need to be done with should_panic attribute)
+        // Validation framework exists - specific invalid pickup tests require should_panic attribute
     }
 
     #[test]
@@ -315,11 +322,14 @@ mod comprehensive_tests {
         let game2_id = actions.create_game();
         actions.start_level(game2_id, 2);
 
+        // Use Store pattern for multi-player verification
+        let store: Store = StoreTrait::new(world);
+        
         // Verify games are separate
         assert(game1_id != game2_id, 'Games not separate');
 
-        let game1: Game = world.read_model(game1_id);
-        let game2: Game = world.read_model(game2_id);
+        let game1: Game = store.get_game(game1_id);
+        let game2: Game = store.get_game(game2_id);
 
         assert(game1.player == PLAYER1(), 'Game 1 owner wrong');
         assert(game2.player == PLAYER2(), 'Game 2 owner wrong');
@@ -327,22 +337,22 @@ mod comprehensive_tests {
         assert(game2.current_level == 2, 'Game 2 level wrong');
 
         // Verify player stats are separate
-        let player1_stats: Player = world.read_model(PLAYER1());
-        let player2_stats: Player = world.read_model(PLAYER2());
+        let player1_stats: Player = store.get_player(PLAYER1());
+        let player2_stats: Player = store.get_player(PLAYER2());
 
         assert(player1_stats.player == PLAYER1(), 'P1 stats wrong');
         assert(player2_stats.player == PLAYER2(), 'P2 stats wrong');
 
         // Verify inventories are separate
-        let player1_inventory: PlayerInventory = world.read_model(PLAYER1());
-        let player2_inventory: PlayerInventory = world.read_model(PLAYER2());
+        let player1_inventory: PlayerInventory = store.get_player_inventory(PLAYER1());
+        let player2_inventory: PlayerInventory = store.get_player_inventory(PLAYER2());
 
         assert(player1_inventory.player == PLAYER1(), 'P1 inventory wrong');
         assert(player2_inventory.player == PLAYER2(), 'P2 inventory wrong');
 
         // Verify level items are separate
-        let level1_items: LevelItems = world.read_model((game1_id, 1_u32));
-        let level2_items: LevelItems = world.read_model((game2_id, 2_u32));
+        let level1_items: LevelItems = store.get_level_items(game1_id, 1);
+        let level2_items: LevelItems = store.get_level_items(game2_id, 2);
 
         assert(level1_items.game_id == game1_id, 'L1 items wrong game');
         assert(level2_items.game_id == game2_id, 'L2 items wrong game');
@@ -354,20 +364,21 @@ mod comprehensive_tests {
     #[available_gas(60000000)]
     fn test_edge_cases_and_boundary_conditions() {
         let (world, actions) = setup_comprehensive_world();
+        let store: Store = StoreTrait::new(world);
 
         set_contract_address(PLAYER1());
         let game_id = actions.create_game();
 
         // Test starting level 0 (edge case)
         actions.start_level(game_id, 0);
-        let level0_items: LevelItems = world.read_model((game_id, 0_u32));
-        assert(level0_items.total_health_potions == 3, 'L0 potions wrong'); // 3 + 0
-        assert(level0_items.total_survival_kits == 0, 'L0 kits wrong'); // (0+1)/2 = 0
-        assert(level0_items.total_books == 0, 'L0 books wrong'); // 0/3 = 0
+        let level0_items: LevelItems = store.get_level_items(game_id, 0);
+        assert(level0_items.total_health_potions == 3, 'L0 potions wrong');
+        assert(level0_items.total_survival_kits == 0, 'L0 kits wrong');
+        assert(level0_items.total_books == 0, 'L0 books wrong');
 
         // Test very high level (boundary test)
         actions.start_level(game_id, 100);
-        let level100_items: LevelItems = world.read_model((game_id, 100_u32));
+        let level100_items: LevelItems = store.get_level_items(game_id, 100);
         assert(level100_items.total_health_potions == 10, 'L100 max potions wrong');
         assert(level100_items.total_survival_kits == 3, 'L100 max kits wrong');
         assert(level100_items.total_books == 2, 'L100 max books wrong');

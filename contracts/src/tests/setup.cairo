@@ -24,7 +24,7 @@ use elysium_descent::models::world_state::m_WorldItem;
 /// Type imports
 pub use elysium_descent::types::game_types::GameStatus;
 
-/// Test address constants - make these proper public functions
+/// Test contract addresses for consistent player identification across tests
 pub fn OWNER() -> ContractAddress {
     contract_address_const::<'OWNER'>()
 }
@@ -90,26 +90,16 @@ fn setup_contracts() -> Span<ContractDef> {
         .span()
 }
 
-/// Main spawn function that initializes the test world
+/// Initializes complete test world with all contracts, models, and permissions configured
 #[inline]
 pub fn spawn() -> (WorldStorage, Systems, Context) {
-    // Set the caller to OWNER for world setup
     set_contract_address(OWNER());
-
-    // Create test world with namespace
     let namespace_def = setup_namespace();
     let mut world = spawn_test_world([namespace_def].span());
-
-    // Sync permissions and initialize contracts
     world.sync_perms_and_inits(setup_contracts());
 
-    // Get system addresses using DNS
     let (actions_address, _) = world.dns(@"actions").unwrap();
-
-    // Create Systems dispatcher
     let systems = Systems { actions: IActionsDispatcher { contract_address: actions_address } };
-
-    // Create test context
     let context = Context {
         player1: PLAYER1(), player2: PLAYER2(), admin: ADMIN(), owner: OWNER(),
     };
@@ -124,19 +114,19 @@ pub fn setup_comprehensive_world() -> (WorldStorage, IActionsDispatcher) {
     (world, systems.actions)
 }
 
-/// Helper function to create a game for testing
+/// Creates a game instance for the specified player with proper caller context
 pub fn create_test_game(systems: Systems, player: ContractAddress) -> u32 {
     set_contract_address(player);
     systems.actions.create_game()
 }
 
-// Helper function to start a level for testing
+/// Starts a specific level within an existing game for the given player
 pub fn start_test_level(systems: Systems, player: ContractAddress, game_id: u32, level: u32) {
     set_contract_address(player);
     systems.actions.start_level(game_id, level);
 }
 
-// Helper function to clear events from contract
+/// Clears all pending events from the specified contract address for clean event testing
 pub fn clear_events(address: ContractAddress) {
     loop {
         match starknet::testing::pop_log_raw(address) {
@@ -146,28 +136,25 @@ pub fn clear_events(address: ContractAddress) {
     }
 }
 
-// Helper function to get test timestamp
+/// Returns deterministic timestamp (1000) for reproducible time-dependent test behavior
 pub fn get_test_timestamp() -> u64 {
-    // Fixed timestamp for consistent testing
     1000_u64
 }
 
-/// Modern Store pattern - cleaner than repetitive helper functions
+/// Store pattern implementation for semantic model access in tests
 pub use elysium_descent::helpers::store::{Store, StoreTrait};
 
-/// Test Store pattern usage
+/// Demonstrates Store pattern usage for retrieving player and inventory data
 pub fn test_store_pattern(
     world: WorldStorage, player: ContractAddress,
 ) -> (Player, PlayerInventory) {
-    // Explicitly use Store type
     let store: Store = StoreTrait::new(world);
     let player_data = store.get_player(player);
     let inventory = store.get_player_inventory(player);
     (player_data, inventory)
 }
 
-/// Helper that explicitly uses ModelStorage
+/// Direct model access using ModelStorage trait for edge cases not covered by Store
 pub fn direct_model_access(world: WorldStorage, player: ContractAddress) -> Player {
-    // This uses ModelStorage trait
     world.read_model(player)
 }
