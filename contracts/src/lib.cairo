@@ -27,8 +27,8 @@ pub mod types {
 
 #[cfg(test)]
 mod tests {
-    mod test_world;
-    mod test_simple;
-    mod test_comprehensive;
+    mod world;
+    mod simple;
+    mod comprehensive;
     mod setup;
 }
