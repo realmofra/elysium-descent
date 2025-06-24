@@ -44,7 +44,7 @@ fn update_tab_colors(current: SettingsTab, mut query: Query<(&TabLabel, &mut UiC
             (if label.0 == current {
                 Color::WHITE
             } else {
-                Color::ELYSIUM_DESCENT_RED
+                Color::ELYSIUM_DESCENT_YELLOW
             })
             .into(),
         );
@@ -293,8 +293,8 @@ impl SettingsScene {
                             Sprite::from_image(ui_assets.chevron_left.clone()),
                             UiHover::new().instant(true),
                             UiColor::new(vec![
-                                (UiBase::id(), Color::ELYSIUM_DESCENT_RED),
-                                (UiHover::id(), Color::ELYSIUM_DESCENT_BLUE.with_alpha(1.2)),
+                                (UiBase::id(), Color::ELYSIUM_DESCENT_YELLOW),
+                                (UiHover::id(), Color::ELYSIUM_DESCENT_YELLOW.with_alpha(1.2)),
                             ]),
                         ))
                         .observe(hover_set::<Pointer<Over>, true>)
@@ -311,8 +311,8 @@ impl SettingsScene {
                             Sprite::from_image(ui_assets.chevron_right.clone()),
                             UiHover::new().instant(true),
                             UiColor::new(vec![
-                                (UiBase::id(), Color::ELYSIUM_DESCENT_RED),
-                                (UiHover::id(), Color::ELYSIUM_DESCENT_BLUE.with_alpha(1.2)),
+                                (UiBase::id(), Color::ELYSIUM_DESCENT_YELLOW),
+                                (UiHover::id(), Color::ELYSIUM_DESCENT_YELLOW.with_alpha(1.2)),
                             ]),
                         ))
                         .observe(hover_set::<Pointer<Over>, true>)
@@ -361,11 +361,11 @@ impl SettingsScene {
                                             UiColor::new(vec![
                                                 (
                                                     UiBase::id(),
-                                                    Color::ELYSIUM_DESCENT_RED.with_alpha(0.0),
+                                                    Color::ELYSIUM_DESCENT_YELLOW.with_alpha(0.0),
                                                 ),
                                                 (
                                                     UiHover::id(),
-                                                    Color::ELYSIUM_DESCENT_RED.with_alpha(0.4),
+                                                    Color::ELYSIUM_DESCENT_YELLOW.with_alpha(0.4),
                                                 ),
                                             ]),
                                             Sprite {
@@ -389,10 +389,13 @@ impl SettingsScene {
                                                         .anchor(Anchor::Center)
                                                         .pack(),
                                                     UiColor::new(vec![
-                                                        (UiBase::id(), Color::ELYSIUM_DESCENT_RED),
+                                                        (
+                                                            UiBase::id(),
+                                                            Color::ELYSIUM_DESCENT_YELLOW,
+                                                        ),
                                                         (
                                                             UiHover::id(),
-                                                            Color::ELYSIUM_DESCENT_BLUE
+                                                            Color::ELYSIUM_DESCENT_YELLOW
                                                                 .with_alpha(1.2),
                                                         ),
                                                     ]),

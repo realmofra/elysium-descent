@@ -1,9 +1,13 @@
-use bevy::prelude::*;
-use bevy::ecs::system::IntoObserverSystem;
-use bevy::ecs::relationship::{RelatedSpawnerCommands, Relationship};
 use crate::ui::styles::ElysiumDescentColorPalette;
+use bevy::ecs::relationship::{RelatedSpawnerCommands, Relationship};
+use bevy::ecs::system::IntoObserverSystem;
+use bevy::prelude::*;
 
-fn label_widget(window_height: f32, font: Handle<Font>, text: impl Into<String> + Clone) -> impl Bundle {
+fn label_widget(
+    window_height: f32,
+    font: Handle<Font>,
+    text: impl Into<String> + Clone,
+) -> impl Bundle {
     (
         Node {
             width: Val::Percent(50.0),
@@ -14,21 +18,23 @@ fn label_widget(window_height: f32, font: Handle<Font>, text: impl Into<String> 
         },
         Name::new(text.clone().into()),
         Pickable::IGNORE,
-        children![
-            (
-                Text::new(text.into()),
-                TextFont {
-                    font_size: window_height * 0.04,
-                    font,
-                    ..default()
-                },
-                TextColor::WHITE,
-            )
-        ],
+        children![(
+            Text::new(text.into()),
+            TextFont {
+                font_size: window_height * 0.04,
+                font,
+                ..default()
+            },
+            TextColor::WHITE,
+        )],
     )
 }
 
-fn volume_display_widget(window_height: f32, font: Handle<Font>, text: impl Into<String> + Clone) -> impl Bundle {
+fn volume_display_widget(
+    window_height: f32,
+    font: Handle<Font>,
+    text: impl Into<String> + Clone,
+) -> impl Bundle {
     (
         Node {
             width: Val::Percent(8.0),
@@ -39,24 +45,26 @@ fn volume_display_widget(window_height: f32, font: Handle<Font>, text: impl Into
             ..default()
         },
         Name::new(text.clone().into()),
-        BorderColor(Color::ELYSIUM_DESCENT_BLUE),
+        BorderColor(Color::ELYSIUM_DESCENT_YELLOW),
         Pickable::IGNORE,
         BorderRadius::MAX,
-        children![
-            (
-                Text::new(text.into()),
-                TextFont {
-                    font_size: window_height * 0.03,
-                    font,
-                    ..default()
-                },
-                TextColor::WHITE,
-            )
-        ],
+        children![(
+            Text::new(text.into()),
+            TextFont {
+                font_size: window_height * 0.03,
+                font,
+                ..default()
+            },
+            TextColor::WHITE,
+        )],
     )
 }
 
-fn button_widget(window_height: f32, font: Handle<Font>, text: impl Into<String> + Clone) -> impl Bundle {
+fn button_widget(
+    window_height: f32,
+    font: Handle<Font>,
+    text: impl Into<String> + Clone,
+) -> impl Bundle {
     (
         Node {
             width: Val::Percent(6.0),
@@ -68,27 +76,25 @@ fn button_widget(window_height: f32, font: Handle<Font>, text: impl Into<String>
         },
         Button,
         Name::new(text.clone().into()),
-        BackgroundColor(Color::ELYSIUM_DESCENT_RED),
+        BackgroundColor(Color::ELYSIUM_DESCENT_YELLOW),
         BorderColor(Color::BLACK),
         BorderRadius::MAX,
-        children![
-            (
-                Text::new(text.into()),
-                TextFont {
-                    font_size: window_height * 0.05,
-                    font,
-                    ..default()
-                },
-                TextColor(Color::BLACK),
-            )
-        ],
+        children![(
+            Text::new(text.into()),
+            TextFont {
+                font_size: window_height * 0.05,
+                font,
+                ..default()
+            },
+            TextColor(Color::BLACK),
+        )],
     )
 }
 
 pub(crate) fn volume_widget<R, E, B, M, IL, IR>(
-    parent: &mut RelatedSpawnerCommands<'_, R>, 
-    window_height: f32, 
-    font: Handle<Font>, 
+    parent: &mut RelatedSpawnerCommands<'_, R>,
+    window_height: f32,
+    font: Handle<Font>,
     text: impl Into<String> + Clone,
     volume_value: impl Into<String> + Clone,
     top: f32,
@@ -102,62 +108,43 @@ where
     IL: IntoObserverSystem<E, B, M>,
     IR: IntoObserverSystem<E, B, M>,
 {
-
-    parent.spawn((
-        Node {
-            position_type: PositionType::Absolute,
-            width: Val::Percent(100.0),
-            height: Val::Percent(40.0),
-            top: Val::Percent(top),
-            ..default()
-        },
-        Name::new("Sound settings row"),
-        Pickable::IGNORE,
-    )).with_children(|content| {
-        content.spawn(
-            label_widget(
-                window_height,
-                font.clone(), 
-                text
-            )
-        );
-
-        content.spawn(
-            button_widget(
-                window_height,
-                font.clone(), 
-                "-"
-            )
-        ).observe(lower_volume_system);
-
-        content.spawn((
+    parent
+        .spawn((
             Node {
-                margin: UiRect::all(Val::Percent(0.5)),
+                position_type: PositionType::Absolute,
+                width: Val::Percent(100.0),
+                height: Val::Percent(40.0),
+                top: Val::Percent(top),
                 ..default()
             },
-        ));
+            Name::new("Sound settings row"),
+            Pickable::IGNORE,
+        ))
+        .with_children(|content| {
+            content.spawn(label_widget(window_height, font.clone(), text));
 
-        content.spawn((
-            volume_display_widget(
-                window_height,
-                font.clone(), 
-                volume_value
-            ),
-        ));
+            content
+                .spawn(button_widget(window_height, font.clone(), "-"))
+                .observe(lower_volume_system);
 
-        content.spawn((
-            Node {
+            content.spawn((Node {
                 margin: UiRect::all(Val::Percent(0.5)),
                 ..default()
-            },
-        ));
+            },));
 
-        content.spawn(
-            button_widget(
+            content.spawn((volume_display_widget(
                 window_height,
-                font.clone(), 
-                "+"
-            )
-        ).observe(raise_volume_system);
-    });
+                font.clone(),
+                volume_value,
+            ),));
+
+            content.spawn((Node {
+                margin: UiRect::all(Val::Percent(0.5)),
+                ..default()
+            },));
+
+            content
+                .spawn(button_widget(window_height, font.clone(), "+"))
+                .observe(raise_volume_system);
+        });
 }

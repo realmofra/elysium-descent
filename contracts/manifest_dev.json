@@ -1328,8 +1328,8 @@
   },
   "contracts": [
     {
-      "address": "0x3b157fb321cd8a0edfcfd47ea1217396bd6c5b534d2766345938eeb78a9d3ec",
-      "class_hash": "0x7d3b3e5ee2658425aca43ffd68ac77c341d644735ff85347f6346bf42fe8e12",
+      "address": "0x5489260d929b819c765d4f62c55cf34e929a39595e2cba39d416a2e79215d87",
+      "class_hash": "0x573fd949e2184557f7c1d6f9c932ba90fe707a8f9e26e80a0a2e7b47a4626b",
       "abi": [
         {
           "type": "impl",
@@ -1729,7 +1729,7 @@
   "models": [
     {
       "members": [],
-      "class_hash": "0x5b7c9af13102e1b8180fb398a1bad97ae3e3f83c95cf25e3e01ccde2f5d97df",
+      "class_hash": "0x22cfa33913f5b3979b5e3544d31e78513fe1d5470f97091fda97dcd8657e7e7",
       "tag": "elysium_001-Game",
       "selector": "0xa987b32e111bf403d49258d1d30dfa5b57a06bc29533a0d202663fac1751a7"
     },
@@ -1759,7 +1759,7 @@
     },
     {
       "members": [],
-      "class_hash": "0x28008e7a69a22693ffd84fa3ceacbe6c13944f83e61e4a60d1df65a85f457ec",
+      "class_hash": "0x23a79f6df363c3f2b3d8b81bab1cbd25e515ce3161b71c76079fa37edfb16b1",
       "tag": "elysium_001-WorldItem",
       "selector": "0x31a6bead5e4e4e91a28bcd367c9e04b6b275f408ec2af3ef74fae35add235ef"
     }
@@ -1773,7 +1773,7 @@
     },
     {
       "members": [],
-      "class_hash": "0x615c7f701345a948c02dd6e274a54e8fb8df5d19d4429fe8c7258157129698a",
+      "class_hash": "0x4e084bee8d0bece754bea38a380c26be596cf580de0d45bb8cd504c80c65007",
       "tag": "elysium_001-ItemPickedUp",
       "selector": "0x596fa771166fd5f4dfec561ed98b878f7518675926c61a86d8671dd1a86243b"
     },

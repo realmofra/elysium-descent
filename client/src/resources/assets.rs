@@ -64,10 +64,10 @@ pub struct AudioAssets {
 // Font Assets
 #[derive(AssetCollection, Resource)]
 pub struct FontAssets {
-    #[asset(path = "fonts/rajdhani/Rajdhani-Bold.ttf")]
+    #[asset(path = "fonts/GoudyTrajan-Regular.otf")]
     pub rajdhani_bold: Handle<Font>,
 
-    #[asset(path = "fonts/rajdhani/Rajdhani-Medium.ttf")]
+    #[asset(path = "fonts/GoudyTrajan-Regular.otf")]
     pub rajdhani_medium: Handle<Font>,
 }
 
@@ -86,7 +86,6 @@ pub struct ModelAssets {
     #[asset(path = "models/environment.glb#Scene0")]
     pub environment: Handle<Scene>,
 }
-
 
 // Movie/Video Assets
 // #[derive(AssetCollection, Resource)]

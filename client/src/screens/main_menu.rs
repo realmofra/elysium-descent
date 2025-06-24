@@ -14,7 +14,9 @@ pub fn plugin(app: &mut App) {
 struct MainMenuScene;
 
 /// Reset the UI camera to its proper state when entering main menu
-fn reset_ui_camera(mut ui_cameras: Query<&mut Transform, (With<Camera2d>, With<bevy_lunex::UiSourceCamera<0>>)>) {
+fn reset_ui_camera(
+    mut ui_cameras: Query<&mut Transform, (With<Camera2d>, With<bevy_lunex::UiSourceCamera<0>>)>,
+) {
     if let Ok(mut camera_transform) = ui_cameras.single_mut() {
         // Reset to the proper UI camera position
         *camera_transform = Transform::from_translation(Vec3::new(0.0, 0.0, 1000.0));
@@ -67,7 +69,7 @@ fn spawn(mut commands: Commands, ui_assets: Res<UiAssets>, font_assets: Res<Font
                             // Spawn the logo
                             ui.spawn((
                                 Name::new("Logo"),
-                                UiLayout::solid().size((1240.0, 381.0)).pack(),
+                                UiLayout::solid().size((620.0, 190.5)).pack(),
                                 Sprite::from_image(ui_assets.title.clone()),
                             ));
                         });
@@ -100,7 +102,7 @@ fn spawn(mut commands: Commands, ui_assets: Res<UiAssets>, font_assets: Res<Font
                                     UiHover::new().forward_speed(20.0).backward_speed(4.0),
                                     // You can specify colors for multiple states
                                     UiColor::new(vec![
-                                        (UiBase::id(), Color::ELYSIUM_DESCENT_RED.with_alpha(0.15)),
+                                        (UiBase::id(), Color::ELYSIUM_DESCENT_YELLOW.with_alpha(1.2)),
                                         (UiHover::id(), Color::ELYSIUM_DESCENT_YELLOW.with_alpha(1.2))
                                     ]),
                                     Sprite {
@@ -118,7 +120,7 @@ fn spawn(mut commands: Commands, ui_assets: Res<UiAssets>, font_assets: Res<Font
                                         // For text always use window layout to position it
                                         UiLayout::window().pos((Rh(40.0), Rl(50.0))).anchor(Anchor::CenterLeft).pack(),
                                         UiColor::new(vec![
-                                            (UiBase::id(), Color::ELYSIUM_DESCENT_RED),
+                                            (UiBase::id(), Color::ELYSIUM_DESCENT_YELLOW),
                                             (UiHover::id(), Color::ELYSIUM_DESCENT_YELLOW.with_alpha(1.2))
                                         ]),
                                         UiHover::new().forward_speed(20.0).backward_speed(4.0),
@@ -140,7 +142,7 @@ fn spawn(mut commands: Commands, ui_assets: Res<UiAssets>, font_assets: Res<Font
                                         // For text always use window layout to position it
                                         UiLayout::window().pos(Rl((90.0, 50.0))).anchor(Anchor::CenterRight).pack(),
                                         UiColor::new(vec![
-                                            (UiBase::id(), Color::ELYSIUM_DESCENT_BLUE.with_alpha(0.2)),
+                                            (UiBase::id(), Color::ELYSIUM_DESCENT_YELLOW.with_alpha(0.2)),
                                             (UiHover::id(), Color::ELYSIUM_DESCENT_YELLOW.with_alpha(1.2))
                                         ]),
                                         UiHover::new().forward_speed(20.0).backward_speed(4.0),
