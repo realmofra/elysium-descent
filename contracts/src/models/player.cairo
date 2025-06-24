@@ -18,7 +18,7 @@ pub struct Player {
 #[generate_trait]
 impl PlayerImpl of PlayerTrait {
     /// Applies class-specific stat bonuses to the player
-    /// 
+    ///
     /// # Arguments
     /// * `player_class` - The player's chosen class specialization
     fn apply_class_bonuses(ref self: Player, player_class: PlayerClass) {
@@ -28,11 +28,11 @@ impl PlayerImpl of PlayerTrait {
     }
 
     /// Calculates experience gain with class-specific multipliers
-    /// 
+    ///
     /// # Arguments
     /// * `base_exp` - Base experience amount before class bonuses
     /// * `player_class` - Player's class affecting experience gain
-    /// 
+    ///
     /// # Returns
     /// Modified experience amount after applying class multiplier
     fn get_experience_gain_with_class(
@@ -43,7 +43,7 @@ impl PlayerImpl of PlayerTrait {
     }
 
     /// Checks if the player is currently alive
-    /// 
+    ///
     /// # Returns
     /// `true` if player has health remaining, `false` otherwise
     fn is_alive(self: @Player) -> bool {
@@ -51,7 +51,7 @@ impl PlayerImpl of PlayerTrait {
     }
 
     /// Determines if player has sufficient experience to level up
-    /// 
+    ///
     /// # Returns
     /// `true` if player meets level up requirements
     fn can_level_up(self: @Player) -> bool {

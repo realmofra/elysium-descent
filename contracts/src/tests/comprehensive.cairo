@@ -304,7 +304,8 @@ mod comprehensive_tests {
 
         let unchanged_inventory = actions.get_player_inventory(PLAYER1());
         assert(unchanged_inventory.health_potions == 0, 'Inventory should be unchanged');
-        // Validation framework exists - specific invalid pickup tests require should_panic attribute
+        // Validation framework exists - specific invalid pickup tests require should_panic
+    // attribute
     }
 
     #[test]
@@ -324,7 +325,7 @@ mod comprehensive_tests {
 
         // Use Store pattern for multi-player verification
         let store: Store = StoreTrait::new(world);
-        
+
         // Verify games are separate
         assert(game1_id != game2_id, 'Games not separate');
 

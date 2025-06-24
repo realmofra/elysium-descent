@@ -27,8 +27,18 @@ pub mod types {
 
 #[cfg(test)]
 mod tests {
+    // Legacy test modules (keeping for compatibility)
     mod world;
     mod simple;
     mod comprehensive;
     mod setup;
+
+    // New feature-based test modules
+    mod test_game_features;
+    mod test_inventory_features;
+    mod test_component_layer;
+    // mod test_error_conditions;
+// mod test_events;
+// mod test_helpers;
+// mod test_performance;
 }

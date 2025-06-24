@@ -8,8 +8,7 @@ mod integration_tests {
     use elysium_descent::systems::actions::IActionsDispatcherTrait;
 
     use elysium_descent::tests::setup::{
-        spawn, 
-        Player, Game, LevelItems, GameCounter, PlayerInventory, WorldItem
+        spawn, Player, Game, LevelItems, GameCounter, PlayerInventory, WorldItem,
     };
     use elysium_descent::helpers::store::{Store, StoreTrait};
 
@@ -72,14 +71,9 @@ mod integration_tests {
 
         // Use Store pattern for enhanced model access
         let store: Store = StoreTrait::new(world);
-        
+
         let player_model = Player {
-            player,
-            health: 80,
-            max_health: 100,
-            level: 2,
-            experience: 150,
-            items_collected: 3,
+            player, health: 80, max_health: 100, level: 2, experience: 150, items_collected: 3,
         };
         world.write_model_test(@player_model);
         let read_player: Player = store.get_player(player);
@@ -106,5 +100,4 @@ mod integration_tests {
         assert(read_world_item.x_position == 15, 'World item position mismatch');
     }
 }
-
 

@@ -6,8 +6,7 @@ mod tests {
     use elysium_descent::systems::actions::IActionsDispatcherTrait;
 
     use elysium_descent::tests::setup::{
-        spawn, 
-        Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem
+        spawn, Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem,
     };
     use elysium_descent::helpers::store::{Store, StoreTrait};
     use elysium_descent::types::item::ItemType;
@@ -29,7 +28,7 @@ mod tests {
 
         // Use Store pattern for enhanced model access
         let store: Store = StoreTrait::new(world);
-        
+
         world.write_model_test(@test_player);
         let read_player: Player = store.get_player(player_address);
 
