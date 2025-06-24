@@ -65,8 +65,8 @@ pub mod actions {
             let player = get_caller_address();
             let timestamp = get_block_timestamp();
 
-            // Delegate game creation to the Store layer following the Shinigami pattern
-            StoreTrait::create_game(ref store, player, timestamp)
+            // Delegate game creation to the GameComponent following the Shinigami pattern
+            GameComponentTrait::create_game(ref store, player, timestamp)
         }
 
         fn start_level(ref self: ContractState, game_id: u32, level: u32) {

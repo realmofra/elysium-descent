@@ -7,7 +7,6 @@ use elysium_descent::models::game::{Game, LevelItems, GameCounter, GAME_COUNTER_
 use elysium_descent::models::player::Player;
 use elysium_descent::models::inventory::PlayerInventory;
 use elysium_descent::models::world_state::WorldItem;
-use elysium_descent::types::game_types::GameStatus;
 use elysium_descent::types::item_types::ItemType;
 
 use elysium_descent::systems::actions::{GameCreated, LevelStarted, ItemPickedUp};
@@ -23,60 +22,21 @@ pub impl StoreImpl of StoreTrait {
         Store { world }
     }
 
-    fn world(self: @Store) -> WorldStorage {
-        *self.world
+    /// Game counter management
+    fn get_game_counter(self: @Store) -> GameCounter {
+        self.world.read_model(GAME_COUNTER_ID)
     }
 
-    /// Game management methods
-    fn create_game(ref self: Store, player: ContractAddress, timestamp: u64) -> u32 {
-        // Generate unique game ID using singleton counter
-        let mut counter: GameCounter = self.world.read_model(GAME_COUNTER_ID);
-        if counter.next_game_id == 0 {
-            let new_counter = GameCounter { counter_id: GAME_COUNTER_ID, next_game_id: 1 };
-            self.world.write_model(@new_counter);
-            counter = new_counter;
-        }
-
-        let game_id = counter.next_game_id;
-        let updated_counter = GameCounter {
-            counter_id: GAME_COUNTER_ID, next_game_id: counter.next_game_id + 1,
-        };
-        self.world.write_model(@updated_counter);
-
-        // Initialize new game instance with default values
-        let game = Game {
-            game_id,
-            player,
-            status: GameStatus::InProgress,
-            current_level: 0,
-            created_at: timestamp,
-            score: 0,
-        };
-        self.world.write_model(@game);
-
-        // Create initial player stats with default values
-        let player_stats = Player {
-            player, health: 100, max_health: 100, level: 1, experience: 0, items_collected: 0,
-        };
-        self.world.write_model(@player_stats);
-
-        // Create empty player inventory with default capacity
-        let inventory = PlayerInventory {
-            player, health_potions: 0, survival_kits: 0, books: 0, capacity: 50,
-        };
-        self.world.write_model(@inventory);
-
-        // Emit game creation event for external systems
-        self.world.emit_event(@GameCreated { player, game_id, created_at: timestamp });
-
-        game_id
+    fn set_game_counter(ref self: Store, counter: GameCounter) {
+        self.world.write_model(@counter);
     }
 
+    /// Game access methods
     fn get_game(self: @Store, game_id: u32) -> Game {
         self.world.read_model(game_id)
     }
 
-    fn update_game(ref self: Store, game: Game) {
+    fn set_game(ref self: Store, game: Game) {
         self.world.write_model(@game);
     }
 
@@ -97,27 +57,21 @@ pub impl StoreImpl of StoreTrait {
         self.world.write_model(@inventory);
     }
 
-    fn spawn_world_item(ref self: Store, item: WorldItem) {
-        self.world.write_model(@item);
-    }
-
+    /// World item management - unified write operation
     fn get_world_item(self: @Store, game_id: u32, item_id: u32) -> WorldItem {
         self.world.read_model((game_id, item_id))
     }
 
-    fn update_world_item(ref self: Store, item: WorldItem) {
+    fn write_world_item(ref self: Store, item: WorldItem) {
         self.world.write_model(@item);
     }
 
+    /// Level items management - unified write operation
     fn get_level_items(self: @Store, game_id: u32, level: u32) -> LevelItems {
         self.world.read_model((game_id, level))
     }
 
-    fn create_level_items(ref self: Store, level_items: LevelItems) {
-        self.world.write_model(@level_items);
-    }
-
-    fn update_level_items(ref self: Store, level_items: LevelItems) {
+    fn write_level_items(ref self: Store, level_items: LevelItems) {
         self.world.write_model(@level_items);
     }
 
@@ -137,5 +91,9 @@ pub impl StoreImpl of StoreTrait {
         level: u32,
     ) {
         self.world.emit_event(@ItemPickedUp { player, game_id, item_id, item_type, level });
+    }
+
+    fn emit_game_created(ref self: Store, player: ContractAddress, game_id: u32, created_at: u64) {
+        self.world.emit_event(@GameCreated { player, game_id, created_at });
     }
 }

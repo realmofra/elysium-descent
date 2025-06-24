@@ -91,7 +91,7 @@ let color: Color = red.into(); // When polymorphic type needed
 let blue = Color::BLUE;
 let red = Color::RED;
 
-// AFTER  
+// AFTER
 use bevy::color::palettes::css::{BLUE, RED};
 let blue = BLUE;
 let red = RED;
@@ -114,7 +114,7 @@ struct Health {
 
 impl Component for Health {
     const STORAGE_TYPE: StorageType = StorageType::Table;
-    
+
     fn register_component_hooks(hooks: &mut ComponentHooks) {
         hooks
             .on_add(|mut world, entity, _component_id| {
@@ -175,13 +175,13 @@ fn setup_character_animations(
     clips: Res<AnimationClips>,
 ) {
     let mut graph = AnimationGraph::new();
-    
+
     let idle = graph.add_clip(clips.idle.clone(), 1.0, graph.root);
     let run = graph.add_clip(clips.run.clone(), 1.0, graph.root);
     let jump = graph.add_clip(clips.jump.clone(), 1.0, graph.root);
-    
+
     let graph_handle = graphs.add(graph);
-    
+
     commands.spawn((
         AnimationPlayer::default(),
         CharacterAnimations { graph: graph_handle, idle, run, jump },
@@ -262,8 +262,8 @@ use bevy::winit::EventLoopProxy;
 struct EventProxy(EventLoopProxy<GameEvent>);
 
 fn send_external_event(proxy: Res<EventProxy>) {
-    let _ = proxy.0.send_event(GameEvent::NetworkMessage { 
-        data: vec![1, 2, 3] 
+    let _ = proxy.0.send_event(GameEvent::NetworkMessage {
+        data: vec![1, 2, 3]
     });
 }
 ```
@@ -318,7 +318,7 @@ struct GameObject;
 fn physics_collider() -> Option<Collider> {
     #[cfg(feature = "physics")]
     return Some(Collider::ball(1.0));
-    
+
     #[cfg(not(feature = "physics"))]
     None
 }
@@ -390,20 +390,20 @@ struct DamageEvent {
 }
 
 app.observe(|
-    trigger: Trigger<DamageEvent>, 
+    trigger: Trigger<DamageEvent>,
     mut healths: Query<&mut Health>,
     names: Query<&Name>,
 | {
     let damage = trigger.event();
     let target = trigger.entity();
-    
+
     if let Ok(mut health) = healths.get_mut(target) {
         health.current -= damage.amount;
-        
+
         if let Ok(name) = names.get(target) {
             info!("{} took {} damage", name.as_str(), damage.amount);
         }
-        
+
         if health.current <= 0.0 {
             // Trigger death event
             trigger.propagate(DeathEvent { entity: target });
@@ -436,7 +436,7 @@ fn gamepad_system(gamepads: Query<&Gamepad>) {
         if gamepad.just_pressed(GamepadButton::South) {
             info!("South button pressed");
         }
-        
+
         let left_stick = gamepad.get(GamepadAxis::LeftStickX).unwrap_or(0.0);
         if left_stick.abs() > 0.1 {
             info!("Left stick X: {}", left_stick);
@@ -548,7 +548,7 @@ fn setup_error_handling() {
             panic!("System error: {}", error);
         })).ok();
     }
-    
+
     #[cfg(not(debug_assertions))]
     {
         // Production: log and continue
@@ -580,7 +580,7 @@ fn robust_system(
             players.iter().next().unwrap()
         }
     };
-    
+
     // Continue with game logic...
     Ok(())
 }
@@ -597,7 +597,7 @@ use bevy::ecs::relationship::{ChildOf, Children};
 #[derive(Component)]
 struct Parent(Entity);
 
-#[derive(Component)]  
+#[derive(Component)]
 struct Children(Vec<Entity>);
 
 // AFTER (0.16): Built-in relationship system
@@ -616,7 +616,7 @@ fn fleet_status_system(
             .filter_map(|&ship| ships.get(ship).ok())
             .map(|health| health.current)
             .sum();
-            
+
         info!("{} fleet health: {}", fleet_name.as_str(), total_health);
     }
 }
@@ -668,13 +668,13 @@ impl Component for MyComponent {
             world.entity_mut(entity).insert(RelatedComponent);
         }))
     }
-    
+
     fn on_insert() -> Option<ComponentHook> {
         Some(ComponentHook::new(|world, entity, context: HookContext| {
             info!("Component inserted/updated on {:?}", entity);
         }))
     }
-    
+
     fn on_remove() -> Option<ComponentHook> {
         Some(ComponentHook::new(|world, entity, context: HookContext| {
             info!("Component removed from {:?}", entity);
@@ -704,7 +704,7 @@ struct GameObject {
 fn cfg_if_physics_enabled() -> Option<PhysicsBody> {
     #[cfg(feature = "physics")]
     return Some(PhysicsBody::default());
-    
+
     #[cfg(not(feature = "physics"))]
     None
 }
@@ -730,18 +730,18 @@ fn my_schedule() -> Schedule {
 use bevy::asset::weak_handle;
 
 // BEFORE (0.15): Error-prone UUID generation
-const SHADER_HANDLE: Handle<Shader> = 
+const SHADER_HANDLE: Handle<Shader> =
     Handle::weak_from_u128(0x12345678_9ABC_DEF0_1234_56789ABCDEF0);
 
 // AFTER (0.16): Type-safe UUID generation
-const SHADER_HANDLE: Handle<Shader> = 
+const SHADER_HANDLE: Handle<Shader> =
     weak_handle!("550e8400-e29b-41d4-a716-446655440000");
 
-const TEXTURE_HANDLE: Handle<Image> = 
+const TEXTURE_HANDLE: Handle<Image> =
     weak_handle!("6ba7b810-9dad-11d1-80b4-00c04fd430c8");
 
 // Compile-time validation prevents errors
-const INVALID_HANDLE: Handle<Mesh> = 
+const INVALID_HANDLE: Handle<Mesh> =
     weak_handle!("not-a-valid-uuid"); // Compile error!
 ```
 
@@ -797,13 +797,13 @@ fn fragment(
     let material = materials[instance_index];
     let texture_index = material.texture_index;
     let sampler_index = material.sampler_index;
-    
+
     let base_color = textureSample(
         textures[texture_index],
         samplers[sampler_index],
         mesh.uv
     );
-    
+
     return base_color * material.base_color;
 }
 ```
@@ -850,7 +850,7 @@ fn culling_metrics_system(
         .filter(|visibility| visibility.get())
         .count();
     stats.culled_objects = stats.total_objects - stats.visible_objects;
-    
+
     if stats.total_objects > 0 {
         let efficiency = (stats.culled_objects as f32 / stats.total_objects as f32) * 100.0;
         if efficiency > 50.0 {
@@ -910,7 +910,7 @@ fn main() {
         .add_systems(Update, (
             server_tick_system,
             process_player_inputs,
-            update_game_state,
+            set_game_state,
         ))
         .run();
 }
@@ -924,14 +924,14 @@ mod wasm_bindings {
             "game:engine/world": GameWorld,
         },
     });
-    
+
     struct GameWorld;
-    
+
     impl exports::game::engine::world::Guest for GameWorld {
         fn tick(&mut self, delta_ms: f32) {
             // Game logic here
         }
-        
+
         fn add_player(&mut self, player_id: u32) -> bool {
             // Player management
             true
@@ -954,7 +954,7 @@ fn async_asset_loading() -> impl System {
             let mesh = yield_load("models/character.gltf");
             (texture1, texture2, mesh)
         };
-        
+
         spawn_character_with_assets(world, assets);
     }
 }
@@ -986,7 +986,7 @@ where
     [(); W * H]:, // Const generic constraint
 {
     const TOTAL_CELLS: usize = W * H;
-    
+
     fn new() -> Self {
         Self {
             cells: [[Cell::Empty; W]; H],
@@ -1020,16 +1020,16 @@ impl Health {
     fn new(max: f32) -> Self {
         Self { current: max, max }
     }
-    
+
     fn damage(&mut self, amount: f32) -> bool {
         self.current = (self.current - amount).max(0.0);
         self.current <= 0.0 // Returns true if dead
     }
-    
+
     fn heal(&mut self, amount: f32) {
         self.current = (self.current + amount).min(self.max);
     }
-    
+
     fn percentage(&self) -> f32 {
         self.current / self.max
     }
@@ -1062,7 +1062,7 @@ fn damage_system(
 ) -> bevy::ecs::error::Result {
     for damage_event in damage_events.read() {
         let mut health = health_query.get_mut(damage_event.target)?;
-        
+
         if health.damage(damage_event.amount) {
             death_events.send(DeathEvent {
                 entity: damage_event.target,
@@ -1081,13 +1081,13 @@ fn setup_reactive_health_ui(mut commands: Commands) {
     | {
         let entity = trigger.entity();
         let health = trigger.event();
-        
+
         // Spawn health bar UI
         let health_bar = commands.spawn((
             HealthBarUI::new(health.percentage()),
             ChildOf(entity),
         )).id();
-        
+
         commands.entity(entity).insert(HealthBarRef(health_bar));
     });
 }
@@ -1128,15 +1128,15 @@ struct GameAssets {
     // Meshes
     player_mesh: Handle<Mesh>,
     enemy_mesh: Handle<Mesh>,
-    
+
     // Materials
     player_material: Handle<StandardMaterial>,
     enemy_material: Handle<StandardMaterial>,
-    
+
     // Audio
     laser_sound: Handle<AudioSource>,
     explosion_sound: Handle<AudioSource>,
-    
+
     // Fonts
     ui_font: Handle<Font>,
 }
@@ -1163,7 +1163,7 @@ fn check_asset_loading(
         ].iter().all(|handle| {
             asset_server.load_state(handle.id()) == LoadState::Loaded
         });
-        
+
         if all_loaded {
             next_state.set(AssetLoadingState::Ready);
         }
@@ -1202,7 +1202,7 @@ fn asset_hot_reload_system(
 struct PBRMaterial {
     #[uniform(0)]
     base_color: LinearRgba,
-    #[uniform(1)] 
+    #[uniform(1)]
     metallic_roughness: Vec2,
     #[texture(2)]
     #[sampler(3)]
@@ -1246,7 +1246,7 @@ fn setup_performance_rendering(
 #[derive(Component)]
 struct LodMeshes {
     high: Handle<Mesh>,    // < 50 units
-    medium: Handle<Mesh>,  // 50-200 units  
+    medium: Handle<Mesh>,  // 50-200 units
     low: Handle<Mesh>,     // > 200 units
     current_lod: usize,
 }
@@ -1256,16 +1256,16 @@ fn lod_system(
     mut lod_objects: Query<(&Transform, &mut LodMeshes, &mut Handle<Mesh>)>,
 ) -> bevy::ecs::error::Result {
     let camera_pos = cameras.single()?.translation;
-    
+
     for (transform, mut lod_meshes, mut mesh_handle) in &mut lod_objects {
         let distance = camera_pos.distance(transform.translation);
-        
+
         let new_lod = match distance {
             d if d < 50.0 => 0,   // High detail
             d if d < 200.0 => 1,  // Medium detail
             _ => 2,               // Low detail
         };
-        
+
         if new_lod != lod_meshes.current_lod {
             lod_meshes.current_lod = new_lod;
             *mesh_handle = match new_lod {
@@ -1308,7 +1308,7 @@ fn good_movement_system(
     if !input.any_pressed([KeyCode::ArrowUp, KeyCode::ArrowDown, KeyCode::ArrowLeft, KeyCode::ArrowRight]) {
         return; // Early exit if no input
     }
-    
+
     for mut transform in &mut query {
         if input.pressed(KeyCode::ArrowUp) {
             transform.translation.y += 1.0;
@@ -1334,15 +1334,15 @@ fn batch_physics_system(
     time: Res<Time>,
 ) {
     let dt = time.delta_seconds();
-    
+
     // Process in batches for better cache locality
     physics_objects.par_iter_mut().for_each(|(mut transform, mut velocity, mass)| {
         // Apply gravity
         velocity.linear.y -= 9.8 * dt;
-        
+
         // Apply velocity
         transform.translation += velocity.linear * dt;
-        
+
         // Apply damping
         velocity.linear *= 0.99;
     });
@@ -1371,7 +1371,7 @@ impl<T: Default> ObjectPool<T> {
     fn get(&mut self) -> T {
         self.available.pop().unwrap_or_default()
     }
-    
+
     fn return_object(&mut self, object: T) {
         self.available.push(object);
     }
@@ -1428,17 +1428,17 @@ fn gpu_instancing_system(
 ) {
     // Group by mesh + material combination
     let mut instance_groups: HashMap<(Handle<Mesh>, Handle<StandardMaterial>), Vec<InstanceData>> = HashMap::new();
-    
+
     for (transform, renderer, color) in &similar_objects {
         let key = (renderer.mesh.clone(), renderer.material.clone());
         let instance_data = InstanceData {
             transform: transform.compute_matrix(),
             color: color.0,
         };
-        
+
         instance_groups.entry(key).or_default().push(instance_data);
     }
-    
+
     // Create instanced renderers for groups with multiple objects
     for ((mesh, material), instances) in instance_groups {
         if instances.len() > 1 {
@@ -1461,7 +1461,7 @@ fn setup_sprite_atlas(
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
 ) {
     let mut atlas_builder = TextureAtlasBuilder::default();
-    
+
     // Add individual sprite textures
     let sprite_handles = [
         ("player", asset_server.load("sprites/player.png")),
@@ -1469,14 +1469,14 @@ fn setup_sprite_atlas(
         ("enemy_2", asset_server.load("sprites/enemy_2.png")),
         // ... more sprites
     ];
-    
+
     for (name, handle) in sprite_handles.iter() {
         atlas_builder.add_texture(handle.clone());
     }
-    
+
     let (atlas_layout, atlas_sources) = atlas_builder.finish();
     let atlas_layout_handle = texture_atlases.add(atlas_layout);
-    
+
     let sprite_atlas = SpriteAtlas {
         texture: atlas_sources.texture,
         layout: atlas_layout_handle,
@@ -1484,7 +1484,7 @@ fn setup_sprite_atlas(
             .map(|(i, (name, _))| (name.to_string(), i))
             .collect(),
     };
-    
+
     commands.insert_resource(sprite_atlas);
 }
 
@@ -1517,15 +1517,15 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     if (base_color.a < 0.1) {
         discard; // Early Z rejection
     }
-    
+
     // Expensive lighting calculations only after alpha test
     let normal = normalize(in.world_normal);
     let view_dir = normalize(camera_position.xyz - in.world_position.xyz);
-    
+
     // Use bindless textures for material properties
     let material_index = in.material_index;
     let metallic_roughness = materials[material_index].metallic_roughness;
-    
+
     // PBR lighting calculation
     let light_result = calculate_pbr_lighting(
         base_color.rgb,
@@ -1534,7 +1534,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
         metallic_roughness.x, // metallic
         metallic_roughness.y  // roughness
     );
-    
+
     return vec4<f32>(light_result, base_color.a);
 }
 
@@ -1562,9 +1562,9 @@ fn vertex(
         instance.model_matrix_2,
         instance.model_matrix_3,
     );
-    
+
     let world_position = model_matrix * vec4<f32>(position, 1.0);
-    
+
     var out: VertexOutput;
     out.clip_position = view_projection * world_position;
     out.world_position = world_position;
@@ -1572,7 +1572,7 @@ fn vertex(
     out.uv = uv;
     out.color = instance.color;
     out.material_index = instance.material_index;
-    
+
     return out;
 }
 ```
@@ -1720,7 +1720,7 @@ fn gameplay_system(
     mut events: EventWriter<GameEvent>,
 ) -> Result {
     let player_pos = players.single()?.translation;
-    
+
     for enemy_transform in &enemies {
         let distance = player_pos.distance(enemy_transform.translation);
         if distance < 5.0 {
@@ -1741,13 +1741,13 @@ fn optional_feature_system(
     if !feature_enabled.advanced_ai {
         return; // Skip if feature disabled
     }
-    
+
     let Ok(player_pos) = maybe_players.single() else {
         // Log warning but continue execution
         warn!("Advanced AI requires exactly one player");
         return;
     };
-    
+
     // Advanced AI logic here
 }
 
@@ -1759,7 +1759,7 @@ fn network_system(
 ) -> Result {
     if connection.is_disconnected() {
         retry_timer.tick(time.delta());
-        
+
         if retry_timer.finished() {
             match connection.try_reconnect() {
                 Ok(_) => {
@@ -1774,7 +1774,7 @@ fn network_system(
         }
         return Ok(()); // Don't process network messages while disconnected
     }
-    
+
     // Process network messages
     connection.process_messages()?;
     Ok(())
@@ -1838,10 +1838,10 @@ impl MovementState {
                     *self = Self::Jumping { initial_velocity: 10.0 };
                 } else if input.movement.length() > 0.1 {
                     let speed = if input.sprint { 8.0 } else { 4.0 };
-                    *self = if input.sprint { 
-                        Self::Running { speed } 
-                    } else { 
-                        Self::Walking { speed } 
+                    *self = if input.sprint {
+                        Self::Running { speed }
+                    } else {
+                        Self::Walking { speed }
                     };
                 }
             }
@@ -1974,7 +1974,7 @@ fn track_asset_loading(
         let loading_progress = asset_server.get_group_load_state(
             assets.get_all_handles()
         );
-        
+
         match loading_progress {
             LoadState::Loaded => {
                 next_state.set(AssetState::Ready);
@@ -2152,12 +2152,12 @@ fn old_hierarchy_system(
 // CORRECT: Automatic relationship system
 fn new_hierarchy_system(mut commands: Commands) {
     let parent = commands.spawn(Parent).id();
-    
+
     commands.spawn((
         Child,
         ChildOf(parent), // Automatic relationship
     ));
-    
+
     // Children component automatically maintained
 }
 ```
@@ -2185,7 +2185,7 @@ fn good_asset_system(
     if local_handle.is_none() {
         *local_handle = Some(asset_server.load("texture.png"));
     }
-    
+
     if let Some(handle) = local_handle.as_ref() {
         match asset_server.load_state(handle.id()) {
             LoadState::Loaded => {

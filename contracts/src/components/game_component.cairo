@@ -1,8 +1,9 @@
 use starknet::ContractAddress;
 use core::poseidon::poseidon_hash_span;
 use elysium_descent::helpers::store::{Store, StoreTrait};
-use elysium_descent::models::game::{Game, LevelItems};
+use elysium_descent::models::game::{Game, LevelItems, GameCounter, GAME_COUNTER_ID};
 use elysium_descent::models::player::Player;
+use elysium_descent::models::inventory::PlayerInventory;
 use elysium_descent::models::world_state::WorldItem;
 use elysium_descent::types::game_types::GameStatus;
 use elysium_descent::types::item_types::ItemType;
@@ -10,6 +11,50 @@ use elysium_descent::types::item_types::ItemType;
 /// Game Component - handles game lifecycle and level management
 #[generate_trait]
 pub impl GameComponentImpl of GameComponentTrait {
+    /// Creates a new game instance for the specified player
+    fn create_game(ref store: Store, player: ContractAddress, timestamp: u64) -> u32 {
+        // Generate unique game ID using singleton counter
+        let mut counter: GameCounter = store.get_game_counter();
+        if counter.next_game_id == 0 {
+            let new_counter = GameCounter { counter_id: GAME_COUNTER_ID, next_game_id: 1 };
+            store.set_game_counter(new_counter);
+            counter = new_counter;
+        }
+
+        let game_id = counter.next_game_id;
+        let updated_counter = GameCounter {
+            counter_id: GAME_COUNTER_ID, next_game_id: counter.next_game_id + 1,
+        };
+        store.set_game_counter(updated_counter);
+
+        // Initialize new game instance with default values
+        let game = Game {
+            game_id,
+            player,
+            status: GameStatus::InProgress,
+            current_level: 0,
+            created_at: timestamp,
+            score: 0,
+        };
+        store.set_game(game);
+
+        // Create initial player stats with default values
+        let player_stats = Player {
+            player, health: 100, max_health: 100, level: 1, experience: 0, items_collected: 0,
+        };
+        store.update_player(player_stats);
+
+        // Create empty player inventory with default capacity
+        let inventory = PlayerInventory {
+            player, health_potions: 0, survival_kits: 0, books: 0, capacity: 50,
+        };
+        store.update_player_inventory(inventory);
+
+        // Emit game creation event for external systems
+        store.emit_game_created(player, game_id, timestamp);
+
+        game_id
+    }
     fn start_level(ref store: Store, player: ContractAddress, game_id: u32, level: u32) -> u32 {
         // Validate game ownership and active status
         let mut game = store.get_game(game_id);
@@ -25,7 +70,7 @@ pub impl GameComponentImpl of GameComponentTrait {
             created_at: game.created_at,
             score: game.score,
         };
-        store.update_game(updated_game);
+        store.set_game(updated_game);
 
         // Determine item spawn counts based on level progression
         let health_potions_count = Self::calculate_level_health_potions(level);
@@ -43,7 +88,7 @@ pub impl GameComponentImpl of GameComponentTrait {
             collected_survival_kits: 0,
             collected_books: 0,
         };
-        store.create_level_items(level_items);
+        store.write_level_items(level_items);
 
         // Spawn physical world items for collection
         let mut item_counter = 0_u32;
@@ -118,7 +163,7 @@ pub impl GameComponentImpl of GameComponentTrait {
             created_at: game.created_at,
             score: game.score,
         };
-        store.update_game(updated_game);
+        store.set_game(updated_game);
     }
 
     fn resume_game(ref store: Store, player: ContractAddress, game_id: u32) {
@@ -134,7 +179,7 @@ pub impl GameComponentImpl of GameComponentTrait {
             created_at: game.created_at,
             score: game.score,
         };
-        store.update_game(updated_game);
+        store.set_game(updated_game);
     }
 
     fn end_game(ref store: Store, player: ContractAddress, game_id: u32, final_score: u32) {
@@ -149,7 +194,7 @@ pub impl GameComponentImpl of GameComponentTrait {
             created_at: game.created_at,
             score: final_score,
         };
-        store.update_game(updated_game);
+        store.set_game(updated_game);
     }
 
     // Private utility methods for item generation and game calculations
@@ -180,7 +225,7 @@ pub impl GameComponentImpl of GameComponentTrait {
                 level,
             };
 
-            store.spawn_world_item(world_item);
+            store.write_world_item(world_item);
 
             item_counter += 1;
             i += 1;
@@ -241,7 +286,7 @@ pub impl GameComponentImpl of GameComponentTrait {
 
         // X coordinate: 10-109 range
         let x = ((x_u256 % 100) + 10).try_into().unwrap();
-        // Y coordinate: 10-109 range  
+        // Y coordinate: 10-109 range
         let y = ((y_u256 % 100) + 10).try_into().unwrap();
         (x, y)
     }

@@ -60,7 +60,7 @@ pub impl InventoryComponentImpl of InventoryComponentTrait {
 
         // Persist updated inventory and item states
         store.update_player_inventory(updated_inventory);
-        store.update_world_item(updated_item);
+        store.write_world_item(updated_item);
 
         // Calculate player experience and level progression
         let player_stats = store.get_player(player);
