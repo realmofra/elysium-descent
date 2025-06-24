@@ -4,7 +4,7 @@ use elysium_descent::models::game::LevelItems;
 use elysium_descent::types::item_types::ItemType;
 use starknet::{get_block_timestamp, ContractAddress, get_caller_address};
 
-// Events
+/// Game events for external system notifications
 #[derive(Copy, Drop, Serde)]
 #[dojo::event]
 pub struct GameCreated {
@@ -35,7 +35,7 @@ pub struct ItemPickedUp {
     pub level: u32,
 }
 
-// define the interface
+/// System interface defining available game actions
 #[starknet::interface]
 pub trait IActions<T> {
     fn create_game(ref self: T) -> u32;
@@ -46,7 +46,7 @@ pub trait IActions<T> {
     fn get_level_items(self: @T, game_id: u32, level: u32) -> LevelItems;
 }
 
-// dojo decorator
+/// Main game actions contract implementing the IActions interface
 #[dojo::contract]
 pub mod actions {
     use super::{
@@ -65,7 +65,7 @@ pub mod actions {
             let player = get_caller_address();
             let timestamp = get_block_timestamp();
 
-            // Use store method following Shinigami pattern
+            // Delegate game creation to the Store layer following the Shinigami pattern
             StoreTrait::create_game(ref store, player, timestamp)
         }
 
@@ -73,7 +73,7 @@ pub mod actions {
             let mut store: Store = StoreTrait::new(self.world_default());
             let player = get_caller_address();
 
-            // Use GameComponent following Shinigami pattern
+            // Delegate level management to the GameComponent layer
             GameComponentTrait::start_level(ref store, player, game_id, level);
         }
 
@@ -81,11 +81,11 @@ pub mod actions {
             let mut store: Store = StoreTrait::new(self.world_default());
             let player = get_caller_address();
 
-            // Verify game ownership
+            // Validate that the caller owns the specified game
             let game = StoreTrait::get_game(@store, game_id);
             assert(game.player == player, 'Not your game');
 
-            // Use InventoryComponent following Shinigami pattern
+            // Delegate item pickup logic to the InventoryComponent layer
             InventoryComponentTrait::pickup_item(ref store, player, game_id, item_id)
         }
 
@@ -107,8 +107,8 @@ pub mod actions {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-        /// Use the default namespace "elysium_descent". This function is handy since the ByteArray
-        /// can't be const.
+        /// Access the default world storage for the "elysium_001" namespace.
+        /// This function provides a consistent way to access the world instance.
         fn world_default(self: @ContractState) -> dojo::world::WorldStorage {
             self.world(@"elysium_001")
         }

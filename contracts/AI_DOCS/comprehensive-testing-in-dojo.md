@@ -959,9 +959,263 @@ fn test_with_debug() {
 }
 ```
 
+## Testing Documentation Standards
+
+### 14. Cairo-Specific Testing Documentation
+
+Following Cairo's strict commenting conventions, all test modules must adhere to proper documentation patterns:
+
+#### Test Module Documentation Pattern
+```cairo
+//! # Comprehensive Test Suite for PlayerSystem
+//! 
+//! This module provides complete test coverage for the PlayerSystem component,
+//! following Dojo v1.5.0 testing patterns and the Shinigami Design Pattern.
+//! 
+//! ## Test Categories
+//! 
+//! - **Unit Tests**: Individual function validation
+//! - **Integration Tests**: Multi-component workflows
+//! - **Error Handling**: Expected failures and edge cases
+//! - **Performance Tests**: Gas optimization and limits
+//! 
+//! ## Shinigami Layer Testing
+//! 
+//! ```text
+//! Systems → Components → Models → Types → Elements
+//!            ↑
+//!       Test Focus
+//! ```
+//! 
+//! ## Key Test Patterns
+//! - Resource registration (Events vs Models)
+//! - Store pattern for model access
+//! - Poseidon hash overflow prevention
+//! - Cairo error handling (panics vs returns)
+
+/// Core test module for PlayerSystem functionality
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use dojo_cairo_test::*;
+    use your_project::tests::setup::setup::{spawn, Context, Systems};
+    
+    /// Test constants following naming conventions
+    const PLAYER_ID: felt252 = 1;
+    const PLAYER_NAME: ByteArray = "TestPlayer";
+    const DEFAULT_EXPERIENCE: u64 = 100;
+    
+    /// Test data factory for consistent test setup
+    #[generate_trait]
+    pub impl TestDataFactory of TestDataFactoryTrait {
+        /// Creates a standardized test player with default values
+        /// 
+        /// # Arguments
+        /// * `id` - Unique player identifier
+        /// 
+        /// # Returns
+        /// Player instance with level 1 and zero experience
+        fn create_test_player(id: felt252) -> Player {
+            Player {
+                id,
+                name: format!("Player{}", id),
+                level: 1,
+                experience: 0,
+                active: true,
+            }
+        }
+    }
+    
+    /// Tests basic player creation functionality
+    /// 
+    /// Validates that PlayerTrait::new() creates a player with correct
+    /// initial values and proper validation of input parameters.
+    #[test]
+    fn test_player_creation() {
+        let player = TestDataFactory::create_test_player(PLAYER_ID);
+        assert_eq!(player.id, PLAYER_ID);
+        assert_eq!(player.level, 1);
+        assert_eq!(player.experience, 0);
+        assert_eq!(player.active, true);
+    }
+    
+    /// Tests player name validation with empty string
+    /// 
+    /// Ensures that PlayerAssert::assert_valid_name() properly rejects
+    /// empty strings and provides clear error messages.
+    #[test]
+    #[should_panic(expected: 'Player: name cannot be empty')]
+    fn test_empty_name_validation() {
+        PlayerAssert::assert_valid_name("");
+    }
+}
+```
+
+#### Integration Test Documentation Pattern
+```cairo
+//! # Integration Test Suite
+//! 
+//! Tests complete workflows across multiple Shinigami layers,
+//! validating system interactions and data flow patterns.
+
+/// Complete game workflow integration test
+/// 
+/// Tests the full player lifecycle from creation through gameplay,
+/// including state persistence, event emission, and multi-system
+/// coordination following the Shinigami pattern.
+/// 
+/// # Test Scenario
+/// 1. Create game instance
+/// 2. Create player and join game
+/// 3. Perform game actions
+/// 4. Validate state changes and events
+/// 
+/// # Validation Points
+/// - Model persistence across operations
+/// - Event emission for state changes
+/// - System coordination and data flow
+/// - Store pattern usage for model access
+#[test]
+#[available_gas(6000000)]
+fn test_complete_game_workflow() {
+    let (world, systems, context) = spawn();
+    
+    // Create game instance with proper validation
+    let game_id = systems.game_system.create_game(
+        "TestGame",
+        "Integration test game",
+        100  // max_players
+    );
+    
+    // Verify game creation using Store pattern
+    let store: Store = StoreTrait::new(world);
+    let game = store.get_game(game_id);
+    assert_eq!(game.name, "TestGame");
+    assert_eq!(game.active, true);
+    
+    // Continue with workflow validation...
+}
+```
+
+#### Test Setup Documentation Standards
+```cairo
+/// Test setup and configuration module
+/// 
+/// Provides standardized test environment initialization following
+/// Dojo v1.5.0 patterns and proper resource registration.
+pub mod setup {
+    /// Spawns complete test environment with proper resource registration
+    /// 
+    /// Creates a test world with all necessary models, events, and contracts
+    /// registered. Uses the Store pattern for model access and provides
+    /// consistent system dispatchers.
+    /// 
+    /// # Resource Registration
+    /// - **Models**: Persistent state using `TestResource::Model`
+    /// - **Events**: Emitted logs using `TestResource::Event`  
+    /// - **Contracts**: System implementations using `TestResource::Contract`
+    /// 
+    /// # Returns
+    /// Tuple containing:
+    /// - `WorldStorage`: Configured test world
+    /// - `Systems`: Dispatcher struct for system access
+    /// - `Context`: Test context with default values
+    /// 
+    /// # Example
+    /// ```cairo
+    /// let (world, systems, context) = spawn();
+    /// let store: Store = StoreTrait::new(world);
+    /// let player = store.get_player(context.player_id);
+    /// ```
+    #[inline]
+    pub fn spawn() -> (WorldStorage, Systems, Context) {
+        // Implementation details...
+    }
+}
+```
+
+### 15. Testing Anti-Patterns and Common Mistakes
+
+#### Documentation Anti-Patterns in Tests
+```cairo
+// ❌ WRONG - Vague test documentation
+/// Test player stuff
+#[test]
+fn test_player() {
+    // Do some testing
+    let player = create_player();
+    // Check if it works
+    assert(player.level > 0, 'should work');
+}
+
+// ❌ WRONG - Inline comments on test attributes
+#[test]  // This tests player creation - COMPILATION ERROR
+#[should_panic]  // Expects panic here - COMPILATION ERROR
+fn test_player_creation() { }
+
+// ✅ CORRECT - Proper test documentation
+/// Tests player creation with valid input parameters
+/// 
+/// Validates that PlayerTrait::new() creates a player with proper
+/// initial state and correctly handles input validation.
+/// 
+/// # Test Conditions
+/// - Valid player name (non-empty, within length limits)
+/// - Default level set to 1
+/// - Default experience set to 0
+/// - Active status set to true
+#[test]
+#[should_panic(expected: 'Player: name cannot be empty')]
+fn test_player_creation_empty_name() {
+    PlayerTrait::new(1, "");
+}
+```
+
+#### Test Organization Anti-Patterns
+```cairo
+// ❌ WRONG - Mixed test types without clear organization
+#[cfg(test)]
+mod tests {
+    // Unit tests mixed with integration tests
+    #[test]
+    fn test_player_creation() { }
+    
+    #[test] 
+    fn test_complete_game_workflow() { }
+    
+    #[test]
+    fn test_player_validation() { }
+}
+
+// ✅ CORRECT - Organized test modules
+#[cfg(test)]
+mod unit_tests {
+    /// Unit tests for individual PlayerTrait functions
+    use super::*;
+    
+    #[test]
+    fn test_player_creation() { }
+    
+    #[test]
+    fn test_player_validation() { }
+}
+
+#[cfg(test)]
+mod integration_tests {
+    /// Integration tests for complete system workflows
+    use super::*;
+    
+    #[test]
+    fn test_complete_game_workflow() { }
+    
+    #[test]
+    fn test_multi_player_interactions() { }
+}
+```
+
 ## Testing Utilities
 
-### 14. Helper Functions
+### 16. Helper Functions
 
 ```cairo
 // Time manipulation for testing
@@ -1115,5 +1369,31 @@ This comprehensive guide provides the foundation for testing any Dojo applicatio
 2. **Misunderstanding Cairo error patterns** - Functions panic, they don't return false
 3. **Insufficient gas limits** - Complex tests need 6-30M gas
 4. **Incorrect resource registration** - Events vs Models must be registered correctly
+5. **Cairo commenting syntax violations** - Inline comments on attributes cause compilation errors
 
-Remember: Good tests are not just about coverage, but about confidence in your code's behavior under all conditions.
+## Cairo Testing Documentation Checklist
+
+Before finalizing any test module, ensure compliance with Cairo documentation standards:
+
+### ✅ Documentation Requirements
+- [ ] **Module-level documentation** using `//!` for comprehensive test suite description
+- [ ] **Function-level documentation** using `///` for all test functions with clear purpose
+- [ ] **No inline comments** on test attributes like `#[test]` or `#[should_panic]`
+- [ ] **Proper comment placement** with comments on separate lines above code elements
+- [ ] **Consistent formatting** following Cairo book documentation guidelines
+
+### ✅ Test Structure Requirements
+- [ ] **Clear test categorization** (unit, integration, error handling, performance)
+- [ ] **Comprehensive error testing** using `#[should_panic(expected: 'message')]`
+- [ ] **Proper resource registration** (Events vs Models correctly identified)
+- [ ] **Store pattern usage** for model access instead of repetitive helper functions
+- [ ] **Gas limit specifications** for complex tests (`#[available_gas(amount)]`)
+
+### ✅ Code Quality Standards
+- [ ] **Modulo constraints** for all poseidon hash operations
+- [ ] **Type-safe conversions** using `.try_into().unwrap()` with proper bounds
+- [ ] **Semantic test names** that clearly describe what is being validated
+- [ ] **Test isolation** ensuring each test is independent and repeatable
+- [ ] **Comprehensive coverage** of both success paths and error conditions
+
+Remember: Good tests are not just about coverage, but about confidence in your code's behavior under all conditions. **Proper Cairo documentation ensures your tests are maintainable and compilation-safe.**

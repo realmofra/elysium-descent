@@ -6,25 +6,25 @@ use dojo_cairo_test::{
     WorldStorageTestTrait,
 };
 
-// System imports
+/// System imports
 use elysium_descent::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
 use elysium_descent::systems::actions::{e_GameCreated, e_LevelStarted, e_ItemPickedUp};
 
-// Model imports for direct usage
+/// Model imports for direct usage
 pub use elysium_descent::models::index::{
     Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem,
 };
 
-// Model imports for TEST_CLASS_HASH
+/// Model imports for TEST_CLASS_HASH
 use elysium_descent::models::player::m_Player;
 use elysium_descent::models::game::{m_Game, m_GameCounter, m_LevelItems};
 use elysium_descent::models::inventory::m_PlayerInventory;
 use elysium_descent::models::world_state::m_WorldItem;
 
-// Type imports
+/// Type imports
 pub use elysium_descent::types::game_types::GameStatus;
 
-// Test address constants - make these proper public functions
+/// Test address constants - make these proper public functions
 pub fn OWNER() -> ContractAddress {
     contract_address_const::<'OWNER'>()
 }
@@ -41,13 +41,13 @@ pub fn ADMIN() -> ContractAddress {
     contract_address_const::<'ADMIN'>()
 }
 
-// System dispatchers struct
+/// System dispatchers struct
 #[derive(Copy, Drop)]
 pub struct Systems {
     pub actions: IActionsDispatcher,
 }
 
-// Test context data
+/// Test context data
 #[derive(Copy, Drop)]
 pub struct Context {
     pub player1: ContractAddress,
@@ -56,7 +56,7 @@ pub struct Context {
     pub owner: ContractAddress,
 }
 
-// Setup namespace definition with proper TEST_CLASS_HASH imports
+/// Setup namespace definition with proper TEST_CLASS_HASH imports
 #[inline]
 fn setup_namespace() -> NamespaceDef {
     NamespaceDef {
@@ -80,7 +80,7 @@ fn setup_namespace() -> NamespaceDef {
     }
 }
 
-// Setup contract definitions
+/// Setup contract definitions
 #[inline]
 fn setup_contracts() -> Span<ContractDef> {
     [
@@ -90,7 +90,7 @@ fn setup_contracts() -> Span<ContractDef> {
         .span()
 }
 
-// Main spawn function that initializes the test world
+/// Main spawn function that initializes the test world
 #[inline]
 pub fn spawn() -> (WorldStorage, Systems, Context) {
     // Set the caller to OWNER for world setup
@@ -117,14 +117,14 @@ pub fn spawn() -> (WorldStorage, Systems, Context) {
     (world, systems, context)
 }
 
-// Utility function for setting up comprehensive test world (alias for compatibility)
+/// Utility function for setting up comprehensive test world (alias for compatibility)
 #[inline]
 pub fn setup_comprehensive_world() -> (WorldStorage, IActionsDispatcher) {
     let (world, systems, _context) = spawn();
     (world, systems.actions)
 }
 
-// Helper function to create a game for testing
+/// Helper function to create a game for testing
 pub fn create_test_game(systems: Systems, player: ContractAddress) -> u32 {
     set_contract_address(player);
     systems.actions.create_game()
@@ -148,23 +148,26 @@ pub fn clear_events(address: ContractAddress) {
 
 // Helper function to get test timestamp
 pub fn get_test_timestamp() -> u64 {
-    1000_u64 // Fixed timestamp for consistent testing
+    // Fixed timestamp for consistent testing
+    1000_u64
 }
 
-// Modern Store pattern - cleaner than repetitive helper functions
+/// Modern Store pattern - cleaner than repetitive helper functions
 pub use elysium_descent::helpers::store::{Store, StoreTrait};
 
-// Test Store pattern usage
+/// Test Store pattern usage
 pub fn test_store_pattern(
     world: WorldStorage, player: ContractAddress,
 ) -> (Player, PlayerInventory) {
-    let store: Store = StoreTrait::new(world); // Explicitly use Store type
+    // Explicitly use Store type
+    let store: Store = StoreTrait::new(world);
     let player_data = store.get_player(player);
     let inventory = store.get_player_inventory(player);
     (player_data, inventory)
 }
 
-// Helper that explicitly uses ModelStorage
+/// Helper that explicitly uses ModelStorage
 pub fn direct_model_access(world: WorldStorage, player: ContractAddress) -> Player {
-    world.read_model(player) // This uses ModelStorage trait
+    // This uses ModelStorage trait
+    world.read_model(player)
 }

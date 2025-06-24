@@ -2,7 +2,7 @@ use starknet::ContractAddress;
 use elysium_descent::types::game_types::GameStatus;
 use elysium_descent::types::item_types::ItemType;
 
-// Simplified game instance for current implementation
+/// Core game model containing game state, status, and metadata
 #[derive(Copy, Drop, Serde)]
 #[dojo::model]
 pub struct Game {
@@ -15,7 +15,7 @@ pub struct Game {
     pub score: u32,
 }
 
-// Level items spawned per level
+/// Level-specific item tracking model for collection progress
 #[derive(Copy, Drop, Serde)]
 #[dojo::model]
 pub struct LevelItems {
@@ -31,7 +31,7 @@ pub struct LevelItems {
     pub collected_books: u32,
 }
 
-// Helper functions to get count by item type - uses imported ItemType
+/// Utility functions for querying item counts by type
 #[generate_trait]
 impl LevelItemsImpl of LevelItemsTrait {
     fn get_total_by_type(self: @LevelItems, item_type: ItemType) -> u32 {
@@ -51,14 +51,15 @@ impl LevelItemsImpl of LevelItemsTrait {
     }
 }
 
-// Global game counter for unique game IDs
+/// Global counter model for generating unique sequential game IDs
 #[derive(Copy, Drop, Serde)]
 #[dojo::model]
 pub struct GameCounter {
     #[key]
-    pub counter_id: u32, // Use constant GAME_COUNTER_ID
+    /// Always set to GAME_COUNTER_ID constant for singleton behavior
+    pub counter_id: u32,
     pub next_game_id: u32,
 }
 
-// Constants for special identifiers
+/// Singleton identifier for the global game counter
 pub const GAME_COUNTER_ID: u32 = 999999999;

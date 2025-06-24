@@ -27,9 +27,9 @@ pub impl StoreImpl of StoreTrait {
         *self.world
     }
 
-    // Game management methods
+    /// Game management methods
     fn create_game(ref self: Store, player: ContractAddress, timestamp: u64) -> u32 {
-        // Get next game ID
+        // Generate unique game ID using singleton counter
         let mut counter: GameCounter = self.world.read_model(GAME_COUNTER_ID);
         if counter.next_game_id == 0 {
             let new_counter = GameCounter { counter_id: GAME_COUNTER_ID, next_game_id: 1 };
@@ -43,7 +43,7 @@ pub impl StoreImpl of StoreTrait {
         };
         self.world.write_model(@updated_counter);
 
-        // Create game
+        // Initialize new game instance with default values
         let game = Game {
             game_id,
             player,
@@ -54,19 +54,19 @@ pub impl StoreImpl of StoreTrait {
         };
         self.world.write_model(@game);
 
-        // Initialize player
+        // Create initial player stats with default values
         let player_stats = Player {
             player, health: 100, max_health: 100, level: 1, experience: 0, items_collected: 0,
         };
         self.world.write_model(@player_stats);
 
-        // Initialize inventory
+        // Create empty player inventory with default capacity
         let inventory = PlayerInventory {
             player, health_potions: 0, survival_kits: 0, books: 0, capacity: 50,
         };
         self.world.write_model(@inventory);
 
-        // Emit event
+        // Emit game creation event for external systems
         self.world.emit_event(@GameCreated { player, game_id, created_at: timestamp });
 
         game_id
@@ -80,7 +80,7 @@ pub impl StoreImpl of StoreTrait {
         self.world.write_model(@game);
     }
 
-    // Player management methods
+    /// Player management methods
     fn get_player(self: @Store, player: ContractAddress) -> Player {
         self.world.read_model(player)
     }
@@ -121,7 +121,7 @@ pub impl StoreImpl of StoreTrait {
         self.world.write_model(@level_items);
     }
 
-    // Event helpers
+    // Event emission helper methods for standardized event publishing
     fn emit_level_started(
         ref self: Store, player: ContractAddress, game_id: u32, level: u32, items_spawned: u32,
     ) {

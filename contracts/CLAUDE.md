@@ -983,8 +983,140 @@ Before finalizing tests, verify:
 
 **Remember**: When in doubt, check both the existing working tests in `src/tests/test_simple.cairo` and the comprehensive testing guide in `AI_DOCS/comprehensive-testing-in-dojo.md` for reference patterns!
 
+## Cairo Documentation and Commenting Best Practices
+
+### Proper Comment Syntax
+
+**CRITICAL**: Cairo has strict commenting syntax that affects compilation. Follow these patterns exactly:
+
+#### Documentation Comments
+```cairo
+/// Item-level documentation for structs, enums, functions, and traits
+/// Use triple slashes for comprehensive descriptions
+#[derive(Serde, Copy, Drop, Introspect, PartialEq)]
+pub enum GameMode {
+    /// Individual variant documentation
+    Tutorial,
+    /// Each variant on its own line
+    Standard,
+    /// Never use inline comments on enum variants
+    Hardcore,
+}
+
+/// Function documentation with structured sections
+/// 
+/// # Arguments
+/// * `base_exp` - Base experience amount before bonuses
+/// * `player_class` - Player's class affecting experience gain
+/// 
+/// # Returns
+/// Modified experience amount after applying class multiplier
+fn calculate_experience(base_exp: u32, player_class: PlayerClass) -> u32 {
+    // Regular inline comments within function bodies
+    let multiplier = player_class.get_experience_multiplier();
+    base_exp * multiplier / 100
+}
+```
+
+#### Module Documentation
+```cairo
+//! Module-level documentation using `//!`
+//! Describes the entire module's purpose and usage
+```
+
+### Common Syntax Errors to Avoid
+
+#### ❌ WRONG - Inline Comments on Enum Variants
+```cairo
+#[derive(Serde, Copy, Drop, Introspect, PartialEq)]
+pub enum GameMode {
+    Tutorial, // This will cause compilation errors
+    Standard, // Never use inline comments here
+    Hardcore  // Even without trailing comma
+}
+```
+
+#### ❌ WRONG - Inline Comments on Struct Fields
+```cairo
+pub struct GameConfig {
+    pub mode: GameMode, // Compilation error
+    pub difficulty: Difficulty, // Don't do this
+}
+```
+
+#### ✅ CORRECT - Separate Line Documentation
+```cairo
+/// Game configuration with mode-specific parameters
+#[derive(Clone, Drop, Serde, Introspect)]
+pub struct GameConfig {
+    pub mode: GameMode,
+    pub difficulty: Difficulty,
+    /// Percentage multiplier where 100 = normal, 200 = double items
+    pub item_spawn_multiplier: u32,
+}
+```
+
+### Comment Quality Guidelines
+
+#### Replace Vague Comments
+```cairo
+// ❌ WRONG - Vague and unhelpful
+// Use store method
+// Get the item
+// Check if completed
+
+// ✅ CORRECT - Specific and actionable
+// Delegate game creation to the Store layer following Shinigami pattern
+// Retrieve the world item to be collected
+// Verify all level items have been successfully collected
+```
+
+#### Function Documentation Template
+```cairo
+/// Brief function description
+/// 
+/// Longer description if needed explaining complex behavior,
+/// algorithm details, or important constraints.
+/// 
+/// # Arguments
+/// * `param1` - Description of first parameter
+/// * `param2` - Description of second parameter
+/// 
+/// # Returns
+/// Description of return value and its meaning
+/// 
+/// # Panics
+/// Conditions that will cause the function to panic
+/// 
+/// # Examples
+/// ```
+/// let result = my_function(value1, value2);
+/// assert(result > 0, 'Should be positive');
+/// ```
+fn my_function(param1: u32, param2: ContractAddress) -> u32 {
+    // Implementation with inline comments for complex logic
+    assert(param1 > 0, 'Parameter must be positive');
+    param1 * 2
+}
+```
+
+### Documentation Maintenance Checklist
+
+When writing or updating comments:
+
+- [ ] Use `///` for item-level documentation (structs, enums, functions)
+- [ ] Use `//` for inline comments within function bodies  
+- [ ] Never put inline comments on enum variants or struct fields
+- [ ] Place comments on separate lines above the code they describe
+- [ ] Write specific, actionable descriptions instead of vague statements
+- [ ] Include parameter and return value documentation for public functions
+- [ ] Document panic conditions with `# Panics` sections
+- [ ] Provide examples for complex functions
+- [ ] Use consistent terminology throughout the codebase
+
 ## Essential Documentation References
 
+- [Cairo Comments Guide](https://book.cairo-lang.org/ch02-04-comments.html) - Official Cairo commenting syntax
 - [Dojo Models](https://www.dojoengine.org/framework/models) - Model structure and best practices
 - [Dojo Systems](https://www.dojoengine.org/framework/world/systems) - System implementation patterns  
 - [World API](https://www.dojoengine.org/framework/world/api) - Complete API reference

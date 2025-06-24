@@ -1,5 +1,5 @@
-// Model index for easy imports
-// Re-export all model structs
+/// Model index for easy imports
+/// Re-export all model structs
 
 pub use super::player::Player;
 pub use super::inventory::PlayerInventory;

@@ -7,16 +7,16 @@ use elysium_descent::models::world_state::WorldItem;
 use elysium_descent::types::game_types::GameStatus;
 use elysium_descent::types::item_types::ItemType;
 
-// Game Component - handles game lifecycle and level management
+/// Game Component - handles game lifecycle and level management
 #[generate_trait]
 pub impl GameComponentImpl of GameComponentTrait {
     fn start_level(ref store: Store, player: ContractAddress, game_id: u32, level: u32) -> u32 {
-        // Verify game exists and player owns it
+        // Validate game ownership and active status
         let mut game = store.get_game(game_id);
         assert(game.player == player, 'Not your game');
         assert(game.status == GameStatus::InProgress, 'Game not in progress');
 
-        // Update game level
+        // Update game state to reflect current level
         let updated_game = Game {
             game_id: game.game_id,
             player: game.player,
@@ -27,12 +27,12 @@ pub impl GameComponentImpl of GameComponentTrait {
         };
         store.update_game(updated_game);
 
-        // Calculate items for this level
+        // Determine item spawn counts based on level progression
         let health_potions_count = Self::calculate_level_health_potions(level);
         let survival_kits_count = Self::calculate_level_survival_kits(level);
         let books_count = Self::calculate_level_books(level);
 
-        // Create level items metadata
+        // Initialize level tracking model for collection progress
         let level_items = LevelItems {
             game_id,
             level,
@@ -45,10 +45,10 @@ pub impl GameComponentImpl of GameComponentTrait {
         };
         store.create_level_items(level_items);
 
-        // Generate actual item instances
+        // Spawn physical world items for collection
         let mut item_counter = 0_u32;
 
-        // Generate health potions
+        // Create health potion instances in the world
         Self::spawn_items_of_type(
             ref store,
             game_id,
@@ -58,12 +58,12 @@ pub impl GameComponentImpl of GameComponentTrait {
             health_potions_count,
         );
 
-        // Generate survival kits
+        // Create survival kit instances in the world
         Self::spawn_items_of_type(
             ref store, game_id, level, ref item_counter, ItemType::SurvivalKit, survival_kits_count,
         );
 
-        // Generate books
+        // Create book instances in the world
         Self::spawn_items_of_type(
             ref store, game_id, level, ref item_counter, ItemType::Book, books_count,
         );
@@ -81,7 +81,7 @@ pub impl GameComponentImpl of GameComponentTrait {
 
         let level_items = store.get_level_items(game_id, level);
 
-        // Check if level is completed (all items collected)
+        // Verify all level items have been successfully collected
         let items_completed = level_items
             .collected_health_potions == level_items
             .total_health_potions
@@ -89,14 +89,14 @@ pub impl GameComponentImpl of GameComponentTrait {
             && level_items.collected_books == level_items.total_books;
 
         if items_completed {
-            // Award completion bonus
+            // Grant experience bonus for completing the level
             let player_stats = store.get_player(player);
             let updated_player = Player {
                 player: player_stats.player,
                 health: player_stats.health,
                 max_health: player_stats.max_health,
                 level: player_stats.level,
-                experience: player_stats.experience + 100, // Level completion bonus
+                experience: player_stats.experience + 100, // Flat bonus for level completion
                 items_collected: player_stats.items_collected,
             };
             store.update_player(updated_player);
@@ -152,7 +152,7 @@ pub impl GameComponentImpl of GameComponentTrait {
         store.update_game(updated_game);
     }
 
-    // Helper methods
+    // Private utility methods for item generation and game calculations
     fn spawn_items_of_type(
         ref store: Store,
         game_id: u32,
@@ -188,7 +188,7 @@ pub impl GameComponentImpl of GameComponentTrait {
     }
 
     fn calculate_level_health_potions(level: u32) -> u32 {
-        // Formula: base 3 potions + 1 per level, max 10
+        // Linear scaling: 3 base + 1 per level, capped at 10
         let potions = 3 + level;
         if potions > 10 {
             10
@@ -198,7 +198,7 @@ pub impl GameComponentImpl of GameComponentTrait {
     }
 
     fn calculate_level_survival_kits(level: u32) -> u32 {
-        // Formula: 1 survival kit every 2 levels, max 3
+        // Moderate scaling: 1 kit per 2 levels, capped at 3
         let kits = (level + 1) / 2;
         if kits > 3 {
             3
@@ -208,7 +208,7 @@ pub impl GameComponentImpl of GameComponentTrait {
     }
 
     fn calculate_level_books(level: u32) -> u32 {
-        // Formula: 1 book every 3 levels, max 2
+        // Rare spawning: 1 book per 3 levels, capped at 2
         let books = level / 3;
         if books > 2 {
             2
@@ -221,9 +221,10 @@ pub impl GameComponentImpl of GameComponentTrait {
         let hash = poseidon_hash_span(
             array![game_id.into(), level.into(), item_counter.into()].span(),
         );
-        // Use modulo to ensure the value fits in u32 range
+        // Constrain hash to u32 range to prevent overflow errors
         let hash_u256: u256 = hash.into();
-        let item_id = (hash_u256 % 0x100000000_u256).try_into().unwrap(); // Max u32 value
+        // Constrain to u32 maximum to prevent overflow
+        let item_id = (hash_u256 % 0x100000000_u256).try_into().unwrap();
         item_id
     }
 
@@ -238,8 +239,10 @@ pub impl GameComponentImpl of GameComponentTrait {
         let x_u256: u256 = seed_x.into();
         let y_u256: u256 = seed_y.into();
 
-        let x = ((x_u256 % 100) + 10).try_into().unwrap(); // X position between 10-109
-        let y = ((y_u256 % 100) + 10).try_into().unwrap(); // Y position between 10-109
+        // X coordinate: 10-109 range
+        let x = ((x_u256 % 100) + 10).try_into().unwrap();
+        // Y coordinate: 10-109 range  
+        let y = ((y_u256 % 100) + 10).try_into().unwrap();
         (x, y)
     }
 }

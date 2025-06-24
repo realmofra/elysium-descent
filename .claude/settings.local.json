@@ -16,7 +16,8 @@
       "mcp__sensei__dojo_logic",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "WebFetch(domain:book.cairo-lang.org)"
     ]
   },
   "enableAllProjectMcpServers": true

@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 
-// Game Status - expanded from your original
+// Game state enumeration covering all possible game lifecycle phases
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 pub enum GameStatus {
     NotStarted,
@@ -11,18 +11,24 @@ pub enum GameStatus {
     Failed,
 }
 
-// Game Mode Types for different gameplay experiences
+/// Gameplay mode variants offering different rule sets and objectives
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 pub enum GameMode {
-    Tutorial, // Guided learning experience
-    Standard, // Normal gameplay
-    Hardcore, // Permadeath, no saves
-    Speedrun, // Timed challenges
-    Creative, // Unlimited resources
-    Multiplayer // Shared world state
+    /// Guided learning experience with enhanced rewards
+    Tutorial,
+    /// Balanced normal gameplay
+    Standard,
+    /// Permadeath mode with restricted resources
+    Hardcore,
+    /// Time-limited completion challenges
+    Speedrun,
+    /// Unlimited resources for experimentation
+    Creative,
+    /// Shared world state with multiple players
+    Multiplayer,
 }
 
-// Difficulty Levels
+// Challenge scaling levels affecting spawns and progression
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 pub enum Difficulty {
     Easy,
@@ -31,17 +37,22 @@ pub enum Difficulty {
     Nightmare,
 }
 
-// Player Class System
+/// Character specializations providing unique bonuses and playstyles
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 pub enum PlayerClass {
-    Explorer, // Balanced stats, bonus to item discovery
-    Survivor, // High health, resistance bonuses
-    Scholar, // Bonus experience, faster learning
-    Collector, // Larger inventory, better loot chances
-    Speedrunner // Movement bonuses, time advantages
+    /// Balanced stats with bonus to item discovery
+    Explorer,
+    /// High health with resistance bonuses
+    Survivor,
+    /// Bonus experience and faster learning
+    Scholar,
+    /// Larger inventory with better loot chances
+    Collector,
+    /// Movement bonuses and time advantages
+    Speedrunner,
 }
 
-// Game Configuration Structure
+/// Game configuration structure defining rules and parameters
 #[derive(Clone, Drop, Serde, Introspect)]
 pub struct GameConfig {
     pub mode: GameMode,
@@ -51,7 +62,8 @@ pub struct GameConfig {
     pub starting_inventory_slots: u32,
     pub permadeath_enabled: bool,
     pub time_limit_seconds: Option<u64>,
-    pub item_spawn_multiplier: u32, // Percentage: 100 = normal, 200 = double items
+    /// Percentage multiplier where 100 = normal, 200 = double items
+    pub item_spawn_multiplier: u32,
     pub experience_multiplier: u32,
     pub allow_trading: bool,
     pub max_players: u32,
@@ -86,7 +98,7 @@ pub struct LevelProgress {
     pub score: u32,
 }
 
-// Conversion traits
+/// Type conversion implementations for storage and serialization
 impl GameStatusIntoFelt252 of Into<GameStatus, felt252> {
     fn into(self: GameStatus) -> felt252 {
         match self {
@@ -136,7 +148,7 @@ impl PlayerClassIntoFelt252 of Into<PlayerClass, felt252> {
     }
 }
 
-// Game type utility traits
+/// Game type utility traits for state validation and mode configuration
 #[generate_trait]
 pub impl GameStatusImpl of GameStatusTrait {
     fn is_active(self: @GameStatus) -> bool {

@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 use elysium_descent::types::item_types::ItemType;
 
-// Simplified player inventory for current implementation
+/// Player inventory model for item storage and capacity management
 #[derive(Copy, Drop, Serde)]
 #[dojo::model]
 pub struct PlayerInventory {
@@ -13,7 +13,7 @@ pub struct PlayerInventory {
     pub capacity: u32,
 }
 
-// Helper functions for PlayerInventory - explicitly uses ItemType
+/// Inventory utility functions for item management operations
 #[generate_trait]
 impl PlayerInventoryImpl of PlayerInventoryTrait {
     fn get_item_count(self: @PlayerInventory, item_type: ItemType) -> u32 {

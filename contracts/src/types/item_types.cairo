@@ -1,4 +1,4 @@
-// Item Categories - following Shinigami's hierarchical approach
+/// High-level item categorization for grouping and filtering
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 pub enum ItemCategory {
     Consumable,
@@ -8,7 +8,7 @@ pub enum ItemCategory {
     Special,
 }
 
-// Basic Item Types for current implementation
+/// Concrete item types available in the game
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 pub enum ItemType {
     HealthPotion,
@@ -17,7 +17,7 @@ pub enum ItemType {
 }
 
 
-// Item Rarity System
+/// Item rarity classification affecting value and drop rates
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 pub enum ItemRarity {
     Common,
@@ -27,7 +27,7 @@ pub enum ItemRarity {
     Legendary,
 }
 
-// Item Properties struct for detailed item data
+/// Comprehensive item metadata structure for advanced item systems
 #[derive(Clone, Drop, Serde, Introspect)]
 pub struct ItemProperties {
     pub id: felt252,
@@ -41,7 +41,7 @@ pub struct ItemProperties {
     pub is_consumable: bool,
 }
 
-// Conversion traits
+/// Type conversion implementations for storage and serialization
 impl ItemTypeIntoFelt252 of Into<ItemType, felt252> {
     fn into(self: ItemType) -> felt252 {
         match self {
@@ -76,7 +76,7 @@ impl ItemRarityIntoFelt252 of Into<ItemRarity, felt252> {
     }
 }
 
-// Type utility traits following Shinigami pattern
+/// ItemType utility functions for game logic and validation
 #[generate_trait]
 pub impl ItemTypeImpl of ItemTypeTrait {
     fn get_category(self: @ItemType) -> ItemCategory {
