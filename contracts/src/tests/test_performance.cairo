@@ -6,7 +6,6 @@
 #[cfg(test)]
 mod performance_tests {
     use starknet::testing::set_contract_address;
-    use dojo::world::WorldStorage;
     use dojo::model::{ModelStorage, ModelStorageTest};
     use elysium_descent::systems::actions::IActionsDispatcherTrait;
 
@@ -16,7 +15,7 @@ mod performance_tests {
 
     // Centralized setup imports
     use elysium_descent::tests::setup::{
-        spawn, Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem, PLAYER1, PLAYER2,
+        spawn, Player, Game, LevelItems, PlayerInventory, WorldItem,
         get_test_timestamp,
     };
     use elysium_descent::helpers::store::{Store, StoreTrait};

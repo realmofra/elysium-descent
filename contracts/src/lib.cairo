@@ -37,8 +37,8 @@ mod tests {
     mod test_game_features;
     mod test_inventory_features;
     mod test_component_layer;
-    // mod test_error_conditions;
-// mod test_events;
-// mod test_helpers;
-// mod test_performance;
+    mod test_error_conditions;
+    mod test_performance;
+    mod test_helpers;
+    // mod test_events;
 }

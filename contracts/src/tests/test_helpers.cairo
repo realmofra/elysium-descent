@@ -5,13 +5,11 @@
 
 #[cfg(test)]
 mod helpers_tests {
-    use starknet::testing::set_contract_address;
-    use dojo::world::WorldStorage;
     use dojo::model::{ModelStorage, ModelStorageTest};
 
     // Centralized setup imports
     use elysium_descent::tests::setup::{
-        spawn, Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem, PLAYER1, PLAYER2,
+        spawn, Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem,
         get_test_timestamp,
     };
     use elysium_descent::helpers::store::{Store, StoreTrait};
@@ -28,11 +26,9 @@ mod helpers_tests {
         let store: Store = StoreTrait::new(world);
 
         // Test that store can be created and used
-        // Verify world storage is accessible
-        assert(
-            store.world.dispatcher.contract_address != starknet::contract_address_const::<0>(),
-            'Store should have valid world',
-        );
+        // Verify store functionality by testing a basic operation
+        let test_counter = store.get_game_counter();
+        assert(test_counter.counter_id == 999999999, 'Store should work');
     }
 
     #[test]
@@ -271,7 +267,7 @@ mod helpers_tests {
         let total_collected_items = retrieved_level_items.collected_health_potions
             + retrieved_level_items.collected_survival_kits
             + retrieved_level_items.collected_books;
-        assert(total_collected_items == 7, 'Total collected items should be 7');
+        assert(total_collected_items == 7, 'Total collected wrong');
     }
 
     #[test]
@@ -314,8 +310,8 @@ mod helpers_tests {
         );
 
         // Store pattern provides semantic interface over raw model operations
-        assert(store_retrieved.level == 4, 'Store should provide semantic access');
-        assert(direct_retrieved.level == 4, 'Direct access should match store');
+        assert(store_retrieved.level == 4, 'Store level wrong');
+        assert(direct_retrieved.level == 4, 'Direct level wrong');
     }
 
     // ==================== STORE PATTERN DATA CONSISTENCY TESTS ====================
@@ -365,7 +361,7 @@ mod helpers_tests {
         assert(final_player.max_health == 110, 'Final max health should be 110');
         assert(final_player.level == 2, 'Final level should be 2');
         assert(final_player.experience == 100, 'Final experience should be 100');
-        assert(final_player.items_collected == 6, 'Final items collected should be 6');
+        assert(final_player.items_collected == 6, 'Final items wrong');
 
         // Verify data consistency - experience threshold met for level 2
         assert(final_player.experience >= (final_player.level - 1) * 100, 'Experience wrong');
