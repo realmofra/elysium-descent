@@ -71,7 +71,7 @@ impl AchievementImpl of AchievementTrait {
             is_active: true,
         }
     }
-    
+
     fn check_completion(self: @Achievement, player_progress: @PlayerProgress) -> bool {
         // Implementation logic
         true
@@ -120,7 +120,7 @@ impl ItemTypeImpl of ItemTypeTrait {
             ItemType::Material(_) => false,
         }
     }
-    
+
     fn get_element_handler(self: @ItemType) -> felt252 {
         match self {
             ItemType::Weapon(_) => 'weapon_handler',
@@ -137,7 +137,7 @@ impl ItemTypeAssert of AssertTrait {
     fn assert_valid_weapon_type(weapon_type: WeaponType) {
         // Validation logic
     }
-    
+
     fn assert_can_equip(item_type: @ItemType, player_class: PlayerClass) {
         assert(item_type.is_equipable(), 'Item: not equipable');
         // Additional class-specific validation
@@ -191,7 +191,7 @@ impl PlayerImpl of PlayerTrait {
             last_action_timestamp: get_block_timestamp(),
         }
     }
-    
+
     fn gain_experience(ref self: Player, amount: u64) {
         self.experience += amount;
         let new_level = self.calculate_level();
@@ -199,7 +199,7 @@ impl PlayerImpl of PlayerTrait {
             self.level_up(new_level);
         }
     }
-    
+
     fn take_damage(ref self: Player, damage: u32) -> bool {
         if damage >= self.health {
             self.health = 0;
@@ -263,7 +263,7 @@ mod CombatComponent {
     impl CombatInternalImpl<
         TContractState, +HasComponent<TContractState>
     > of super::ICombat<ComponentState<TContractState>> {
-        
+
         fn initiate_combat(
             ref self: ComponentState<TContractState>,
             player_id: felt252,
@@ -272,10 +272,10 @@ mod CombatComponent {
             // Validate participants
             let player = self.get_player(player_id);
             let enemy = self.get_enemy(enemy_id);
-            
+
             assert(player.health > 0, 'Player: already defeated');
             assert(enemy.health > 0, 'Enemy: already defeated');
-            
+
             // Create combat instance
             let combat_id = self.generate_combat_id(player_id, enemy_id);
             let combat = Combat {
@@ -287,9 +287,9 @@ mod CombatComponent {
                 status: CombatStatus::Active,
                 start_time: get_block_timestamp(),
             };
-            
+
             self.active_combats.write(combat_id, combat);
-            
+
             // Emit event
             self.emit(CombatStarted {
                 combat_id,
@@ -297,10 +297,10 @@ mod CombatComponent {
                 enemy_id,
                 timestamp: get_block_timestamp(),
             });
-            
+
             combat_id
         }
-        
+
         fn execute_attack(
             ref self: ComponentState<TContractState>,
             combat_id: felt252,
@@ -308,22 +308,22 @@ mod CombatComponent {
         ) -> CombatResult {
             let mut combat = self.active_combats.read(combat_id);
             assert(combat.status == CombatStatus::Active, 'Combat: not active');
-            
+
             match combat.turn {
                 Turn::Player => {
                     let player = self.get_player(combat.player_id);
                     let mut enemy = self.get_enemy(combat.enemy_id);
-                    
+
                     let damage = self.calculate_damage(player, enemy, attack_type);
                     enemy.take_damage(damage);
-                    
+
                     if enemy.health == 0 {
                         combat.status = CombatStatus::PlayerWin;
                         self.process_victory(combat.player_id, combat.enemy_id);
                     } else {
                         combat.turn = Turn::Enemy;
                     }
-                    
+
                     self.update_enemy(enemy);
                     CombatResult::Success(damage)
                 },
@@ -354,7 +354,7 @@ mod CombatComponent {
 #[dojo::contract]
 mod GameSystem {
     use super::{IGameSystem, GameMode, GameConfig, PlayerClass};
-    
+
     component!(path: CombatComponent, storage: combat, event: CombatEvent);
     component!(path: QuestComponent, storage: quest, event: QuestEvent);
     component!(path: InventoryComponent, storage: inventory, event: InventoryEvent);
@@ -399,14 +399,14 @@ mod GameSystem {
                     permadeath: true,
                 },
             };
-            
+
             self.current_mode.write(mode);
             self.game_config.write(config);
-            
+
             // Initialize player with mode-specific configuration
             self.create_player_with_config(player_id, player_class, config);
         }
-        
+
         fn process_player_action(
             ref self: ContractState,
             player_id: felt252,
@@ -414,7 +414,7 @@ mod GameSystem {
         ) -> ActionResult {
             let mode = self.current_mode.read();
             let config = self.game_config.read();
-            
+
             match action {
                 GameAction::Move(direction) => {
                     self.process_movement(player_id, direction, config)
@@ -451,14 +451,14 @@ mod GameSystem {
 mod RandomHelper {
     use core::pedersen::PedersenTrait;
     use core::hash::{HashStateTrait, HashStateExTrait};
-    
+
     fn generate_seed(player_id: felt252, block_number: u64) -> felt252 {
         PedersenTrait::new()
             .update_with(player_id)
             .update_with(block_number.into())
             .finalize()
     }
-    
+
     fn random_range(seed: felt252, min: u32, max: u32) -> u32 {
         assert(min < max, 'Random: invalid range');
         let range = max - min;
@@ -469,7 +469,7 @@ mod RandomHelper {
 
 mod DamageCalculator {
     use super::{Player, Enemy, AttackType, DamageModifier};
-    
+
     fn calculate_base_damage(
         attacker_strength: u32,
         weapon_damage: u32,
@@ -482,7 +482,7 @@ mod DamageCalculator {
             AttackType::Critical => base * 200 / 100,
         }
     }
-    
+
     fn apply_modifiers(
         base_damage: u32,
         modifiers: Array<DamageModifier>
@@ -495,11 +495,11 @@ mod DamageCalculator {
             }
             let modifier = modifiers.at(i);
             final_damage = match *modifier {
-                DamageModifier::Percentage(percent) => 
+                DamageModifier::Percentage(percent) =>
                     final_damage * percent / 100,
-                DamageModifier::Flat(amount) => 
+                DamageModifier::Flat(amount) =>
                     final_damage + amount,
-                DamageModifier::Resistance(resistance) => 
+                DamageModifier::Resistance(resistance) =>
                     final_damage - (final_damage * resistance / 100),
             };
             i += 1;
@@ -513,13 +513,13 @@ mod DataPacker {
     fn pack_position(x: u32, y: u32) -> felt252 {
         (x.into() * 0x100000000) + y.into()
     }
-    
+
     fn unpack_position(packed: felt252) -> (u32, u32) {
         let x = (packed / 0x100000000).try_into().unwrap();
         let y = (packed % 0x100000000).try_into().unwrap();
         (x, y)
     }
-    
+
     fn pack_inventory_slot(item_id: felt252, quantity: u32) -> felt252 {
         item_id + (quantity.into() * 0x1000000000000000000000000000000000000000000000000000000000000000)
     }
@@ -620,10 +620,10 @@ Systems communicate through events rather than direct calls.
 mod world {
     // All models automatically registered
     use super::{Player, GameState, Inventory, Enemy};
-    
+
     // Systems registered as contracts
     use super::{StandardMode, TutorialMode, ArenaMode};
-    
+
     // Components available for composition
     use super::{CombatComponent, MovementComponent, QuestComponent};
 }
@@ -639,7 +639,7 @@ fn sync_game_state(
 ) {
     // Fetch updated models from Dojo
     let blockchain_players = dojo_client.get_models::<Player>();
-    
+
     for blockchain_player in blockchain_players {
         // Update or create Bevy entities based on blockchain state
         update_bevy_player(&mut commands, blockchain_player);
@@ -724,11 +724,11 @@ trait IGamePlugin<TState> {
 #[dojo::contract]
 mod plugin_manager {
     use super::{IGamePlugin, PluginRegistry};
-    
+
     fn register_plugin(ref self: ContractState, plugin: ContractAddress) {
         // Dynamic plugin registration
     }
-    
+
     fn execute_plugins(ref self: ContractState, event: GameEvent) {
         // Execute all registered plugins for event
     }
