@@ -55,6 +55,7 @@ pub impl GameComponentImpl of GameComponentTrait {
 
         game_id
     }
+
     fn start_level(ref store: Store, player: ContractAddress, game_id: u32, level: u32) -> u32 {
         // Validate game ownership and active status
         let mut game = store.get_game(game_id);
