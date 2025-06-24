@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
-use super::super::types::game_types::GameStatus;
-use super::super::types::item_types::ItemType;
+use elysium_descent::types::game_types::GameStatus;
+use elysium_descent::types::item_types::ItemType;
 
 // Simplified game instance for current implementation
 #[derive(Copy, Drop, Serde)]
@@ -62,4 +62,3 @@ pub struct GameCounter {
 
 // Constants for special identifiers
 pub const GAME_COUNTER_ID: u32 = 999999999;
-

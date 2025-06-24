@@ -154,9 +154,11 @@ pub fn get_test_timestamp() -> u64 {
 // Modern Store pattern - cleaner than repetitive helper functions
 pub use elysium_descent::helpers::store::{Store, StoreTrait};
 
-// Test Store pattern usage  
-pub fn test_store_pattern(world: WorldStorage, player: ContractAddress) -> (Player, PlayerInventory) {
-    let store: Store = StoreTrait::new(world);  // Explicitly use Store type
+// Test Store pattern usage
+pub fn test_store_pattern(
+    world: WorldStorage, player: ContractAddress,
+) -> (Player, PlayerInventory) {
+    let store: Store = StoreTrait::new(world); // Explicitly use Store type
     let player_data = store.get_player(player);
     let inventory = store.get_player_inventory(player);
     (player_data, inventory)
@@ -164,5 +166,5 @@ pub fn test_store_pattern(world: WorldStorage, player: ContractAddress) -> (Play
 
 // Helper that explicitly uses ModelStorage
 pub fn direct_model_access(world: WorldStorage, player: ContractAddress) -> Player {
-    world.read_model(player)  // This uses ModelStorage trait
+    world.read_model(player) // This uses ModelStorage trait
 }

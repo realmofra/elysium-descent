@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use super::super::types::game_types::{PlayerClass, PlayerClassTrait};
+use elysium_descent::types::game_types::{PlayerClass, PlayerClassTrait};
 
 // Simplified player stats model for current implementation
 #[derive(Copy, Drop, Serde)]
@@ -40,4 +40,3 @@ impl PlayerImpl of PlayerTrait {
         *self.experience >= *self.level * 100
     }
 }
-

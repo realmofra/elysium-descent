@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use super::super::types::item_types::ItemType;
+use elysium_descent::types::item_types::ItemType;
 
 // Simplified player inventory for current implementation
 #[derive(Copy, Drop, Serde)]
@@ -61,4 +61,3 @@ impl PlayerInventoryImpl of PlayerInventoryTrait {
         }
     }
 }
-

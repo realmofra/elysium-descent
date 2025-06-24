@@ -1,9 +1,9 @@
 use starknet::ContractAddress;
-use super::super::helpers::store::{Store, StoreTrait};
-use super::super::models::player::Player;
-use super::super::models::inventory::PlayerInventory;
-use super::super::models::world_state::WorldItem;
-use super::super::types::item_types::ItemType;
+use elysium_descent::helpers::store::{Store, StoreTrait};
+use elysium_descent::models::player::Player;
+use elysium_descent::models::inventory::PlayerInventory;
+use elysium_descent::models::world_state::WorldItem;
+use elysium_descent::types::item_types::ItemType;
 
 // Inventory Component - handles all inventory-related business logic
 #[generate_trait]

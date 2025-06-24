@@ -1,11 +1,11 @@
 use starknet::ContractAddress;
 use core::poseidon::poseidon_hash_span;
-use super::super::helpers::store::{Store, StoreTrait};
-use super::super::models::game::{Game, LevelItems};
-use super::super::models::player::Player;
-use super::super::models::world_state::WorldItem;
-use super::super::types::game_types::GameStatus;
-use super::super::types::item_types::ItemType;
+use elysium_descent::helpers::store::{Store, StoreTrait};
+use elysium_descent::models::game::{Game, LevelItems};
+use elysium_descent::models::player::Player;
+use elysium_descent::models::world_state::WorldItem;
+use elysium_descent::types::game_types::GameStatus;
+use elysium_descent::types::item_types::ItemType;
 
 // Game Component - handles game lifecycle and level management
 #[generate_trait]

@@ -118,15 +118,12 @@ mod integration_tests {
     // Helper function to test additional model types that were imported
     fn test_additional_models(mut world: WorldStorage) {
         // Test GameCounter model usage using ModelStorageTest
-        let counter = GameCounter {
-            counter_id: 999999999,
-            next_game_id: 3,
-        };
+        let counter = GameCounter { counter_id: 999999999, next_game_id: 3 };
         world.write_model_test(@counter);
         let read_counter: GameCounter = world.read_model(counter.counter_id);
         assert(read_counter.next_game_id == 3, 'Counter should be 3');
 
-        // Test LevelItems model usage  
+        // Test LevelItems model usage
         let level_items = LevelItems {
             game_id: 1,
             level: 1,
@@ -156,11 +153,7 @@ mod integration_tests {
 
         // Test PlayerInventory model
         let inventory = PlayerInventory {
-            player: PLAYER(),
-            health_potions: 3,
-            survival_kits: 1,
-            books: 1,
-            capacity: 15,
+            player: PLAYER(), health_potions: 3, survival_kits: 1, books: 1, capacity: 15,
         };
         world.write_model_test(@inventory);
         let read_inventory: PlayerInventory = world.read_model(PLAYER());

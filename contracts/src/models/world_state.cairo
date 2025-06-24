@@ -1,5 +1,5 @@
 use starknet::{ContractAddress, contract_address_const};
-use super::super::types::item_types::ItemType;
+use elysium_descent::types::item_types::ItemType;
 
 // Simplified world item for current implementation
 #[derive(Copy, Drop, Serde)]
@@ -29,4 +29,3 @@ impl WorldItemImpl of WorldItemTrait {
         !*self.is_collected && player != contract_address_const::<0>()
     }
 }
-

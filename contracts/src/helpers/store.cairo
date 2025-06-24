@@ -3,14 +3,14 @@ use dojo::model::{ModelStorage};
 use dojo::event::EventStorage;
 use starknet::ContractAddress;
 
-use super::super::models::game::{Game, LevelItems, GameCounter, GAME_COUNTER_ID};
-use super::super::models::player::Player;
-use super::super::models::inventory::PlayerInventory;
-use super::super::models::world_state::WorldItem;
-use super::super::types::game_types::GameStatus;
-use super::super::types::item_types::ItemType;
+use elysium_descent::models::game::{Game, LevelItems, GameCounter, GAME_COUNTER_ID};
+use elysium_descent::models::player::Player;
+use elysium_descent::models::inventory::PlayerInventory;
+use elysium_descent::models::world_state::WorldItem;
+use elysium_descent::types::game_types::GameStatus;
+use elysium_descent::types::item_types::ItemType;
 
-use super::super::systems::actions::{GameCreated, LevelStarted, ItemPickedUp};
+use elysium_descent::systems::actions::{GameCreated, LevelStarted, ItemPickedUp};
 
 #[derive(Clone, Drop)]
 pub struct Store {

@@ -67,27 +67,20 @@ mod tests {
         assert(read_player.level == 1, 'Level mismatch');
 
         // Test other model types to use imported types
-        let test_game_counter = GameCounter {
-            counter_id: 999999999,
-            next_game_id: 1,
-        };
+        let test_game_counter = GameCounter { counter_id: 999999999, next_game_id: 1 };
         world.write_model_test(@test_game_counter);
         let read_counter: GameCounter = world.read_model(test_game_counter.counter_id);
         assert(read_counter.next_game_id == 1, 'Counter mismatch');
 
         // Test inventory model
         let test_inventory = PlayerInventory {
-            player: player_address,
-            health_potions: 5,
-            survival_kits: 2,
-            books: 1,
-            capacity: 20,
+            player: player_address, health_potions: 5, survival_kits: 2, books: 1, capacity: 20,
         };
         world.write_model_test(@test_inventory);
         let read_inventory: PlayerInventory = world.read_model(player_address);
         assert(read_inventory.health_potions == 5, 'Inventory mismatch');
 
-        // Test level items model  
+        // Test level items model
         let test_level_items = LevelItems {
             game_id: 1,
             level: 1,
@@ -163,7 +156,7 @@ mod tests {
 
         // Use WorldStorage explicitly in a helper function
         verify_world_storage_works(world);
-        
+
         // Test modern Store pattern
         test_store_pattern_usage(world, PLAYER());
     }
@@ -171,17 +164,20 @@ mod tests {
     // Helper function that explicitly uses WorldStorage type
     fn verify_world_storage_works(world: WorldStorage) {
         // Simple verification that WorldStorage is working
-        assert(world.dispatcher.contract_address != contract_address_const::<0>(), 'World should have address');
+        assert(
+            world.dispatcher.contract_address != contract_address_const::<0>(),
+            'World should have address',
+        );
     }
 
     // Test Store pattern - modern approach
     fn test_store_pattern_usage(world: WorldStorage, player: ContractAddress) {
-        let store: Store = StoreTrait::new(world);  // Explicitly use Store type
-        
+        let store: Store = StoreTrait::new(world); // Explicitly use Store type
+
         // Use Store methods directly (thanks to #[generate_trait])
         let player_data = store.get_player(player);
         let inventory = store.get_player_inventory(player);
-        
+
         // Store automatically uses ModelStorage internally
         assert(player_data.health <= player_data.max_health, 'Health should be valid');
         assert(inventory.capacity > 0, 'Inventory should have capacity');
