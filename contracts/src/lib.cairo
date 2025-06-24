@@ -30,4 +30,5 @@ mod tests {
     mod test_world;
     mod test_simple;
     mod test_comprehensive;
+    mod setup;
 }

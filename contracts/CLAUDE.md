@@ -278,6 +278,26 @@ torii --world <WORLD_ADDRESS> --http.cors_origins "*"
 
 This section provides detailed guidance for writing reliable tests in Dojo, based on real-world debugging and issue resolution.
 
+### CRITICAL: Events vs Models Resource Registration
+
+**The #1 cause of Dojo testing failures** is incorrect resource registration. You must register the exact resources your test needs:
+
+```cairo
+// ❌ WRONG - Mixed up resource types  
+TestResource::Model(e_GameCreated::TEST_CLASS_HASH),  // Event registered as Model
+TestResource::Event(m_Player::TEST_CLASS_HASH),       // Model registered as Event
+
+// ✅ CORRECT - Proper resource registration
+TestResource::Model(m_Player::TEST_CLASS_HASH),       // Models use m_ prefix
+TestResource::Event(e_GameCreated::TEST_CLASS_HASH),  // Events use e_ prefix
+```
+
+**When to Register Events vs Models:**
+
+- **Register Events** (`TestResource::Event`) when testing event emission, logging, achievements
+- **Register Models** (`TestResource::Model`) when testing persistent state, data storage
+- **Always register the CONTRACT** that emits events or manages models
+
 ### Critical Testing Concepts
 
 #### 1. Dojo Auto-Generated Types
@@ -592,22 +612,85 @@ grep -r "elysium_001" Scarb.toml
 # Ensure consistency across all files
 ```
 
+### Advanced Setup Module Pattern
+
+For complex projects, use a structured setup module:
+
+```cairo
+// src/tests/setup.cairo
+#[derive(Copy, Drop)]
+pub struct Systems {
+    pub actions: IActionsDispatcher,
+    pub player_system: IPlayerSystemDispatcher,
+    pub game_system: IGameSystemDispatcher,
+}
+
+#[derive(Copy, Drop)]
+pub struct Context {
+    pub player1: ContractAddress,
+    pub player2: ContractAddress,
+    pub admin: ContractAddress,
+    pub test_game_id: u32,
+}
+
+pub fn spawn() -> (WorldStorage, Systems, Context) {
+    set_contract_address(OWNER());
+    let namespace_def = setup_namespace();
+    let world = spawn_test_world([namespace_def].span());
+    world.sync_perms_and_inits(setup_contracts());
+
+    // Get all system dispatchers
+    let (actions_address, _) = world.dns(@"actions").unwrap();
+    let (player_address, _) = world.dns(@"player_system").unwrap();
+    let (game_address, _) = world.dns(@"game_system").unwrap();
+    
+    let systems = Systems {
+        actions: IActionsDispatcher { contract_address: actions_address },
+        player_system: IPlayerSystemDispatcher { contract_address: player_address },
+        game_system: IGameSystemDispatcher { contract_address: game_address },
+    };
+
+    let context = Context {
+        player1: PLAYER1(),
+        player2: PLAYER2(),
+        admin: ADMIN(),
+        test_game_id: 1,
+    };
+
+    (world, systems, context)
+}
+
+// Utility to clear events for clean testing
+pub fn clear_events(address: ContractAddress) {
+    loop {
+        match starknet::testing::pop_log_raw(address) {
+            core::option::Option::Some(_) => {},
+            core::option::Option::None => { break; },
+        };
+    }
+}
+```
+
 ### Performance Considerations
 
-#### Gas Optimization for Tests
+#### Gas Optimization Strategy
 ```cairo
-// Gas limits based on test complexity
+// Progressive gas limits - start low and increase as needed
 #[test]
-#[available_gas(30000000)]   // Basic tests - 30M
+#[available_gas(3000000)]    // Start with 3M for basic tests
 fn test_simple_operations() { /* ... */ }
 
 #[test]
-#[available_gas(60000000)]   // Complex tests - 60M  
+#[available_gas(6000000)]    // 6M for complex operations
 fn test_comprehensive_workflow() { /* ... */ }
 
 #[test]
-#[available_gas(100000000)]  // Heavy computation - 100M
+#[available_gas(10000000)]   // 10M for heavy computation
 fn test_level_progression_mechanics() { /* ... */ }
+
+#[test]
+#[available_gas(30000000)]   // 30M for integration tests
+fn test_full_game_workflow() { /* ... */ }
 ```
 
 #### Batch Testing Strategy
@@ -672,9 +755,38 @@ let small_val: u32 = large_val.into();
 let small_val: u32 = (large_val % MAX_U32).try_into().unwrap();
 ```
 
+### Production-Ready Test Checklist
+
+Before deploying, ensure your tests cover:
+
+- [ ] **Basic Model Operations**: Create, read, update patterns work
+- [ ] **System Integration**: Complete workflows from start to finish  
+- [ ] **Error Conditions**: Use `#[should_panic]` for expected failures
+- [ ] **Multi-Player Scenarios**: Isolation and concurrent access patterns
+- [ ] **Edge Cases**: Boundary values, maximum limits, zero values
+- [ ] **Gas Optimization**: All tests run within reasonable gas limits
+- [ ] **Event Emission**: Critical state changes emit proper events
+- [ ] **Security Validation**: Authorization, ownership, input validation
+
+### Systematic Debugging Approach
+
+When tests fail, follow this approach:
+
+1. **Isolate the Issue**: Create minimal tests that reproduce the exact failure
+2. **Check Type Conversions**: Look for poseidon hash overflow issues (most common)
+3. **Verify Error Patterns**: Understand whether functions panic or return error values
+4. **Increment Gas Gradually**: Start at 3M, increase to 6M, 10M, 30M as needed
+5. **Test One Component**: Isolate failing functionality to specific components
+
+**Key Insight**: The most critical testing issues in Dojo stem from:
+1. **Type overflow in poseidon hashing** - Always use modulo constraints
+2. **Misunderstanding Cairo error patterns** - Functions panic, they don't return false
+3. **Insufficient gas limits** - Complex tests need 6-30M gas
+4. **Incorrect resource registration** - Events vs Models must be registered correctly
+
 ---
 
-**Remember**: When in doubt, check the existing working tests in `src/tests/test_simple.cairo` for reference patterns!
+**Remember**: When in doubt, check both the existing working tests in `src/tests/test_simple.cairo` and the comprehensive testing guide in `AI_DOCS/comprehensive-testing-in-dojo.md` for reference patterns!
 
 ## Essential Documentation References
 

@@ -1,33 +1,43 @@
-use starknet::{ContractAddress, contract_address_const};
-use starknet::testing::set_contract_address;
+use starknet::{ContractAddress, contract_address_const, testing::set_contract_address};
 use dojo::world::{WorldStorage, WorldStorageTrait};
+use dojo::model::{ModelStorage};
 use dojo_cairo_test::{
-    spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, ContractDef,
-    WorldStorageTestTrait,
+    spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, ContractDef, WorldStorageTestTrait,
 };
 
-// Import our contracts and models
+// System imports
 use elysium_descent::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
-use elysium_descent::models::player::Player;
-use elysium_descent::models::game::{Game, LevelItems, GameCounter};
-use elysium_descent::models::inventory::PlayerInventory;
-use elysium_descent::models::world_state::WorldItem;
+use elysium_descent::systems::actions::{e_GameCreated, e_LevelStarted, e_ItemPickedUp};
 
-// Test address constants
-fn OWNER() -> ContractAddress {
+// Model imports for direct usage
+pub use elysium_descent::models::index::{
+    Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem,
+};
+
+// Model imports for TEST_CLASS_HASH
+use elysium_descent::models::player::m_Player;
+use elysium_descent::models::game::{m_Game, m_GameCounter, m_LevelItems};
+use elysium_descent::models::inventory::m_PlayerInventory;
+use elysium_descent::models::world_state::m_WorldItem;
+
+// Type imports
+pub use elysium_descent::types::game_types::GameStatus;
+
+// Test address constants - make these proper public functions
+pub fn OWNER() -> ContractAddress {
     contract_address_const::<'OWNER'>()
 }
 
-fn PLAYER() -> ContractAddress {
-    contract_address_const::<'PLAYER'>()
+pub fn PLAYER1() -> ContractAddress {
+    contract_address_const::<'PLAYER1'>()
 }
 
-fn PLAYER2() -> ContractAddress {
+pub fn PLAYER2() -> ContractAddress {
     contract_address_const::<'PLAYER2'>()
 }
 
-fn OTHER_PLAYER() -> ContractAddress {
-    contract_address_const::<'OTHER_PLAYER'>()
+pub fn ADMIN() -> ContractAddress {
+    contract_address_const::<'ADMIN'>()
 }
 
 // System dispatchers struct
@@ -39,24 +49,31 @@ pub struct Systems {
 // Test context data
 #[derive(Copy, Drop)]
 pub struct Context {
-    pub player: ContractAddress,
+    pub player1: ContractAddress,
     pub player2: ContractAddress,
+    pub admin: ContractAddress,
     pub owner: ContractAddress,
 }
 
-// Setup namespace definition
+// Setup namespace definition with proper TEST_CLASS_HASH imports
 #[inline]
 fn setup_namespace() -> NamespaceDef {
     NamespaceDef {
         namespace: "elysium_001",
         resources: [
             // Models
-            TestResource::Model(Player::TEST_CLASS_HASH),
-            TestResource::Model(Game::TEST_CLASS_HASH),
-            TestResource::Model(LevelItems::TEST_CLASS_HASH),
-            TestResource::Model(GameCounter::TEST_CLASS_HASH),
-            TestResource::Model(PlayerInventory::TEST_CLASS_HASH),
-            TestResource::Model(WorldItem::TEST_CLASS_HASH),
+            TestResource::Model(m_Player::TEST_CLASS_HASH),
+            TestResource::Model(m_Game::TEST_CLASS_HASH),
+            TestResource::Model(m_GameCounter::TEST_CLASS_HASH),
+            TestResource::Model(m_LevelItems::TEST_CLASS_HASH),
+            TestResource::Model(m_PlayerInventory::TEST_CLASS_HASH),
+            TestResource::Model(m_WorldItem::TEST_CLASS_HASH),
+            
+            // Events
+            TestResource::Event(e_GameCreated::TEST_CLASS_HASH),
+            TestResource::Event(e_LevelStarted::TEST_CLASS_HASH),
+            TestResource::Event(e_ItemPickedUp::TEST_CLASS_HASH),
+            
             // Contracts
             TestResource::Contract(actions::TEST_CLASS_HASH),
         ].span(),
@@ -95,12 +112,20 @@ pub fn spawn() -> (WorldStorage, Systems, Context) {
     
     // Create test context
     let context = Context {
-        player: PLAYER(),
+        player1: PLAYER1(),
         player2: PLAYER2(),
+        admin: ADMIN(),
         owner: OWNER(),
     };
     
     (world, systems, context)
+}
+
+// Utility function for setting up comprehensive test world (alias for compatibility)
+#[inline]
+pub fn setup_comprehensive_world() -> (WorldStorage, IActionsDispatcher) {
+    let (world, systems, _context) = spawn();
+    (world, systems.actions)
 }
 
 // Helper function to create a game for testing
@@ -113,6 +138,16 @@ pub fn create_test_game(systems: Systems, player: ContractAddress) -> u32 {
 pub fn start_test_level(systems: Systems, player: ContractAddress, game_id: u32, level: u32) {
     set_contract_address(player);
     systems.actions.start_level(game_id, level);
+}
+
+// Helper function to clear events from contract
+pub fn clear_events(address: ContractAddress) {
+    loop {
+        match starknet::testing::pop_log_raw(address) {
+            core::option::Option::Some(_) => {},
+            core::option::Option::None => { break; },
+        };
+    }
 }
 
 // Helper function to get test timestamp

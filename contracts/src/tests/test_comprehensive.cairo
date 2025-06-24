@@ -1,80 +1,26 @@
 #[cfg(test)]
 mod comprehensive_tests {
-    use starknet::{ContractAddress, contract_address_const, testing::set_contract_address};
-    use dojo::world::{WorldStorage, WorldStorageTrait};
+    use starknet::testing::set_contract_address;
+    use dojo::world::{WorldStorage};
     use dojo::model::{ModelStorage};
-    use dojo_cairo_test::{
-        spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, WorldStorageTestTrait,
-    };
 
     // System imports
-    use elysium_descent::systems::actions::{actions, IActionsDispatcher, IActionsDispatcherTrait};
-    use elysium_descent::systems::actions::{e_GameCreated, e_LevelStarted, e_ItemPickedUp};
+    use elysium_descent::systems::actions::{IActionsDispatcher, IActionsDispatcherTrait};
 
     // Model imports for direct usage
     use elysium_descent::models::index::{
         Player, Game, GameCounter, LevelItems, PlayerInventory,
     };
 
-    // Model imports for TEST_CLASS_HASH
-    use elysium_descent::models::player::m_Player;
-    use elysium_descent::models::game::{m_Game, m_GameCounter, m_LevelItems};
-    use elysium_descent::models::inventory::m_PlayerInventory;
-    use elysium_descent::models::world_state::m_WorldItem;
-
     // Type imports
     use elysium_descent::types::game_types::GameStatus;
 
-    // Test constants
-    fn PLAYER1() -> ContractAddress {
-        contract_address_const::<'PLAYER1'>()
-    }
+    // Test constants - use centralized setup functions
+    use elysium_descent::tests::setup::{PLAYER1, PLAYER2, ADMIN};
 
-    fn PLAYER2() -> ContractAddress {
-        contract_address_const::<'PLAYER2'>()
-    }
-
-    fn ADMIN() -> ContractAddress {
-        contract_address_const::<'ADMIN'>()
-    }
-
-    // Setup function for comprehensive tests
+    // Setup function - delegates to centralized setup
     fn setup_comprehensive_world() -> (WorldStorage, IActionsDispatcher) {
-        let namespace_def = NamespaceDef {
-            namespace: "elysium_001",
-            resources: [
-                // Models
-                TestResource::Model(m_Player::TEST_CLASS_HASH),
-                TestResource::Model(m_Game::TEST_CLASS_HASH),
-                TestResource::Model(m_GameCounter::TEST_CLASS_HASH),
-                TestResource::Model(m_LevelItems::TEST_CLASS_HASH),
-                TestResource::Model(m_PlayerInventory::TEST_CLASS_HASH),
-                TestResource::Model(m_WorldItem::TEST_CLASS_HASH),
-                // Events
-                TestResource::Event(e_GameCreated::TEST_CLASS_HASH),
-                TestResource::Event(e_LevelStarted::TEST_CLASS_HASH),
-                TestResource::Event(e_ItemPickedUp::TEST_CLASS_HASH),
-                // Contracts
-                TestResource::Contract(actions::TEST_CLASS_HASH),
-            ]
-                .span(),
-        };
-
-        let mut world = spawn_test_world([namespace_def].span());
-
-        // Setup contract permissions
-        let contracts = [
-            ContractDefTrait::new(@"elysium_001", @"actions")
-                .with_writer_of([dojo::utils::bytearray_hash(@"elysium_001")].span())
-        ]
-            .span();
-        world.sync_perms_and_inits(contracts);
-
-        // Get actions dispatcher
-        let (actions_address, _) = world.dns(@"actions").unwrap();
-        let actions = IActionsDispatcher { contract_address: actions_address };
-
-        (world, actions)
+        elysium_descent::tests::setup::setup_comprehensive_world()
     }
 
     // ==================== COMPREHENSIVE GAME LIFECYCLE TESTS ====================
@@ -329,7 +275,7 @@ mod comprehensive_tests {
     #[test]
     #[available_gas(60000000)]
     fn test_item_collection_validation() {
-        let (world, actions) = setup_comprehensive_world();
+        let (_world, actions) = setup_comprehensive_world();
 
         set_contract_address(PLAYER1());
         let game_id = actions.create_game();
