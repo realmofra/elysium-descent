@@ -11,7 +11,7 @@ mod comprehensive_tests {
     use elysium_descent::models::index::{Player, Game, GameCounter, LevelItems, PlayerInventory};
 
     // Type imports
-    use elysium_descent::types::game_types::GameStatus;
+    use elysium_descent::types::game::GameStatus;
 
     // Test constants - use centralized setup functions
     use elysium_descent::tests::setup::{PLAYER1, PLAYER2, ADMIN};

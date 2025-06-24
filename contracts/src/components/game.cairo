@@ -5,8 +5,8 @@ use elysium_descent::models::game::{Game, LevelItems, GameCounter, GAME_COUNTER_
 use elysium_descent::models::player::Player;
 use elysium_descent::models::inventory::PlayerInventory;
 use elysium_descent::models::world_state::WorldItem;
-use elysium_descent::types::game_types::GameStatus;
-use elysium_descent::types::item_types::ItemType;
+use elysium_descent::types::game::GameStatus;
+use elysium_descent::types::item::ItemType;
 
 /// Game Component - handles game lifecycle and level management
 #[generate_trait]

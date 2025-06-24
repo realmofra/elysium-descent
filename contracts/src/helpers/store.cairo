@@ -7,7 +7,7 @@ use elysium_descent::models::game::{Game, LevelItems, GameCounter, GAME_COUNTER_
 use elysium_descent::models::player::Player;
 use elysium_descent::models::inventory::PlayerInventory;
 use elysium_descent::models::world_state::WorldItem;
-use elysium_descent::types::item_types::ItemType;
+use elysium_descent::types::item::ItemType;
 
 use elysium_descent::systems::actions::{GameCreated, LevelStarted, ItemPickedUp};
 

@@ -10,7 +10,7 @@ mod tests {
         Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem
     };
     use elysium_descent::helpers::store::{Store, StoreTrait};
-    use elysium_descent::types::item_types::ItemType;
+    use elysium_descent::types::item::ItemType;
 
     #[test]
     fn test_basic_model_operations() {

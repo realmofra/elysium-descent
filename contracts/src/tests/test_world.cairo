@@ -95,7 +95,7 @@ mod integration_tests {
         let world_item = WorldItem {
             game_id: 1,
             item_id: 100,
-            item_type: elysium_descent::types::item_types::ItemType::Book,
+            item_type: elysium_descent::types::item::ItemType::Book,
             x_position: 15,
             y_position: 25,
             is_collected: false,

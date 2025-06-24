@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use elysium_descent::types::item_types::ItemType;
+use elysium_descent::types::item::ItemType;
 
 /// Player inventory model for item storage and capacity management
 #[derive(Copy, Drop, Serde)]

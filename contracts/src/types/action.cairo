@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use super::item_types::{ItemType};
+use super::item::{ItemType};
 
 // Game Actions - following Shinigami's entry point pattern
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]

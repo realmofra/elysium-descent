@@ -1,7 +1,7 @@
 use elysium_descent::models::player::Player;
 use elysium_descent::models::inventory::PlayerInventory;
 use elysium_descent::models::game::LevelItems;
-use elysium_descent::types::item_types::ItemType;
+use elysium_descent::types::item::ItemType;
 use starknet::{get_block_timestamp, ContractAddress, get_caller_address};
 
 /// Game events for external system notifications
@@ -55,8 +55,8 @@ pub mod actions {
     };
 
     use elysium_descent::helpers::store::{Store, StoreTrait};
-    use elysium_descent::components::inventory_component::{InventoryComponentTrait};
-    use elysium_descent::components::game_component::{GameComponentTrait};
+    use elysium_descent::components::inventory::{InventoryComponentTrait};
+    use elysium_descent::components::game::{GameComponentTrait};
 
     #[abi(embed_v0)]
     impl ActionsImpl of IActions<ContractState> {

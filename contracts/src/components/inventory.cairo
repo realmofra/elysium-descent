@@ -3,7 +3,7 @@ use elysium_descent::helpers::store::{Store, StoreTrait};
 use elysium_descent::models::player::Player;
 use elysium_descent::models::inventory::PlayerInventory;
 use elysium_descent::models::world_state::WorldItem;
-use elysium_descent::types::item_types::ItemType;
+use elysium_descent::types::item::ItemType;
 
 /// Inventory Component - handles all inventory-related business logic
 #[generate_trait]

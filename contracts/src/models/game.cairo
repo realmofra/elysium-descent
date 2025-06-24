@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
-use elysium_descent::types::game_types::GameStatus;
-use elysium_descent::types::item_types::ItemType;
+use elysium_descent::types::game::GameStatus;
+use elysium_descent::types::item::ItemType;
 
 /// Core game model containing game state, status, and metadata
 #[derive(Copy, Drop, Serde)]

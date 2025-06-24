@@ -22,7 +22,7 @@ use elysium_descent::models::inventory::m_PlayerInventory;
 use elysium_descent::models::world_state::m_WorldItem;
 
 /// Type imports
-pub use elysium_descent::types::game_types::GameStatus;
+pub use elysium_descent::types::game::GameStatus;
 
 /// Test contract addresses for consistent player identification across tests
 pub fn OWNER() -> ContractAddress {

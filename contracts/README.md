@@ -27,8 +27,8 @@ contracts/src/
 ├── systems/           # Game API and entry points
 │   └── actions.cairo      # Main contract interface (IActions)
 ├── components/        # Business logic orchestration
-│   ├── game_component.cairo     # Game lifecycle management
-│   └── inventory_component.cairo # Item and inventory operations
+│   ├── game.cairo     # Game lifecycle management
+│   └── inventory.cairo # Item and inventory operations
 ├── models/           # Persistent blockchain state
 │   ├── player.cairo      # Player stats and progression
 │   ├── game.cairo        # Game instances and level tracking

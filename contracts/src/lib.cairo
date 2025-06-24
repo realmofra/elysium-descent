@@ -3,8 +3,8 @@ pub mod helpers {
 }
 
 pub mod components {
-    pub mod inventory_component;
-    pub mod game_component;
+    pub mod inventory;
+    pub mod game;
 }
 
 pub mod systems {
@@ -20,9 +20,9 @@ pub mod models {
 }
 
 pub mod types {
-    pub mod item_types;
-    pub mod action_types;
-    pub mod game_types;
+    pub mod item;
+    pub mod action;
+    pub mod game;
 }
 
 #[cfg(test)]

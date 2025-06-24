@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use elysium_descent::types::game_types::{PlayerClass, PlayerClassTrait};
+use elysium_descent::types::game::{PlayerClass, PlayerClassTrait};
 
 /// Core player model containing health, level, and progression data
 #[derive(Copy, Drop, Serde)]

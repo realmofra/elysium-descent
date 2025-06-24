@@ -1,5 +1,5 @@
 use starknet::{ContractAddress, contract_address_const};
-use elysium_descent::types::item_types::ItemType;
+use elysium_descent::types::item::ItemType;
 
 /// World item model representing collectible items placed in the game world
 #[derive(Copy, Drop, Serde)]
