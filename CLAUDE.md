@@ -37,7 +37,7 @@ cargo run
 # Test client
 cd client && cargo test
 
-# Test contracts
+# Test contracts (98 comprehensive tests)
 cd contracts && sozo test
 ```
 
@@ -64,6 +64,7 @@ cd contracts && sozo build
 - **Systems**: Game logic and player actions in `contracts/src/systems/`
 - **World**: Central registry managing all models and systems
 - **Events**: State change notifications for indexing
+- **Tests**: Comprehensive 98-test suite covering game features, inventory, components, error conditions, performance, helpers, and events
 
 ### Shinigami Design Pattern
 This project follows the **Shinigami Design Pattern** - a hierarchical architecture for fully on-chain games:

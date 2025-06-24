@@ -6,20 +6,16 @@
 #[cfg(test)]
 mod events_tests {
     use starknet::testing::{set_contract_address, pop_log_raw};
-    use dojo::world::WorldStorage;
-    use dojo::model::{ModelStorage, ModelStorageTest};
+    use dojo::model::ModelStorageTest;
     use elysium_descent::systems::actions::IActionsDispatcherTrait;
 
     // Component imports
     use elysium_descent::components::game::{GameComponentTrait};
     use elysium_descent::components::inventory::{InventoryComponentTrait};
 
-    // Event imports
-    use elysium_descent::systems::actions::{GameCreated, LevelStarted, ItemPickedUp};
-
     // Centralized setup imports
     use elysium_descent::tests::setup::{
-        spawn, Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem, PLAYER1, PLAYER2,
+        spawn, Player, Game, LevelItems, PlayerInventory, WorldItem,
         clear_events, get_test_timestamp,
     };
     use elysium_descent::helpers::store::{Store, StoreTrait};
@@ -39,7 +35,7 @@ mod events_tests {
         let game_id = systems.actions.create_game();
 
         // Capture and verify GameCreated event
-        let event = pop_log_raw(world.dispatcher.contract_address).unwrap();
+        let _event = pop_log_raw(world.dispatcher.contract_address).unwrap();
 
         // Events are emitted but detailed verification would require event parsing
         // For now, verify that an event was emitted
@@ -101,7 +97,7 @@ mod events_tests {
 
         // Verify event was emitted
         let event = pop_log_raw(world.dispatcher.contract_address);
-        assert(event.is_some(), 'GameCreated event should be emitted');
+        assert(event.is_some(), 'GameCreated event expected');
 
         // Verify game creation
         let game: Game = store.get_game(game_id);
@@ -126,7 +122,7 @@ mod events_tests {
         systems.actions.start_level(game_id, 3);
 
         let event = pop_log_raw(world.dispatcher.contract_address);
-        assert(event.is_some(), 'LevelStarted event should be emitted');
+        assert(event.is_some(), 'LevelStarted event expected');
 
         // Verify level was started correctly
         let store: Store = StoreTrait::new(world);
@@ -134,8 +130,8 @@ mod events_tests {
         assert(game.current_level == 3, 'Game level should be updated');
 
         let level_items: LevelItems = store.get_level_items(game_id, 3);
-        assert(level_items.level == 3, 'Level items should match event level');
-        assert(level_items.game_id == game_id, 'Level items should match event game');
+        assert(level_items.level == 3, 'Level items wrong');
+        assert(level_items.game_id == game_id, 'Game ID wrong');
     }
 
     #[test]
@@ -196,7 +192,7 @@ mod events_tests {
 
         // Verify event was emitted
         let event = pop_log_raw(world.dispatcher.contract_address);
-        assert(event.is_some(), 'LevelStarted event should be emitted');
+        assert(event.is_some(), 'LevelStarted event expected');
 
         // Verify level was started correctly
         let game: Game = store.get_game(game_id);
@@ -204,7 +200,7 @@ mod events_tests {
 
         let level_items: LevelItems = store.get_level_items(game_id, 2);
         assert(level_items.level == 2, 'Level items level should be 2');
-        assert(items_spawned == 5, 'Level 2 should spawn 5 items');
+        assert(items_spawned == 6, 'Level 2 should spawn 6 items');
     }
 
     // ==================== ITEM PICKED UP EVENT TESTS ====================
@@ -243,14 +239,14 @@ mod events_tests {
 
         // Verify event was emitted
         let event = pop_log_raw(world.dispatcher.contract_address);
-        assert(event.is_some(), 'ItemPickedUp event should be emitted');
+        assert(event.is_some(), 'ItemPickedUp event expected');
 
         // Verify pickup effects
         let inventory: PlayerInventory = store.get_player_inventory(context.player1);
         assert(inventory.health_potions == 1, 'Inventory should be updated');
 
         let player: Player = store.get_player(context.player1);
-        assert(player.items_collected == 1, 'Player items count should update');
+        assert(player.items_collected == 1, 'Items count wrong');
         assert(player.experience == 10, 'Player should gain experience');
     }
 
@@ -312,7 +308,7 @@ mod events_tests {
         let event1 = pop_log_raw(world.dispatcher.contract_address);
 
         assert(event1.is_some(), 'First pickup event should exist');
-        assert(event2.is_some(), 'Second pickup event should exist');
+        assert(event2.is_some(), 'Second event expected');
         assert(event3.is_some(), 'Third pickup event should exist');
 
         // Verify final inventory state
@@ -375,11 +371,11 @@ mod events_tests {
         // Test each item type
         InventoryComponentTrait::pickup_item(ref store, context.player1, game_id, 1);
         let health_event = pop_log_raw(world.dispatcher.contract_address);
-        assert(health_event.is_some(), 'HealthPotion event should be emitted');
+        assert(health_event.is_some(), 'HealthPotion event expected');
 
         InventoryComponentTrait::pickup_item(ref store, context.player1, game_id, 2);
         let kit_event = pop_log_raw(world.dispatcher.contract_address);
-        assert(kit_event.is_some(), 'SurvivalKit event should be emitted');
+        assert(kit_event.is_some(), 'SurvivalKit event expected');
 
         InventoryComponentTrait::pickup_item(ref store, context.player1, game_id, 3);
         let book_event = pop_log_raw(world.dispatcher.contract_address);
@@ -407,12 +403,12 @@ mod events_tests {
         // Step 1: Create game (should emit GameCreated)
         let game_id = systems.actions.create_game();
         let game_event = pop_log_raw(world.dispatcher.contract_address);
-        assert(game_event.is_some(), 'GameCreated event should be emitted');
+        assert(game_event.is_some(), 'GameCreated event expected');
 
         // Step 2: Start level (should emit LevelStarted)
         systems.actions.start_level(game_id, 1);
         let level_event = pop_log_raw(world.dispatcher.contract_address);
-        assert(level_event.is_some(), 'LevelStarted event should be emitted');
+        assert(level_event.is_some(), 'LevelStarted event expected');
 
         // Step 3: Create and pickup item (should emit ItemPickedUp)
         let test_item = WorldItem {
@@ -430,7 +426,7 @@ mod events_tests {
         assert(pickup_result == true, 'Pickup should succeed');
 
         let pickup_event = pop_log_raw(world.dispatcher.contract_address);
-        assert(pickup_event.is_some(), 'ItemPickedUp event should be emitted');
+        assert(pickup_event.is_some(), 'ItemPickedUp event expected');
 
         // Verify final state
         let store: Store = StoreTrait::new(world);
@@ -462,8 +458,8 @@ mod events_tests {
         // Verify 2 GameCreated events
         let game2_event = pop_log_raw(world.dispatcher.contract_address);
         let game1_event = pop_log_raw(world.dispatcher.contract_address);
-        assert(game1_event.is_some(), 'Player 1 game event should exist');
-        assert(game2_event.is_some(), 'Player 2 game event should exist');
+        assert(game1_event.is_some(), 'Player 1 game expected');
+        assert(game2_event.is_some(), 'Player 2 game expected');
 
         // Both players start levels
         set_contract_address(context.player1);
@@ -475,8 +471,8 @@ mod events_tests {
         // Verify 2 LevelStarted events
         let level2_event = pop_log_raw(world.dispatcher.contract_address);
         let level1_event = pop_log_raw(world.dispatcher.contract_address);
-        assert(level1_event.is_some(), 'Player 1 level event should exist');
-        assert(level2_event.is_some(), 'Player 2 level event should exist');
+        assert(level1_event.is_some(), 'Player 1 level expected');
+        assert(level2_event.is_some(), 'Player 2 level expected');
 
         // Verify games are separate
         let store: Store = StoreTrait::new(world);

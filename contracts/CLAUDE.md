@@ -41,7 +41,7 @@ let unpacked = (flipped_u256 & POWERUP_DATA_MASK) / 0x10;
 // For reading/writing models
 use dojo::model::{ModelStorage};
 
-// For emitting events  
+// For emitting events
 use dojo::event::EventStorage;
 
 // For world access with DNS
@@ -66,7 +66,7 @@ contracts/src/
 ├── types/        # Enums and entry points (ItemType, ActionType)
 ├── models/       # Persistent blockchain state
 ├── components/   # Multi-model business logic operations
-├── systems/      # Game mode configurations  
+├── systems/      # Game mode configurations
 └── helpers/      # Reusable utility functions (top of hierarchy)
 ```
 
@@ -79,7 +79,7 @@ contracts/src/
 - **Elements**: Specific game entities with traits (Weapon, Enemy, Room)
 - **Types**: Entry points and enums that route to Elements
 - **Models**: Data persistence with `#[dojo::model]` and `#[key]` attributes
-- **Components**: Multi-model operations (CombatComponent, TradingComponent)  
+- **Components**: Multi-model operations (CombatComponent, TradingComponent)
 - **Systems**: Game modes that configure how Components interact
 - **Helpers**: Pure utility functions without game-specific data
 
@@ -143,13 +143,13 @@ pub trait IGameActions<T> {
     fn pickup_item(ref self: T, item_id: u32);
 }
 
-#[dojo::contract] 
+#[dojo::contract]
 pub mod game_actions {
     use super::IGameActions;
     use starknet::{ContractAddress, get_caller_address};
     use dojo::model::{ModelStorage};
     use dojo::event::EventStorage;
-    
+
     #[derive(Copy, Drop, Serde)]
     #[dojo::event]
     pub struct ItemPickedUp {
@@ -163,10 +163,10 @@ pub mod game_actions {
         fn create_player(ref self: ContractState) {
             let mut world = self.world(@"elysium_001");
             let player = get_caller_address();
-            
+
             // Read model (returns default if not exists)
             let mut player_data: Player = world.read_model(player);
-            
+
             // Update and write back
             player_data.level = 1;
             world.write_model(@player_data);
@@ -175,15 +175,15 @@ pub mod game_actions {
         fn pickup_item(ref self: ContractState, item_id: u32) {
             let mut world = self.world(@"elysium_001");
             let player = get_caller_address();
-            
+
             // Validation
             assert(item_id > 0, 'Invalid item ID');
-            
+
             // Multi-model operation
             let mut inventory: Inventory = world.read_model(player);
             inventory.items.append(item_id);
             world.write_model(@inventory);
-            
+
             // Emit custom event
             world.emit_event(@ItemPickedUp { player, item_id });
         }
@@ -197,12 +197,12 @@ pub mod game_actions {
 let player_data: Player = world.read_model(player);
 let resource: Resource = world.read_model((player, location)); // Multiple keys
 
-// Writing models  
+// Writing models
 world.write_model(@updated_model);
 
 // Member access
 let health: u32 = world.read_member(
-    Model::<Player>::ptr_from_keys(player), 
+    Model::<Player>::ptr_from_keys(player),
     selector!("health")
 );
 
@@ -220,7 +220,7 @@ if let Some((contract_address, class_hash)) = world.dns("other_system") {
 sozo build
 
 # Run tests
-sozo test  
+sozo test
 
 # Deploy to local Katana
 sozo migrate
@@ -231,7 +231,7 @@ torii --world <WORLD_ADDRESS> --http.cors_origins "*"
 
 ### Local Development Setup
 ```bash
-# Terminal 1: Local blockchain  
+# Terminal 1: Local blockchain
 katana --dev --dev.no-fee
 
 # Terminal 2: Build & deploy
@@ -254,7 +254,7 @@ torii --world <WORLD_ADDRESS> --http.cors_origins "*"
 
 ### Debug Checklist
 - [ ] Correct imports for ModelStorage/EventStorage
-- [ ] Mutable world reference for writes  
+- [ ] Mutable world reference for writes
 - [ ] Proper trait derivations
 - [ ] Safe type conversions
 - [ ] Correct namespace string
@@ -268,7 +268,7 @@ torii --world <WORLD_ADDRESS> --http.cors_origins "*"
 - Prefer primitive types over complex nested structures
 - Use composite keys efficiently
 
-### System Design  
+### System Design
 - Batch operations when possible
 - Validate inputs early with descriptive assertions
 - Use member reads/writes for single field updates
@@ -283,7 +283,7 @@ This section provides detailed guidance for writing reliable tests in Dojo, base
 **The #1 cause of Dojo testing failures** is incorrect resource registration. You must register the exact resources your test needs:
 
 ```cairo
-// ❌ WRONG - Mixed up resource types  
+// ❌ WRONG - Mixed up resource types
 TestResource::Model(e_GameCreated::TEST_CLASS_HASH),  // Event registered as Model
 TestResource::Event(m_Player::TEST_CLASS_HASH),       // Model registered as Event
 
@@ -310,7 +310,7 @@ Dojo automatically generates test-specific types for models and events:
 ```cairo
 // CORRECT resource registrations
 TestResource::Model(m_Player::TEST_CLASS_HASH),      // For models
-TestResource::Event(e_GameCreated::TEST_CLASS_HASH), // For events  
+TestResource::Event(e_GameCreated::TEST_CLASS_HASH), // For events
 TestResource::Contract(actions::TEST_CLASS_HASH),    // For contracts
 ```
 
@@ -341,7 +341,7 @@ mod tests {
 
     // CORRECT: Use absolute Cairo imports, not Rust-style relative imports
     use elysium_descent::tests::setup::{
-        spawn, 
+        spawn,
         Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem,
         Store, StoreTrait
     };
@@ -350,7 +350,7 @@ mod tests {
     fn test_basic_operations() {
         // One line setup - no duplication!
         let (world, systems, context) = spawn();
-        
+
         // Test logic using centralized infrastructure
         set_contract_address(context.player1);
         let game_id = systems.actions.create_game();
@@ -428,30 +428,30 @@ fn setup_test_world() -> (WorldStorage, IActionsDispatcher) {
             TestResource::Model(m_LevelItems::TEST_CLASS_HASH),
             TestResource::Model(m_PlayerInventory::TEST_CLASS_HASH),
             TestResource::Model(m_WorldItem::TEST_CLASS_HASH),
-            
+
             // Events - register all events your systems emit
             TestResource::Event(e_GameCreated::TEST_CLASS_HASH),
             TestResource::Event(e_LevelStarted::TEST_CLASS_HASH),
             TestResource::Event(e_ItemPickedUp::TEST_CLASS_HASH),
-            
+
             // Contracts - register all contracts your tests call
             TestResource::Contract(actions::TEST_CLASS_HASH),
         ].span(),
     };
 
     let mut world = spawn_test_world([namespace_def].span());
-    
+
     // Setup permissions for contract to write to namespace
     let contracts = [
         ContractDefTrait::new(@"elysium_001", @"actions")
             .with_writer_of([dojo::utils::bytearray_hash(@"elysium_001")].span())
     ].span();
     world.sync_perms_and_inits(contracts);
-    
+
     // Get system dispatchers using DNS
     let (actions_address, _) = world.dns(@"actions").unwrap();
     let actions = IActionsDispatcher { contract_address: actions_address };
-    
+
     (world, actions)
 }
 ```
@@ -471,7 +471,7 @@ fn test_basic_model_operations() {
     };
 
     let mut world = spawn_test_world([namespace_def].span());
-    
+
     // Create test data
     let player_address = contract_address_const::<'PLAYER'>();
     let test_player = Player {
@@ -482,11 +482,11 @@ fn test_basic_model_operations() {
         experience: 0,
         items_collected: 0,
     };
-    
+
     // Test write and read operations
     world.write_model_test(@test_player);
     let read_player: Player = world.read_model(player_address);
-    
+
     // Verify data integrity
     assert(read_player.player == player_address, 'Player address mismatch');
     assert(read_player.health == 100, 'Health mismatch');
@@ -499,14 +499,14 @@ fn test_basic_model_operations() {
 #[test]
 fn test_system_interactions() {
     let (world, actions) = setup_test_world();
-    
+
     // Set the calling contract address
     set_contract_address(contract_address_const::<'PLAYER'>());
-    
+
     // Test system calls
     let game_id = actions.create_game();
     assert(game_id > 0, 'Game ID should be positive');
-    
+
     // Verify state changes
     let game: Game = world.read_model(game_id);
     assert(game.player == contract_address_const::<'PLAYER'>(), 'Player mismatch');
@@ -584,14 +584,14 @@ pub use super::inventory::PlayerInventory;
 #[test]
 fn test_event_emission() {
     let (world, actions) = setup_test_world();
-    
+
     // Clear existing events
     starknet::testing::pop_log_raw(world.dispatcher.contract_address);
-    
+
     // Trigger event-emitting action
     set_contract_address(contract_address_const::<'PLAYER'>());
     let game_id = actions.create_game();
-    
+
     // Capture and validate event
     let event = starknet::testing::pop_log_raw(world.dispatcher.contract_address).unwrap();
     // Validate event contents...
@@ -603,22 +603,22 @@ fn test_event_emission() {
 #[test]
 fn test_player_isolation() {
     let (world, actions) = setup_test_world();
-    
+
     // Test with multiple players
     let player1 = contract_address_const::<'PLAYER1'>();
     let player2 = contract_address_const::<'PLAYER2'>();
-    
+
     // Player 1 actions
     set_contract_address(player1);
     let game1_id = actions.create_game();
-    
+
     // Player 2 actions
     set_contract_address(player2);
     let game2_id = actions.create_game();
-    
+
     // Verify isolation
     assert(game1_id != game2_id, 'Games should be separate');
-    
+
     let game1: Game = world.read_model(game1_id);
     let game2: Game = world.read_model(game2_id);
     assert(game1.player == player1, 'Game1 player mismatch');
@@ -630,7 +630,7 @@ fn test_player_isolation() {
 
 Before writing tests, verify:
 - [ ] All required models imported with `m_` prefix for TEST_CLASS_HASH
-- [ ] All required events imported with `e_` prefix for TEST_CLASS_HASH  
+- [ ] All required events imported with `e_` prefix for TEST_CLASS_HASH
 - [ ] Events registered as `TestResource::Event`, not `TestResource::Model`
 - [ ] Namespace matches your profile configuration (`"elysium_001"`)
 - [ ] Contract permissions set up with `sync_perms_and_inits`
@@ -657,7 +657,7 @@ sozo test
 
 # Common fixes:
 # - Use TestResource::Event for events
-# - Use TestResource::Model for models  
+# - Use TestResource::Model for models
 # - Use TestResource::Contract for contracts
 ```
 
@@ -701,7 +701,7 @@ pub fn spawn() -> (WorldStorage, Systems, Context) {
     let (actions_address, _) = world.dns(@"actions").unwrap();
     let (player_address, _) = world.dns(@"player_system").unwrap();
     let (game_address, _) = world.dns(@"game_system").unwrap();
-    
+
     let systems = Systems {
         actions: IActionsDispatcher { contract_address: actions_address },
         player_system: IPlayerSystemDispatcher { contract_address: player_address },
@@ -757,9 +757,9 @@ fn test_full_game_workflow() { /* ... */ }
 #[test]
 fn test_complete_game_workflow() {
     let (world, actions) = setup_test_world();
-    
+
     // Test 1: Game creation
-    // Test 2: Player joining  
+    // Test 2: Player joining
     // Test 3: Game actions
     // Test 4: Game completion
     // All in one test to avoid repeated world setup
@@ -770,7 +770,7 @@ fn test_complete_game_workflow() {
 
 #### 1. Poseidon Hash Overflow (CRITICAL)
 ```cairo
-// ❌ WRONG - Causes "Option::unwrap failed" 
+// ❌ WRONG - Causes "Option::unwrap failed"
 fn generate_id(game_id: u32, level: u32, counter: u32) -> u32 {
     let hash = poseidon_hash_span(array![game_id.into(), level.into(), counter.into()].span());
     hash.try_into().unwrap() // FAILS - hash too large for u32
@@ -794,7 +794,7 @@ fn test_invalid_pickup() {
     assert(!result, 'Should return false'); // This will PANIC instead
 }
 
-// ✅ CORRECT - Use should_panic for expected failures  
+// ✅ CORRECT - Use should_panic for expected failures
 #[test]
 #[should_panic(expected: ('Item does not exist', 'ENTRYPOINT_FAILED'))]
 fn test_invalid_pickup() {
@@ -806,7 +806,7 @@ fn test_invalid_pickup() {
 
 ### Critical Lessons Learned
 
-#### Test Organization 
+#### Test Organization
 - **NEVER duplicate setup code** across test files - use centralized `setup.cairo` module
 - **Use absolute imports**: `use elysium_descent::tests::setup::{spawn}` not `use super::setup::{spawn}`
 - **One line setup**: `let (world, systems, context) = spawn();` eliminates 40+ lines of boilerplate
@@ -829,7 +829,7 @@ let small_val: u32 = (large_val % MAX_U32).try_into().unwrap();
 Before deploying, ensure your tests cover:
 
 - [ ] **Basic Model Operations**: Create, read, update patterns work
-- [ ] **System Integration**: Complete workflows from start to finish  
+- [ ] **System Integration**: Complete workflows from start to finish
 - [ ] **Error Conditions**: Use `#[should_panic]` for expected failures
 - [ ] **Multi-Player Scenarios**: Isolation and concurrent access patterns
 - [ ] **Edge Cases**: Boundary values, maximum limits, zero values
@@ -853,6 +853,167 @@ When tests fail, follow this approach:
 3. **Insufficient gas limits** - Complex tests need 6-30M gas
 4. **Incorrect resource registration** - Events vs Models must be registered correctly
 
+## Common Compilation Issues and Resolutions
+
+This section covers systematic approaches to resolving compilation errors encountered during test development and maintenance.
+
+### Felt252 Overflow Errors
+
+**Problem**: Error messages that are too long for felt252 capacity cause compilation failures.
+
+```cairo
+// ❌ WRONG - Message too long, causes felt252 overflow
+assert(result == false, 'Should return false for non-existent item');
+
+// ✅ CORRECT - Shortened message within felt252 limits
+assert(result == false, 'Should return false');
+```
+
+**Resolution Strategy**:
+1. **Keep messages under 31 characters** for single felt252
+2. **Use abbreviations**: `'expected'` instead of `'should be emitted'`
+3. **Remove articles**: `'event expected'` instead of `'event should be emitted'`
+4. **Use consistent terminology**: `'wrong'` instead of descriptive phrases
+
+### Private Member Access Errors
+
+**Problem**: Attempting to access private fields of structs in tests.
+
+```cairo
+// ❌ WRONG - Cannot access private world field
+assert(store.world.dispatcher.contract_address != contract_address_const::<0>(), 'Store should have valid world');
+
+// ✅ CORRECT - Use public methods or test functionality directly
+let test_counter = store.get_game_counter();
+assert(test_counter.counter_id == 999999999, 'Store should work');
+```
+
+**Resolution Principles**:
+1. **Use public APIs**: Test through public methods, not internal implementation
+2. **Test behavior, not structure**: Verify functionality rather than internal state
+3. **Create functional tests**: Test that operations work correctly
+
+### Unused Import Warnings
+
+**Problem**: Imports that aren't directly used in test code generate warnings.
+
+```cairo
+// ❌ PROBLEMATIC - Unused imports cause warnings
+use dojo::world::WorldStorage;               // Used only in type annotations
+use elysium_descent::systems::actions::{GameCreated, LevelStarted, ItemPickedUp}; // Events not directly used
+
+// ✅ CORRECT - Minimal, necessary imports
+use dojo::model::ModelStorageTest;           // Actually used for write_model_test
+use elysium_descent::tests::setup::{         // Only import what's used
+    spawn, Player, Game, LevelItems, PlayerInventory, WorldItem,
+    clear_events, get_test_timestamp,
+};
+```
+
+**Resolution Strategy**:
+1. **Import only what's used**: Remove imports that don't have explicit usage
+2. **Use type annotations**: `let store: Store = StoreTrait::new(world);` to make usage explicit
+3. **Consolidate imports**: Group related imports and remove unused ones
+4. **Prefer functional testing**: Test through public APIs rather than importing internal types
+
+### Test Module Organization
+
+**Problem**: Inconsistent test module structure and import patterns.
+
+```cairo
+// ❌ PROBLEMATIC - Inconsistent module pattern
+#[cfg(test)]
+mod events_tests {
+    use starknet::testing::{set_contract_address, pop_log_raw};
+    use dojo::world::WorldStorage;  // Unused
+    use dojo::model::{ModelStorage, ModelStorageTest};  // ModelStorage unused
+
+    use elysium_descent::systems::actions::{GameCreated, LevelStarted, ItemPickedUp}; // Unused events
+    use elysium_descent::tests::setup::{
+        spawn, Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem, PLAYER1, PLAYER2, // Unused PLAYER1, PLAYER2
+        clear_events, get_test_timestamp,
+    };
+}
+
+// ✅ CORRECT - Clean, focused imports
+#[cfg(test)]
+mod events_tests {
+    use starknet::testing::{set_contract_address, pop_log_raw};
+    use dojo::model::ModelStorageTest;
+    use elysium_descent::systems::actions::IActionsDispatcherTrait;
+
+    use elysium_descent::tests::setup::{
+        spawn, Player, Game, LevelItems, PlayerInventory, WorldItem,
+        clear_events, get_test_timestamp,
+    };
+    use elysium_descent::helpers::store::{Store, StoreTrait};
+    use elysium_descent::types::item::ItemType;
+}
+```
+
+**Best Practices**:
+1. **Feature-based organization**: Group tests by functionality (events, inventory, errors)
+2. **Consistent import patterns**: Use same import structure across test files
+3. **Centralized setup**: Always use `spawn()` from centralized setup module
+4. **Minimal imports**: Only import what's actually used in the test file
+
+### #[should_panic] Test Patterns
+
+**Problem**: Incorrect usage of panic expectation in tests.
+
+```cairo
+// ❌ WRONG - Expecting specific panic messages with wrong syntax
+#[should_panic(expected: ('Inventory full'))]  // Wrong syntax
+
+// ❌ WRONG - Expecting panics when functions return gracefully
+#[test]
+#[should_panic]
+fn test_pickup_nonexistent_item() {
+    let result = actions.pickup_item(game_id, 999);  // Actually returns false
+}
+
+// ✅ CORRECT - Proper panic syntax
+#[test]
+#[should_panic(expected: "Inventory full")]     // String literal
+fn test_inventory_full() { /* ... */ }
+
+// ✅ CORRECT - Test graceful behavior instead of expecting panics
+#[test]
+fn test_pickup_nonexistent_item_graceful() {
+    let result = actions.pickup_item(game_id, 999);
+    assert(result == false, 'Should return false');
+}
+```
+
+**Resolution Guidelines**:
+1. **Use string literals**: `"message"` not `('message')`
+2. **Test actual behavior**: If functions return gracefully, test the return values
+3. **Simplify expectations**: Use `#[should_panic]` without specific messages if message format is inconsistent
+4. **Understand system design**: Some systems handle errors gracefully rather than panicking
+
+### Compilation Error Debugging Workflow
+
+When encountering compilation errors:
+
+1. **Identify Error Category**:
+   - Felt252 overflow → Shorten error messages
+   - Private member access → Use public APIs
+   - Unused imports → Remove or use explicitly
+   - Wrong panic syntax → Fix #[should_panic] format
+
+2. **Apply Systematic Fixes**:
+   - Fix import structure first
+   - Then resolve syntax errors
+   - Finally adjust test expectations
+
+3. **Verify Fixes**:
+   - Run `sozo test` after each category of fixes
+   - Ensure all compilation errors are resolved before addressing test failures
+
+4. **Document Patterns**:
+   - Update team practices based on common issues
+   - Add examples to prevent future occurrences
+
 ## Import Hygiene and Type Usage Best Practices
 
 This section covers practical patterns for avoiding unused import warnings and properly using imported types in Cairo/Dojo projects.
@@ -874,12 +1035,12 @@ use elysium_descent::helpers::store::{Store, StoreTrait};
 fn test_with_modern_store_pattern() {
     let (world, actions) = setup_test_world();
     let store: Store = StoreTrait::new(world);  // Explicit type annotation uses Store import
-    
+
     // Clean, semantic model operations - Store uses ModelStorage internally
     let player = store.get_player(PLAYER());
     let game = store.get_game(game_id);
     let inventory = store.get_player_inventory(PLAYER());
-    
+
     // Store methods are cleaner than repetitive helpers
     assert(player.health > 0, 'Player should be alive');
     assert(game.status == GameStatus::InProgress, 'Game should be active');
@@ -994,17 +1155,17 @@ mod tests {
     // Core Dojo testing framework
     use dojo::world::{WorldStorage, WorldStorageTrait};          // Used in helper functions
     use dojo::model::{ModelStorage, ModelStorageTest};           // Used for read/write operations
-    
+
     // Direct model imports for struct creation
     use elysium_descent::models::index::{
         Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem  // ALL used in tests
     };
-    
+
     // Test class hash imports for resource registration
     use elysium_descent::models::player::m_Player;               // Used in TestResource::Model
     use elysium_descent::models::game::{m_Game, m_LevelItems};   // Used in TestResource::Model
     // ... etc for all model types
-    
+
     // Type imports for explicit usage
     use elysium_descent::types::item_types::ItemType;           // Used in WorldItem creation
 }
@@ -1033,7 +1194,7 @@ world.sync_perms_and_inits(contracts);
 Before finalizing tests, verify:
 
 - [ ] **All model imports are used** in struct creation or helper functions
-- [ ] **All type imports are used** in function parameters or struct fields  
+- [ ] **All type imports are used** in function parameters or struct fields
 - [ ] **ModelStorage is used** in explicit helper functions
 - [ ] **WorldStorage is used** in type annotations or helper functions
 - [ ] **ContractDef is used** in helper functions for setup
@@ -1051,6 +1212,95 @@ Before finalizing tests, verify:
 ---
 
 **Remember**: When in doubt, check both the existing working tests in `src/tests/test_simple.cairo` and the comprehensive testing guide in `AI_DOCS/comprehensive-testing-in-dojo.md` for reference patterns!
+
+## Current Test Suite Organization
+
+The project now follows a feature-based test organization with 98 comprehensive tests across multiple modules:
+
+### Test Module Structure
+
+```
+contracts/src/tests/
+├── setup.cairo              # Centralized test infrastructure (spawn, context, helpers)
+├── simple.cairo             # Basic model and system operation tests
+├── world.cairo              # World setup and integration tests
+├── comprehensive.cairo      # Legacy comprehensive test suite
+├── test_game_features.cairo # Game lifecycle and level progression (12 tests)
+├── test_inventory_features.cairo # Item management and player inventory (10 tests)
+├── test_component_layer.cairo     # Direct component testing (7 tests)
+├── test_error_conditions.cairo   # Error handling and edge cases (20 tests)
+├── test_performance.cairo         # Gas optimization and performance (15 tests)
+├── test_helpers.cairo            # Store pattern and utility testing (13 tests)
+└── test_events.cairo            # Event emission verification (11 tests)
+```
+
+### Test Coverage Areas
+
+**Core Game Systems (98 tests total)**:
+- **Game Features** (12 tests): Creation, level progression, ownership, multi-player isolation
+- **Inventory Management** (10 tests): Item pickup, capacity limits, type differentiation, experience tracking
+- **Component Layer** (7 tests): Direct business logic testing, integration workflows
+- **Error Conditions** (20 tests): Validation rules, security, graceful error handling
+- **Performance** (15 tests): Gas usage patterns, optimization, stress testing
+- **Helper Functions** (13 tests): Store pattern validation, data consistency, edge cases
+- **Event System** (11 tests): Event emission, isolation, workflow sequences
+- **Legacy Tests** (10 tests): World setup, basic operations, comprehensive workflows
+
+### Key Testing Patterns
+
+**1. Centralized Setup**:
+```cairo
+// Every test file uses the same pattern
+use elysium_descent::tests::setup::{spawn, Player, Game, LevelItems, /*...*/};
+
+#[test]
+fn test_feature() {
+    let (world, systems, context) = spawn(); // One-line setup
+    // Test logic here
+}
+```
+
+**2. Feature-Based Organization**:
+- Tests grouped by functionality, not by system layer
+- Clear separation between happy path, error conditions, and performance
+- Consistent naming conventions: `test_[feature]_[behavior]`
+
+**3. Progressive Gas Limits**:
+- Basic operations: 3-6M gas
+- Complex workflows: 10-30M gas
+- Integration tests: 30-60M gas
+- Performance stress tests: 100M+ gas
+
+**4. Error Testing Strategy**:
+- Use `#[should_panic]` for expected failures
+- Test graceful handling for edge cases
+- Verify default return values for non-existent data
+
+**5. Import Hygiene**:
+- Minimal, focused imports per test module
+- Consistent import structure across files
+- Use of Store pattern for clean model access
+
+### Test Maintenance Guidelines
+
+**Adding New Tests**:
+1. **Choose appropriate module** based on functionality being tested
+2. **Use centralized setup**: Always call `spawn()` for world initialization
+3. **Follow gas limit patterns**: Start with 30M gas, adjust as needed
+4. **Import minimally**: Only import types actually used in tests
+5. **Use consistent patterns**: Follow existing test structure and naming
+
+**Fixing Test Issues**:
+1. **Check compilation first**: Resolve import and syntax errors before logic
+2. **Verify gas limits**: Increase if tests are running out of gas
+3. **Check error expectations**: Ensure `#[should_panic]` matches actual behavior
+4. **Test actual behavior**: Don't assume functions panic; they might return gracefully
+
+**Performance Considerations**:
+- Group related tests to reuse world setup
+- Use appropriate gas limits (avoid over-allocation)
+- Test edge cases and boundary conditions
+- Validate both success and failure paths
 
 ## Cairo Documentation and Commenting Best Practices
 
@@ -1073,11 +1323,11 @@ pub enum GameMode {
 }
 
 /// Function documentation with structured sections
-/// 
+///
 /// # Arguments
 /// * `base_exp` - Base experience amount before bonuses
 /// * `player_class` - Player's class affecting experience gain
-/// 
+///
 /// # Returns
 /// Modified experience amount after applying class multiplier
 fn calculate_experience(base_exp: u32, player_class: PlayerClass) -> u32 {
@@ -1143,20 +1393,20 @@ pub struct GameConfig {
 #### Function Documentation Template
 ```cairo
 /// Brief function description
-/// 
+///
 /// Longer description if needed explaining complex behavior,
 /// algorithm details, or important constraints.
-/// 
+///
 /// # Arguments
 /// * `param1` - Description of first parameter
 /// * `param2` - Description of second parameter
-/// 
+///
 /// # Returns
 /// Description of return value and its meaning
-/// 
+///
 /// # Panics
 /// Conditions that will cause the function to panic
-/// 
+///
 /// # Examples
 /// ```
 /// let result = my_function(value1, value2);
@@ -1174,7 +1424,7 @@ fn my_function(param1: u32, param2: ContractAddress) -> u32 {
 When writing or updating comments:
 
 - [ ] Use `///` for item-level documentation (structs, enums, functions)
-- [ ] Use `//` for inline comments within function bodies  
+- [ ] Use `//` for inline comments within function bodies
 - [ ] Never put inline comments on enum variants or struct fields
 - [ ] Place comments on separate lines above the code they describe
 - [ ] Write specific, actionable descriptions instead of vague statements
@@ -1187,7 +1437,7 @@ When writing or updating comments:
 
 - [Cairo Comments Guide](https://book.cairo-lang.org/ch02-04-comments.html) - Official Cairo commenting syntax
 - [Dojo Models](https://www.dojoengine.org/framework/models) - Model structure and best practices
-- [Dojo Systems](https://www.dojoengine.org/framework/world/systems) - System implementation patterns  
+- [Dojo Systems](https://www.dojoengine.org/framework/world/systems) - System implementation patterns
 - [World API](https://www.dojoengine.org/framework/world/api) - Complete API reference
 - [Testing](https://www.dojoengine.org/framework/testing) - Testing framework and patterns
 - [Cairo Language](https://book.cairo-lang.org/) - Core language reference
