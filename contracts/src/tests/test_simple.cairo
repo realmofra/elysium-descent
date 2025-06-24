@@ -16,6 +16,7 @@ mod tests {
     use elysium_descent::models::game::{m_Game, m_GameCounter, m_LevelItems};
     use elysium_descent::models::inventory::m_PlayerInventory;
     use elysium_descent::models::world_state::m_WorldItem;
+    use elysium_descent::helpers::store::{Store, StoreTrait};
 
     fn PLAYER() -> ContractAddress {
         contract_address_const::<'PLAYER'>()
@@ -162,11 +163,27 @@ mod tests {
 
         // Use WorldStorage explicitly in a helper function
         verify_world_storage_works(world);
+        
+        // Test modern Store pattern
+        test_store_pattern_usage(world, PLAYER());
     }
 
     // Helper function that explicitly uses WorldStorage type
     fn verify_world_storage_works(world: WorldStorage) {
         // Simple verification that WorldStorage is working
         assert(world.dispatcher.contract_address != contract_address_const::<0>(), 'World should have address');
+    }
+
+    // Test Store pattern - modern approach
+    fn test_store_pattern_usage(world: WorldStorage, player: ContractAddress) {
+        let store: Store = StoreTrait::new(world);  // Explicitly use Store type
+        
+        // Use Store methods directly (thanks to #[generate_trait])
+        let player_data = store.get_player(player);
+        let inventory = store.get_player_inventory(player);
+        
+        // Store automatically uses ModelStorage internally
+        assert(player_data.health <= player_data.max_health, 'Health should be valid');
+        assert(inventory.capacity > 0, 'Inventory should have capacity');
     }
 }

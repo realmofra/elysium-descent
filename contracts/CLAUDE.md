@@ -784,6 +784,201 @@ When tests fail, follow this approach:
 3. **Insufficient gas limits** - Complex tests need 6-30M gas
 4. **Incorrect resource registration** - Events vs Models must be registered correctly
 
+## Import Hygiene and Type Usage Best Practices
+
+This section covers practical patterns for avoiding unused import warnings and properly using imported types in Cairo/Dojo projects.
+
+### Unused Import Prevention Strategies
+
+**Problem**: Cairo compiler warns about unused imports, but removing them breaks type safety and explicit usage.
+
+**Solution**: Create helper functions and comprehensive tests that explicitly use all imported types.
+
+#### 1. Modern Store Pattern (Recommended)
+
+```cairo
+// Use the existing Store pattern instead of repetitive helper functions
+use elysium_descent::helpers::store::{Store, StoreTrait};
+
+// In tests - use Store for clean, organized model access
+#[test]
+fn test_with_modern_store_pattern() {
+    let (world, actions) = setup_test_world();
+    let store: Store = StoreTrait::new(world);  // Explicit type annotation uses Store import
+    
+    // Clean, semantic model operations - Store uses ModelStorage internally
+    let player = store.get_player(PLAYER());
+    let game = store.get_game(game_id);
+    let inventory = store.get_player_inventory(PLAYER());
+    
+    // Store methods are cleaner than repetitive helpers
+    assert(player.health > 0, 'Player should be alive');
+    assert(game.status == GameStatus::InProgress, 'Game should be active');
+}
+```
+
+#### 2. Direct ModelStorage Usage (For Edge Cases)
+
+```cairo
+// Only for models/operations not covered by Store
+use dojo::model::ModelStorage;
+
+// Direct usage when Store doesn't have specific methods
+fn direct_model_access(world: WorldStorage, player: ContractAddress) -> Player {
+    world.read_model(player)  // Explicit ModelStorage usage
+}
+```
+
+#### 3. WorldStorage Usage Patterns
+
+```cairo
+// Helper that explicitly uses WorldStorage type
+fn verify_world_storage_works(world: WorldStorage) {
+    assert(world.dispatcher.contract_address != contract_address_const::<0>(), 'World should have address');
+}
+
+// Use in tests
+#[test]
+fn test_basic_system_dispatch() {
+    let (world, actions) = setup_test_world();
+    // ... test logic ...
+    verify_world_storage_works(world); // Explicitly use WorldStorage
+}
+```
+
+#### 4. ContractAddress Safe Usage Patterns
+
+```cairo
+use starknet::{ContractAddress, contract_address_const};
+
+// ✅ CORRECT - Safe comparison pattern
+fn is_valid_address(addr: ContractAddress) -> bool {
+    addr != contract_address_const::<0>()
+}
+
+// ❌ WRONG - Method doesn't exist in Cairo
+// addr.is_non_zero()  // Compilation error
+
+// Helper functions using ContractAddress explicitly
+impl WorldItemImpl of WorldItemTrait {
+    fn can_be_collected_by(self: @WorldItem, player: ContractAddress) -> bool {
+        !*self.is_collected && player != contract_address_const::<0>()
+    }
+}
+```
+
+#### 5. Comprehensive Model Testing Pattern
+
+```cairo
+#[test]
+fn test_all_imported_model_types() {
+    let mut world = spawn_test_world([namespace_def].span());
+    let player_address = PLAYER();
+
+    // Test Player model (uses imported Player type)
+    let test_player = Player {
+        player: player_address,
+        health: 100,
+        max_health: 100,
+        level: 1,
+        experience: 0,
+        items_collected: 0,
+    };
+    world.write_model_test(@test_player);
+    let read_player: Player = world.read_model(player_address);
+    assert(read_player.health == 100, 'Player health mismatch');
+
+    // Test GameCounter model (uses imported GameCounter type)
+    let test_counter = GameCounter {
+        counter_id: 999999999,
+        next_game_id: 1,
+    };
+    world.write_model_test(@test_counter);
+    let read_counter: GameCounter = world.read_model(test_counter.counter_id);
+    assert(read_counter.next_game_id == 1, 'Counter mismatch');
+
+    // Test LevelItems model (uses imported LevelItems type)
+    let test_level_items = LevelItems {
+        game_id: 1,
+        level: 1,
+        total_health_potions: 10,
+        total_survival_kits: 5,
+        total_books: 3,
+        collected_health_potions: 0,
+        collected_survival_kits: 0,
+        collected_books: 0,
+    };
+    world.write_model_test(@test_level_items);
+    let read_level_items: LevelItems = world.read_model((1_u32, 1_u32));
+    assert(read_level_items.total_health_potions == 10, 'Level items mismatch');
+
+    // Continue for all imported model types...
+}
+```
+
+#### 6. Type-Safe Import Organization
+
+```cairo
+// Organize imports by usage category
+#[cfg(test)]
+mod tests {
+    // Core Dojo testing framework
+    use dojo::world::{WorldStorage, WorldStorageTrait};          // Used in helper functions
+    use dojo::model::{ModelStorage, ModelStorageTest};           // Used for read/write operations
+    
+    // Direct model imports for struct creation
+    use elysium_descent::models::index::{
+        Player, Game, GameCounter, LevelItems, PlayerInventory, WorldItem  // ALL used in tests
+    };
+    
+    // Test class hash imports for resource registration
+    use elysium_descent::models::player::m_Player;               // Used in TestResource::Model
+    use elysium_descent::models::game::{m_Game, m_LevelItems};   // Used in TestResource::Model
+    // ... etc for all model types
+    
+    // Type imports for explicit usage
+    use elysium_descent::types::item_types::ItemType;           // Used in WorldItem creation
+}
+```
+
+#### 7. ContractDef Usage Pattern
+
+```cairo
+use dojo_cairo_test::ContractDef;
+
+// Helper function that explicitly uses ContractDef type
+fn setup_contract_definitions() -> Span<ContractDef> {
+    [
+        ContractDefTrait::new(@"elysium_001", @"actions")
+            .with_writer_of([dojo::utils::bytearray_hash(@"elysium_001")].span())
+    ].span()
+}
+
+// Use in test setup
+let contracts = setup_contract_definitions();
+world.sync_perms_and_inits(contracts);
+```
+
+### Import Hygiene Checklist
+
+Before finalizing tests, verify:
+
+- [ ] **All model imports are used** in struct creation or helper functions
+- [ ] **All type imports are used** in function parameters or struct fields  
+- [ ] **ModelStorage is used** in explicit helper functions
+- [ ] **WorldStorage is used** in type annotations or helper functions
+- [ ] **ContractDef is used** in helper functions for setup
+- [ ] **ContractAddress patterns** use safe comparison methods
+- [ ] **Test class hashes** match their resource registration types
+
+### Benefits of Proper Import Usage
+
+1. **Type Safety**: Explicit usage ensures types are actually needed
+2. **Code Documentation**: Helper functions document intended usage patterns
+3. **Test Coverage**: Comprehensive model testing improves validation
+4. **Maintenance**: Clear type usage makes refactoring safer
+5. **Compiler Happiness**: No unused import warnings
+
 ---
 
 **Remember**: When in doubt, check both the existing working tests in `src/tests/test_simple.cairo` and the comprehensive testing guide in `AI_DOCS/comprehensive-testing-in-dojo.md` for reference patterns!

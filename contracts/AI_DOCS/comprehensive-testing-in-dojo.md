@@ -170,7 +170,7 @@ fn setup_namespace() -> NamespaceDef {
 
 ### 2. Setup Module Pattern
 
-Every test suite should include a consistent setup module:
+Every test suite should include a consistent setup module with modern Store pattern:
 
 ```cairo
 pub mod setup {
@@ -180,10 +180,14 @@ pub mod setup {
 
     // Dojo imports
     use dojo::world::{WorldStorage, WorldStorageTrait};
+    use dojo::model::ModelStorage;  // For direct model access when needed
     use dojo_cairo_test::{
         spawn_test_world, NamespaceDef, ContractDef, TestResource, ContractDefTrait,
         WorldStorageTestTrait,
     };
+
+    // Store pattern imports
+    use your_project::helpers::store::{Store, StoreTrait};
 
     // Your imports
     use your_project::models::{index as models};
@@ -275,8 +279,67 @@ pub mod setup {
             };
         }
     }
+
+    // Modern Store pattern for model access
+    pub fn test_store_pattern(world: WorldStorage, player: ContractAddress) -> (Player, PlayerInventory) {
+        let store: Store = StoreTrait::new(world);  // Explicit type annotation
+        let player_data = store.get_player(player);
+        let inventory = store.get_player_inventory(player);
+        (player_data, inventory)
+    }
+
+    // Direct ModelStorage usage for edge cases
+    pub fn direct_model_access(world: WorldStorage, player: ContractAddress) -> Player {
+        world.read_model(player)  // Explicit ModelStorage usage
+    }
 }
 ```
+
+## Modern Store Pattern for Testing
+
+### **Recommended Approach: Use Store Instead of Repetitive Helpers**
+
+Instead of creating multiple helper functions for model access, use the existing Store pattern:
+
+```cairo
+#[test]
+fn test_with_store_pattern() {
+    let (world, systems, context) = spawn();
+    
+    // Use Store for clean model access
+    let store: Store = StoreTrait::new(world);  // Explicit type annotation
+    
+    // Clean, semantic operations - Store uses ModelStorage internally
+    let player = store.get_player(context.player1);
+    let game = store.get_game(game_id);
+    let inventory = store.get_player_inventory(context.player1);
+    
+    // Store methods provide better readability than generic helpers
+    assert(player.health > 0, 'Player should be alive');
+    assert(game.status == GameStatus::InProgress, 'Game should be active');
+    assert(inventory.capacity > 0, 'Inventory should have capacity');
+}
+```
+
+### **When to Use Direct ModelStorage**
+
+Only use direct `world.read_model()` for edge cases not covered by Store:
+
+```cairo
+fn test_direct_model_access(world: WorldStorage) {
+    // For models that Store doesn't handle
+    let custom_model: CustomModel = world.read_model(key);  // Uses ModelStorage
+    world.write_model(@updated_model);
+}
+```
+
+### **Benefits of Store Pattern**
+
+1. **No Code Duplication** - Store already implements common model operations
+2. **Semantic Method Names** - `store.get_player()` vs `read_player_model()`
+3. **Type Safety** - Store methods are strongly typed
+4. **Follows Project Standards** - Matches how systems use Store
+5. **ModelStorage Built-in** - Store uses ModelStorage internally
 
 ## Unit Testing
 
