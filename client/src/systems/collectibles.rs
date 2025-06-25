@@ -2,7 +2,7 @@ use crate::assets::ModelAssets;
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_yarnspinner::prelude::*;
-use bevy_yarnspinner::events::ExecuteCommandEvent;
+use bevy_yarnspinner::events::{ExecuteCommandEvent, PresentLineEvent, PresentOptionsEvent, DialogueCompleteEvent};
 use std::sync::Arc;
 
 use crate::systems::dojo::PickupItemEvent;
@@ -115,8 +115,8 @@ impl Plugin for CollectiblesPlugin {
                 handle_interactions,
                 handle_book_dialogue_events,
                 handle_dialogue_commands,
-                debug_dialogue_system,
                 update_interaction_prompts,
+                debug_dialogue_events,
                 inventory::add_item_to_inventory.run_if(in_state(Screen::GamePlay)),
                 inventory::toggle_inventory_visibility.run_if(in_state(Screen::GamePlay)),
             )
@@ -316,22 +316,22 @@ fn handle_interactions(
     mut pickup_events: EventWriter<PickupItemEvent>,
 ) {
     for _event in interaction_events.read() {
-        // warn!("🎯 INTERACTION EVENT RECEIVED! Checking for nearby interactable...");
+        info!("🎯 INTERACTION EVENT RECEIVED! Checking for nearby interactable...");
         
         if let Some(entity) = nearby_interactable.entity {
-            // warn!("✅ Found nearby interactable entity: {:?}", entity);
+            info!("✅ Found nearby interactable entity: {:?}", entity);
             
             if let Ok((collectible_type, _collectible)) = interactable_query.get(entity) {
-                // warn!("✅ Entity is valid with type: {:?}", collectible_type);
+                info!("✅ Entity is valid with type: {:?}", collectible_type);
                 
                 // Trigger dialogue for books, blockchain transaction for FirstAidKit, direct collection for others
                 match collectible_type {
                     CollectibleType::Book => {
-                        // warn!("📚 BOOK DETECTED! Triggering StartBookDialogueEvent...");
+                        info!("📚 BOOK DETECTED! Triggering StartBookDialogueEvent...");
                         book_dialogue_events.write(StartBookDialogueEvent {
                             book_entity: entity,
                         });
-                        // warn!("📚 StartBookDialogueEvent SENT!");
+                        info!("📚 StartBookDialogueEvent SENT!");
                     }
                     CollectibleType::FirstAidKit => {
                         // Trigger blockchain transaction for FirstAidKit
@@ -354,10 +354,10 @@ fn handle_interactions(
                     text: String::new(),
                 });
             } else {
-                // warn!("❌ Nearby entity is not a valid interactable!");
+                warn!("❌ Nearby entity is not a valid interactable!");
             }
         } else {
-            // warn!("❌ No nearby interactable entity when E was pressed!");
+            warn!("❌ No nearby interactable entity when E was pressed!");
         }
     }
 }
@@ -378,7 +378,7 @@ fn handle_book_dialogue_events(
     book_query: Query<&Collectible, With<CollectibleType>>,
 ) {
     for event in book_dialogue_events.read() {
-        // warn!("🎯 BOOK INTERACTION EVENT TRIGGERED! Starting dialogue for book entity: {:?}", event.book_entity);
+        info!("🎯 BOOK INTERACTION EVENT TRIGGERED! Starting dialogue for book entity: {:?}", event.book_entity);
         
         // Store the current book entity so we can collect it later
         current_book.entity = Some(event.book_entity);
@@ -386,33 +386,33 @@ fn handle_book_dialogue_events(
         // Try different approaches to start dialogue
         match dialogue_runner_query.single_mut() {
             Ok(mut dialogue_runner) => {
-                // warn!("✅ Found DialogueRunner, attempting to start Ancient_Tome dialogue");
+                info!("✅ Found DialogueRunner, attempting to start Ancient_Tome dialogue");
                 
                 // Check if dialogue is already running
                 if dialogue_runner.is_running() {
-                    // warn!("⚠️  DialogueRunner is already running dialogue - stopping first");
+                    info!("⚠️  DialogueRunner is already running dialogue - stopping first");
                     dialogue_runner.stop();
                 }
                 
                 // Detailed logging before starting dialogue
-                // warn!("🎬 STARTING DIALOGUE:");
-                // warn!("  📍 Node: 'Ancient_Tome'");
-                // warn!("  🏃 Runner state before: running={}", dialogue_runner.is_running());
+                info!("🎬 STARTING DIALOGUE:");
+                info!("  📍 Node: 'Ancient_Tome'");
+                info!("  🏃 Runner state before: running={}", dialogue_runner.is_running());
                 
                 // Start the dialogue - this method doesn't return Result, just starts the node
                 dialogue_runner.start_node("Ancient_Tome");
                 
                 // Immediately check state after starting
-                // warn!("🎉 SUCCESS: DialogueRunner.start_node('Ancient_Tome') called!");
-                // warn!("🔄 Runner state after: running={}", dialogue_runner.is_running());
+                info!("🎉 SUCCESS: DialogueRunner.start_node('Ancient_Tome') called!");
+                info!("🔄 Runner state after: running={}", dialogue_runner.is_running());
                 
                 // Force an immediate continue to ensure first line appears
-                // warn!("🔄 Calling continue_in_next_update() to trigger first event...");
+                info!("🔄 Calling continue_in_next_update() to trigger first event...");
                 dialogue_runner.continue_in_next_update();
             }
             Err(_e) => {
                 // No DialogueRunner found - try to create one for this interaction
-                // warn!("❌ No DialogueRunner found: {:?}. Available runners: {}", e, dialogue_runner_query.iter().count());
+                warn!("❌ No DialogueRunner found: {:?}. Available runners: {}", _e, dialogue_runner_query.iter().count());
                 
                 // Fallback to simple book collection
                 info!("📖 Fallback: You found an ancient tome! It contains mystical knowledge about Elysium's depths.");
@@ -596,4 +596,26 @@ pub fn spawn_interactable_book(
             speed: 1.0,
         },
     ));
+}
+
+/// System to debug dialogue events
+fn debug_dialogue_events(
+    mut line_events: EventReader<PresentLineEvent>,
+    mut option_events: EventReader<PresentOptionsEvent>,
+    mut complete_events: EventReader<DialogueCompleteEvent>,
+) {
+    for event in line_events.read() {
+        info!("💬 DIALOGUE LINE EVENT: {}", event.line.text);
+    }
+    
+    for event in option_events.read() {
+        info!("🔸 DIALOGUE OPTIONS EVENT: {} options", event.options.len());
+        for (i, option) in event.options.iter().enumerate() {
+            info!("  [{}] {}", i + 1, option.line.text);
+        }
+    }
+    
+    for _event in complete_events.read() {
+        info!("✅ DIALOGUE COMPLETE EVENT");
+    }
 }
