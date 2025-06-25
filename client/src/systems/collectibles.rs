@@ -510,17 +510,31 @@ fn debug_dialogue_system(
     }
 }
 
-/// System to update interaction prompt UI (placeholder for now)
+/// System to update interaction prompt UI using Yarn system
 fn update_interaction_prompts(
     mut prompt_events: EventReader<InteractionPromptEvent>,
+    mut dialogue_runners: Query<&mut DialogueRunner>,
 ) {
     for event in prompt_events.read() {
         if event.show {
             info!("SHOW PROMPT: {}", event.text);
-            // TODO: Show UI prompt with event.text
+            // Show the prompt using Yarn Spinner dialogue
+            if let Ok(mut dialogue_runner) = dialogue_runners.single_mut() {
+                // Stop any existing dialogue first
+                if dialogue_runner.is_running() {
+                    dialogue_runner.stop();
+                }
+                // Start the interaction prompt dialogue
+                dialogue_runner.start_node("InteractionPrompt");
+            }
         } else {
             info!("HIDE PROMPT");
-            // TODO: Hide UI prompt
+            // Hide the prompt by stopping the dialogue
+            if let Ok(mut dialogue_runner) = dialogue_runners.single_mut() {
+                if dialogue_runner.is_running() {
+                    dialogue_runner.stop();
+                }
+            }
         }
     }
 }
