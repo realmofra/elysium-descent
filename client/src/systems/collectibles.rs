@@ -573,7 +573,7 @@ pub fn spawn_interactable_book(
     // Add interaction components
     entity.insert((
         Interactable {
-            interaction_radius: 3.0,
+            interaction_radius: 10.0,
             prompt_text: "Press E to read".to_string(),
         },
         CollectibleRotation {

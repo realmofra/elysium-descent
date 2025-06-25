@@ -3,7 +3,7 @@ use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_kira_audio::prelude::*;
 use bevy_lunex::prelude::*;
 use bevy_yarnspinner::prelude::*;
-// use bevy_yarnspinner_example_dialogue_view::ExampleYarnSpinnerDialogueViewPlugin;
+use bevy_yarnspinner_example_dialogue_view::prelude::*;
 use dojo_bevy_plugin::{DojoPlugin, DojoResource, TokioRuntime};
 
 mod constants;
@@ -14,8 +14,6 @@ mod resources;
 mod screens;
 mod systems;
 mod ui;
-
-use systems::dialogue_view::SimpleDialogueViewPlugin;
 
 use systems::dojo;
 
@@ -46,7 +44,7 @@ fn main() -> AppExit {
         .add_plugins(YarnSpinnerPlugin::with_yarn_source(YarnFileSource::file(
             "dialogue/books.yarn",
         )))
-        .add_plugins(SimpleDialogueViewPlugin) // Our custom dialogue view - no auto-start
+        .add_plugins(ExampleYarnSpinnerDialogueViewPlugin::new())
         .init_resource::<DojoResource>()
         .init_resource::<TokioRuntime>()
         .add_plugins(DojoPlugin)
