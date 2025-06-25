@@ -2,7 +2,7 @@ use crate::assets::ModelAssets;
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_yarnspinner::prelude::*;
-use bevy_yarnspinner::events::{ExecuteCommandEvent, PresentLineEvent, PresentOptionsEvent, DialogueCompleteEvent};
+use bevy_yarnspinner::events::ExecuteCommandEvent;
 use std::sync::Arc;
 
 use crate::systems::dojo::PickupItemEvent;
@@ -53,7 +53,6 @@ pub struct Sensor;
 #[derive(Component)]
 pub struct Interactable {
     pub interaction_radius: f32,
-    pub prompt_text: String,
 }
 
 /// Event triggered when player presses interaction key
@@ -64,7 +63,6 @@ pub struct InteractionEvent;
 #[derive(Event, Debug)]
 pub struct InteractionPromptEvent {
     pub show: bool,
-    pub text: String,
 }
 
 /// Event to trigger book dialogue
@@ -116,7 +114,6 @@ impl Plugin for CollectiblesPlugin {
                 handle_book_dialogue_events,
                 handle_dialogue_commands,
                 update_interaction_prompts,
-                debug_dialogue_events,
                 inventory::add_item_to_inventory.run_if(in_state(Screen::GamePlay)),
                 inventory::toggle_inventory_visibility.run_if(in_state(Screen::GamePlay)),
             )
@@ -274,15 +271,13 @@ fn detect_nearby_interactables(
 
     // Update nearby interactable state
     match closest_interactable {
-        Some((entity, distance, interactable)) => {
+        Some((entity, distance, _interactable)) => {
             if nearby_interactable.entity != Some(entity) {
                 // New interactable entered range
-                // warn!("🔍 PROXIMITY: Player entered range of interactable entity {:?} - '{}'", entity, interactable.prompt_text);
                 nearby_interactable.entity = Some(entity);
                 nearby_interactable.distance = distance;
                 prompt_events.write(InteractionPromptEvent {
                     show: true,
-                    text: interactable.prompt_text.clone(),
                 });
             } else {
                 // Update distance for existing interactable
@@ -292,12 +287,10 @@ fn detect_nearby_interactables(
         None => {
             if nearby_interactable.entity.is_some() {
                 // Left interaction range
-                // warn!("🚶 PROXIMITY: Player left interaction range");
                 nearby_interactable.entity = None;
                 nearby_interactable.distance = 0.0;
                 prompt_events.write(InteractionPromptEvent {
                     show: false,
-                    text: String::new(),
                 });
             }
         }
@@ -316,22 +309,14 @@ fn handle_interactions(
     mut pickup_events: EventWriter<PickupItemEvent>,
 ) {
     for _event in interaction_events.read() {
-        info!("🎯 INTERACTION EVENT RECEIVED! Checking for nearby interactable...");
-        
         if let Some(entity) = nearby_interactable.entity {
-            info!("✅ Found nearby interactable entity: {:?}", entity);
-            
             if let Ok((collectible_type, _collectible)) = interactable_query.get(entity) {
-                info!("✅ Entity is valid with type: {:?}", collectible_type);
-                
                 // Trigger dialogue for books, blockchain transaction for FirstAidKit, direct collection for others
                 match collectible_type {
                     CollectibleType::Book => {
-                        info!("📚 BOOK DETECTED! Triggering StartBookDialogueEvent...");
                         book_dialogue_events.write(StartBookDialogueEvent {
                             book_entity: entity,
                         });
-                        info!("📚 StartBookDialogueEvent SENT!");
                     }
                     CollectibleType::FirstAidKit => {
                         // Trigger blockchain transaction for FirstAidKit
@@ -351,13 +336,8 @@ fn handle_interactions(
                 // Hide the interaction prompt
                 prompt_events.write(InteractionPromptEvent {
                     show: false,
-                    text: String::new(),
                 });
-            } else {
-                warn!("❌ Nearby entity is not a valid interactable!");
             }
-        } else {
-            warn!("❌ No nearby interactable entity when E was pressed!");
         }
     }
 }
@@ -378,36 +358,19 @@ fn handle_book_dialogue_events(
     book_query: Query<&Collectible, With<CollectibleType>>,
 ) {
     for event in book_dialogue_events.read() {
-        info!("🎯 BOOK INTERACTION EVENT TRIGGERED! Starting dialogue for book entity: {:?}", event.book_entity);
-        
         // Store the current book entity so we can collect it later
         current_book.entity = Some(event.book_entity);
         
         // Try different approaches to start dialogue
         match dialogue_runner_query.single_mut() {
             Ok(mut dialogue_runner) => {
-                info!("✅ Found DialogueRunner, attempting to start Ancient_Tome dialogue");
-                
                 // Check if dialogue is already running
                 if dialogue_runner.is_running() {
-                    info!("⚠️  DialogueRunner is already running dialogue - stopping first");
                     dialogue_runner.stop();
                 }
                 
-                // Detailed logging before starting dialogue
-                info!("🎬 STARTING DIALOGUE:");
-                info!("  📍 Node: 'Ancient_Tome'");
-                info!("  🏃 Runner state before: running={}", dialogue_runner.is_running());
-                
-                // Start the dialogue - this method doesn't return Result, just starts the node
+                // Start the dialogue
                 dialogue_runner.start_node("Ancient_Tome");
-                
-                // Immediately check state after starting
-                info!("🎉 SUCCESS: DialogueRunner.start_node('Ancient_Tome') called!");
-                info!("🔄 Runner state after: running={}", dialogue_runner.is_running());
-                
-                // Force an immediate continue to ensure first line appears
-                info!("🔄 Calling continue_in_next_update() to trigger first event...");
                 dialogue_runner.continue_in_next_update();
             }
             Err(_e) => {
@@ -464,52 +427,6 @@ fn handle_dialogue_commands(
     }
 }
 
-/// System to debug dialogue system state
-fn debug_dialogue_system(
-    dialogue_runners: Query<&DialogueRunner>,
-    yarn_project: Option<Res<YarnProject>>,
-    mut debug_timer: Local<f32>,
-    time: Res<Time>,
-) {
-    *debug_timer += time.delta_secs();
-    
-    // Only log every 5 seconds to avoid spam
-    if *debug_timer > 5.0 {
-        *debug_timer = 0.0;
-        
-        let runner_count = dialogue_runners.iter().count();
-        let _project_exists = yarn_project.is_some();
-        
-        if runner_count == 0 {
-            // warn!("🔍 YARN DEBUG: DialogueRunners: {}, YarnProject exists: {}", 
-            //       runner_count, project_exists);
-            // warn!("❌ No DialogueRunner entities found! This is why dialogue isn't working.");
-        } else {
-            // info!("✅ YARN DEBUG: Found {} DialogueRunner(s), YarnProject exists: {}", 
-            //       runner_count, project_exists);
-            
-            // Check if any runners are actually running dialogue
-            let mut _active_runners = 0;
-            for runner in dialogue_runners.iter() {
-                if runner.is_running() {
-                    _active_runners += 1;
-                }
-            }
-            
-            // if active_runners > 0 {
-            //     info!("🎯 ACTIVE DIALOGUE: {} runner(s) currently running dialogue", active_runners);
-            // } else {
-            //     info!("⚠️  IDLE RUNNERS: All {} runner(s) are idle (no dialogue running)", runner_count);
-            // }
-            
-            // YarnProject exists, dialogue should work
-            // if yarn_project.is_some() {
-            //     info!("✅ YarnProject resource exists - dialogue system should be ready");
-            // }
-        }
-    }
-}
-
 /// System to update interaction prompt UI using Yarn system
 fn update_interaction_prompts(
     mut prompt_events: EventReader<InteractionPromptEvent>,
@@ -517,7 +434,6 @@ fn update_interaction_prompts(
 ) {
     for event in prompt_events.read() {
         if event.show {
-            info!("SHOW PROMPT: {}", event.text);
             // Show the prompt using Yarn Spinner dialogue
             if let Ok(mut dialogue_runner) = dialogue_runners.single_mut() {
                 // Stop any existing dialogue first
@@ -528,7 +444,6 @@ fn update_interaction_prompts(
                 dialogue_runner.start_node("InteractionPrompt");
             }
         } else {
-            info!("HIDE PROMPT");
             // Hide the prompt by stopping the dialogue
             if let Ok(mut dialogue_runner) = dialogue_runners.single_mut() {
                 if dialogue_runner.is_running() {
@@ -588,7 +503,6 @@ pub fn spawn_interactable_book(
     entity.insert((
         Interactable {
             interaction_radius: 10.0,
-            prompt_text: "Press E to read".to_string(),
         },
         CollectibleRotation {
             enabled: true,
@@ -596,26 +510,4 @@ pub fn spawn_interactable_book(
             speed: 1.0,
         },
     ));
-}
-
-/// System to debug dialogue events
-fn debug_dialogue_events(
-    mut line_events: EventReader<PresentLineEvent>,
-    mut option_events: EventReader<PresentOptionsEvent>,
-    mut complete_events: EventReader<DialogueCompleteEvent>,
-) {
-    for event in line_events.read() {
-        info!("💬 DIALOGUE LINE EVENT: {}", event.line.text);
-    }
-    
-    for event in option_events.read() {
-        info!("🔸 DIALOGUE OPTIONS EVENT: {} options", event.options.len());
-        for (i, option) in event.options.iter().enumerate() {
-            info!("  [{}] {}", i + 1, option.line.text);
-        }
-    }
-    
-    for _event in complete_events.read() {
-        info!("✅ DIALOGUE COMPLETE EVENT");
-    }
 }
