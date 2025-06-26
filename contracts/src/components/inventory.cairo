@@ -4,6 +4,8 @@ use elysium_descent::models::player::Player;
 use elysium_descent::models::inventory::PlayerInventory;
 use elysium_descent::models::world_state::WorldItem;
 use elysium_descent::types::item::ItemType;
+use elysium_descent::elements::factory::{DefaultElementFactory};
+use elysium_descent::elements::base::{ItemElement, ElementEffect};
 
 /// Inventory Component - handles all inventory-related business logic
 #[generate_trait]
@@ -97,7 +99,7 @@ pub impl InventoryComponentImpl of InventoryComponentTrait {
 
     fn use_consumable_item(
         ref store: Store, player: ContractAddress, item_type: ItemType, quantity: u32,
-    ) -> bool {
+    ) -> ElementEffect {
         let mut inventory = store.get_player_inventory(player);
         let mut player_stats = store.get_player(player);
 
@@ -106,49 +108,63 @@ pub impl InventoryComponentImpl of InventoryComponentTrait {
             ItemType::HealthPotion => inventory.health_potions,
             ItemType::SurvivalKit => inventory.survival_kits,
             ItemType::Book => inventory.books,
+            _ => 0,
         };
 
-        assert(available >= quantity, 'Insufficient items');
-
-        // Consume items and apply their beneficial effects
-        match item_type {
-            ItemType::HealthPotion => {
-                inventory.health_potions -= quantity;
-                // Standard healing: 25 HP per potion
-                let heal_amount = quantity * 25;
-                let new_health = player_stats.health + heal_amount;
-                player_stats
-                    .health =
-                        if new_health > player_stats.max_health {
-                            player_stats.max_health
-                        } else {
-                            new_health
-                        };
-            },
-            ItemType::SurvivalKit => {
-                inventory.survival_kits -= quantity;
-                // Survival kits provide moderate experience bonus
-                player_stats.experience += quantity * 50;
-            },
-            ItemType::Book => {
-                inventory.books -= quantity;
-                // Books provide high experience bonus for knowledge gain
-                player_stats.experience += quantity * 100;
-            },
-        };
-
-        // Process level advancement from experience gain
-        let new_level = (player_stats.experience / 100) + 1;
-        if new_level > player_stats.level {
-            player_stats.level = new_level;
-            player_stats.max_health += 10 * (new_level - player_stats.level);
+        if available < quantity {
+            return ElementEffect {
+                success: false,
+                message: "Insufficient items in inventory",
+                value_changed: 0,
+            };
         }
 
-        // Save updated inventory and player progression
-        store.set_player_inventory(inventory);
-        store.set_player(player_stats);
+        // Create element and apply effect
+        let element = DefaultElementFactory::create_element(item_type);
+        
+        // Check if element can be used
+        if !element.can_use(@player_stats) {
+            return ElementEffect {
+                success: false,
+                message: "Cannot use item in current state",
+                value_changed: 0,
+            };
+        }
 
-        true
+        // Apply the element effect
+        let effect = element.apply_effect(ref store, ref player_stats, quantity);
+        
+        if effect.success {
+            // Deduct items from inventory
+            match item_type {
+                ItemType::HealthPotion => {
+                    inventory.health_potions -= quantity;
+                },
+                ItemType::SurvivalKit => {
+                    inventory.survival_kits -= quantity;
+                },
+                ItemType::Book => {
+                    inventory.books -= quantity;
+                },
+                _ => {}, // Handle unknown item types gracefully
+            };
+
+            // Process level advancement from experience gain
+            let new_level = (player_stats.experience / 100) + 1;
+            if new_level > player_stats.level {
+                let level_diff = new_level - player_stats.level;
+                player_stats.level = new_level;
+                player_stats.max_health += 10 * level_diff;
+                // Restore health to max on level up
+                player_stats.health = player_stats.max_health;
+            }
+
+            // Save updated inventory and player progression
+            store.set_player_inventory(inventory);
+            store.set_player(player_stats);
+        }
+
+        effect
     }
 
     fn get_inventory_summary(store: @Store, player: ContractAddress) -> InventorySummary {
@@ -211,6 +227,23 @@ pub impl InventoryComponentImpl of InventoryComponentTrait {
         store.set_player_inventory(to_inventory);
 
         true
+    }
+
+    fn get_item_info(item_type: ItemType) -> (ByteArray, ByteArray, u32, u64, u32) {
+        let element = DefaultElementFactory::create_element(item_type);
+        (
+            element.get_name(),
+            element.get_description(), 
+            element.get_base_value(),
+            element.get_cooldown_seconds(),
+            element.get_stack_limit()
+        )
+    }
+
+    fn can_use_item(store: @Store, player: ContractAddress, item_type: ItemType) -> bool {
+        let player_stats = store.get_player(player);
+        let element = DefaultElementFactory::create_element(item_type);
+        element.can_use(@player_stats)
     }
 }
 

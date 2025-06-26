@@ -16,10 +16,12 @@ pub struct DojoConfig {
 impl Default for DojoConfig {
     fn default() -> Self {
         Self {
-            torii_url: env::var("TORII_URL")
-                .unwrap_or_else(|_| "http://localhost:8080".to_string()),
-            katana_url: env::var("KATANA_URL")
-                .unwrap_or_else(|_| "http://0.0.0.0:5050".to_string()),
+            torii_url: env::var("TORII_URL").unwrap_or_else(|_| {
+                "https://api.cartridge.gg/x/elysium-descent00/torii".to_string()
+            }),
+            katana_url: env::var("KATANA_URL").unwrap_or_else(|_| {
+                "https://api.cartridge.gg/x/elysium-descent00/katana".to_string()
+            }),
             world_address: env::var("WORLD_ADDRESS")
                 .ok()
                 .and_then(|addr| Felt::from_hex(&addr).ok())
@@ -35,7 +37,7 @@ impl Default for DojoConfig {
                 .unwrap_or_else(|| {
                     // Real deployed action address from manifest_dev.json
                     Felt::from_hex_unchecked(
-                        "0x03b157fb321cd8a0edfcfd47ea1217396bd6c5b534d2766345938eeb78a9d3ec",
+                        "0x05489260d929b819c765d4f62c55cf34e929a39595e2cba39d416a2e79215d87",
                     )
                 }),
             use_dev_account: env::var("USE_DEV_ACCOUNT").unwrap_or_else(|_| "true".to_string())

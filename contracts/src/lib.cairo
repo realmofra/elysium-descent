@@ -25,6 +25,16 @@ pub mod types {
     pub mod game;
 }
 
+pub mod elements {
+    pub mod base;
+    pub mod factory;
+    pub mod items {
+        pub mod health_potion;
+        pub mod survival_kit;
+        pub mod teleport_scroll;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     // Legacy test modules (keeping for compatibility)
@@ -33,7 +43,7 @@ mod tests {
     mod comprehensive;
 
     // New feature-based test modules
-    mod setup;
+    pub mod setup;
     mod test_game_features;
     mod test_inventory_features;
     mod test_component_layer;
@@ -41,4 +51,5 @@ mod tests {
     mod test_performance;
     mod test_helpers;
     mod test_events;
+    mod test_elements;
 }

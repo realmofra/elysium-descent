@@ -17,3 +17,5 @@ cairo_test = "2.10.1"
 
 [[target.starknet-contract]]
 build-external-contracts = ["dojo::world::world_contract::world"]
+
+[profile.slot]
