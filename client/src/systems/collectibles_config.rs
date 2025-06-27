@@ -6,7 +6,8 @@ use once_cell::sync::Lazy;
 pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
     CollectibleConfig {
         position: Vec3::new(10.0, 2.0, 60.0),
-        collectible_type: CollectibleType::FirstAidKit,
+        // collectible_type: CollectibleType::FirstAidKit,
+        collectible_type: CollectibleType::Book,
         scale: 1.0,
         rotation: Some(CollectibleRotation { enabled: true, clockwise: true, speed: 2.0 }),
         on_collect: Arc::new(|commands, entity| {

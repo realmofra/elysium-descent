@@ -1,8 +1,6 @@
 use crate::assets::ModelAssets;
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use bevy_yarnspinner::prelude::*;
-use bevy_yarnspinner::events::ExecuteCommandEvent;
 use std::sync::Arc;
 
 use crate::systems::dojo::PickupItemEvent;
@@ -65,12 +63,6 @@ pub struct InteractionPromptEvent {
     pub show: bool,
 }
 
-/// Event to trigger book dialogue
-#[derive(Event, Debug)]
-pub struct StartBookDialogueEvent {
-    pub book_entity: Entity,
-}
-
 /// Resource to track current interactable object
 #[derive(Resource, Default)]
 pub struct NearbyInteractable {
@@ -99,9 +91,7 @@ impl Plugin for CollectiblesPlugin {
         })
         .add_event::<InteractionEvent>()
         .add_event::<InteractionPromptEvent>()
-        .add_event::<StartBookDialogueEvent>()
         .init_resource::<NearbyInteractable>()
-        .init_resource::<CurrentBookEntity>()
         .insert_resource(inventory::InventoryVisibilityState::default())
         .add_systems(
             Update,
@@ -111,9 +101,6 @@ impl Plugin for CollectiblesPlugin {
                 rotate_collectibles,
                 detect_nearby_interactables,
                 handle_interactions,
-                handle_book_dialogue_events,
-                handle_dialogue_commands,
-                update_interaction_prompts,
                 inventory::add_item_to_inventory.run_if(in_state(Screen::GamePlay)),
                 inventory::toggle_inventory_visibility.run_if(in_state(Screen::GamePlay)),
             )
@@ -305,8 +292,6 @@ fn handle_interactions(
     nearby_interactable: Res<NearbyInteractable>,
     interactable_query: Query<(&CollectibleType, &Collectible), With<Interactable>>,
     mut prompt_events: EventWriter<InteractionPromptEvent>,
-    mut book_dialogue_events: EventWriter<StartBookDialogueEvent>,
-    mut pickup_events: EventWriter<PickupItemEvent>,
 ) {
     for _event in interaction_events.read() {
         if let Some(entity) = nearby_interactable.entity {
@@ -314,17 +299,17 @@ fn handle_interactions(
                 // Trigger dialogue for books, blockchain transaction for FirstAidKit, direct collection for others
                 match collectible_type {
                     CollectibleType::Book => {
-                        book_dialogue_events.write(StartBookDialogueEvent {
-                            book_entity: entity,
-                        });
+                        // Trigger blockchain transaction for FirstAidKit
+                        info!("🏥 FirstAidKit interacted with - triggering blockchain transaction");
+                        collectible_counter.collectibles_collected += 1;
+                        info!(
+                            "Total collectibles collected: {}",
+                            collectible_counter.collectibles_collected
+                        );
                     }
                     CollectibleType::FirstAidKit => {
                         // Trigger blockchain transaction for FirstAidKit
                         info!("🏥 FirstAidKit interacted with - triggering blockchain transaction");
-                        pickup_events.write(PickupItemEvent {
-                            item_type: *collectible_type,
-                            item_entity: entity,
-                        });
                         collectible_counter.collectibles_collected += 1;
                         info!(
                             "Total collectibles collected: {}",
@@ -346,112 +331,6 @@ fn handle_interactions(
 #[derive(Resource, Default)]
 pub struct CurrentBookEntity {
     pub entity: Option<Entity>,
-}
-
-/// System to handle book dialogue events
-fn handle_book_dialogue_events(
-    mut book_dialogue_events: EventReader<StartBookDialogueEvent>,
-    mut dialogue_runner_query: Query<&mut DialogueRunner>,
-    mut commands: Commands,
-    mut collectible_counter: ResMut<CollectibleCounter>,
-    mut current_book: ResMut<CurrentBookEntity>,
-    book_query: Query<&Collectible, With<CollectibleType>>,
-) {
-    for event in book_dialogue_events.read() {
-        // Store the current book entity so we can collect it later
-        current_book.entity = Some(event.book_entity);
-        
-        // Try different approaches to start dialogue
-        match dialogue_runner_query.single_mut() {
-            Ok(mut dialogue_runner) => {
-                // Check if dialogue is already running
-                if dialogue_runner.is_running() {
-                    dialogue_runner.stop();
-                }
-                
-                // Start the dialogue
-                dialogue_runner.start_node("Ancient_Tome");
-                dialogue_runner.continue_in_next_update();
-            }
-            Err(_e) => {
-                // No DialogueRunner found - try to create one for this interaction
-                warn!("❌ No DialogueRunner found: {:?}. Available runners: {}", _e, dialogue_runner_query.iter().count());
-                
-                // Fallback to simple book collection
-                info!("📖 Fallback: You found an ancient tome! It contains mystical knowledge about Elysium's depths.");
-                info!("The book's wisdom becomes part of your understanding.");
-                
-                // Collect the book
-                if let Ok(collectible) = book_query.get(event.book_entity) {
-                    (collectible.on_collect)(&mut commands, event.book_entity);
-                    collectible_counter.collectibles_collected += 1;
-                    info!("Book collected! Total collectibles: {}", collectible_counter.collectibles_collected);
-                }
-            }
-        }
-    }
-}
-
-/// System to handle dialogue commands like collect_book
-fn handle_dialogue_commands(
-    mut command_events: EventReader<ExecuteCommandEvent>,
-    mut commands: Commands,
-    mut collectible_counter: ResMut<CollectibleCounter>,
-    mut current_book: ResMut<CurrentBookEntity>,
-    book_query: Query<&Collectible, With<CollectibleType>>,
-) {
-    for command_event in command_events.read() {
-        info!("Received dialogue command: {:?}", command_event.command);
-        
-        match command_event.command.name.as_str() {
-            "collect_book" => {
-                if let Some(book_entity) = current_book.entity {
-                    info!("Collecting book from dialogue command");
-                    if let Ok(collectible) = book_query.get(book_entity) {
-                        (collectible.on_collect)(&mut commands, book_entity);
-                        collectible_counter.collectibles_collected += 1;
-                        info!(
-                            "Total collectibles collected: {}",
-                            collectible_counter.collectibles_collected
-                        );
-                    }
-                    current_book.entity = None; // Clear the current book
-                } else {
-                    warn!("collect_book command received but no current book entity");
-                }
-            }
-            _ => {
-                info!("Unknown dialogue command: {:?}", command_event.command);
-            }
-        }
-    }
-}
-
-/// System to update interaction prompt UI using Yarn system
-fn update_interaction_prompts(
-    mut prompt_events: EventReader<InteractionPromptEvent>,
-    mut dialogue_runners: Query<&mut DialogueRunner>,
-) {
-    for event in prompt_events.read() {
-        if event.show {
-            // Show the prompt using Yarn Spinner dialogue
-            if let Ok(mut dialogue_runner) = dialogue_runners.single_mut() {
-                // Stop any existing dialogue first
-                if dialogue_runner.is_running() {
-                    dialogue_runner.stop();
-                }
-                // Start the interaction prompt dialogue
-                dialogue_runner.start_node("InteractionPrompt");
-            }
-        } else {
-            // Hide the prompt by stopping the dialogue
-            if let Ok(mut dialogue_runner) = dialogue_runners.single_mut() {
-                if dialogue_runner.is_running() {
-                    dialogue_runner.stop();
-                }
-            }
-        }
-    }
 }
 
 /// Helper function to spawn an interactable book
