@@ -10,7 +10,7 @@ use crate::systems::character_controller::{
 };
 use crate::keybinding;
 use bevy_enhanced_input::prelude::*;
-use crate::systems::collectibles::{CollectiblesPlugin, spawn_collectible, spawn_interactable_book, CollectibleType};
+use crate::systems::collectibles::{CollectiblesPlugin, spawn_collectible, spawn_interactable_book, CollectibleType, Interactable};
 use crate::systems::collectibles_config::COLLECTIBLES;
 use crate::ui::inventory::spawn_inventory_ui;
 use crate::assets::FontAssets;
@@ -20,7 +20,7 @@ pub use crate::ui::widgets::label_widget;
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(OnEnter(Screen::GamePlay), (PlayingScene::spawn_environment, set_gameplay_clear_color, spawn_press_e_dialog))
-        .add_systems(Update, (camera_follow_player, animate_press_e_dialog).run_if(in_state(Screen::GamePlay)))
+        .add_systems(Update, (camera_follow_player, animate_press_e_dialog, check_book_proximity).run_if(in_state(Screen::GamePlay)))
         .add_systems(OnExit(Screen::GamePlay), despawn_scene::<PlayingScene>)
         .add_plugins(PhysicsPlugins::default())
         // .add_plugins(PhysicsDebugPlugin::default())
@@ -94,6 +94,7 @@ fn spawn_press_e_dialog(
         PressEDialog,
         PlayingScene,
         Name::new("PressEDialog"),
+        Visibility::Hidden, // Start hidden
     )).with_children(|parent| {
         parent.spawn(label_widget(
             window_height,
@@ -114,6 +115,37 @@ fn animate_press_e_dialog(
         let pulse_alpha = 0.3;
         let new_alpha = base_alpha + pulse_alpha * t;
         *bg = BackgroundColor(Color::srgba(0.1, 0.1, 0.2, new_alpha));
+    }
+}
+
+fn check_book_proximity(
+    player_query: Query<&Transform, With<CharacterController>>,
+    book_query: Query<(Entity, &Transform, &Interactable), (With<CollectibleType>, Without<CharacterController>)>,
+    mut dialog_query: Query<&mut Visibility, With<PressEDialog>>,
+) {
+    let Ok(player_transform) = player_query.single() else {
+        return;
+    };
+
+    let mut near_book = false;
+    let book_interaction_radius = 10.0; // 10 meters
+
+    // Check if player is near any book
+    for (_, book_transform, interactable) in book_query.iter() {
+        let distance = player_transform.translation.distance(book_transform.translation);
+        if distance <= book_interaction_radius {
+            near_book = true;
+            break;
+        }
+    }
+
+    // Show/hide dialog based on proximity
+    if let Ok(mut visibility) = dialog_query.single_mut() {
+        if near_book {
+            *visibility = Visibility::Visible;
+        } else {
+            *visibility = Visibility::Hidden;
+        }
     }
 }
 
