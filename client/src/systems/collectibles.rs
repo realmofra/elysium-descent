@@ -286,6 +286,7 @@ fn handle_interactions(
     nearby_interactable: Res<NearbyInteractable>,
     interactable_query: Query<(&CollectibleType, &Collectible), With<Interactable>>,
     mut prompt_events: EventWriter<InteractionPromptEvent>,
+    mut next_state: ResMut<NextState<Screen>>,
 ) {
     for _event in interaction_events.read() {
         if let Some(entity) = nearby_interactable.entity {
@@ -293,13 +294,9 @@ fn handle_interactions(
                 // Trigger dialogue for books, blockchain transaction for FirstAidKit, direct collection for others
                 match collectible_type {
                     CollectibleType::Book => {
-                        // Trigger blockchain transaction for FirstAidKit
-                        info!("🏥 FirstAidKit interacted with - triggering blockchain transaction");
-                        collectible_counter.collectibles_collected += 1;
-                        info!(
-                            "Total collectibles collected: {}",
-                            collectible_counter.collectibles_collected
-                        );
+                        // Transition to fight scene when book is interacted with
+                        info!("📚 Book interacted with - transitioning to fight scene");
+                        next_state.set(Screen::FightScene);
                     }
                     CollectibleType::FirstAidKit => {
                         // Trigger blockchain transaction for FirstAidKit
