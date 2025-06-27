@@ -191,26 +191,51 @@ fn handle_dojo_entity_updates(
 
             match model.name.as_str() {
                 "Game" => {
-                    info!("Game model updated - creating placeholder game entity");
+                    info!("Game model updated - parsing game entity data");
 
-                    // For now, create a placeholder game entity since detailed parsing requires more setup
-                    let game_entity = GameEntity {
-                        game_id: 1,                  // TODO: Extract from model data
-                        player: "0x123".to_string(), // TODO: Extract from model data
-                        status: 0,
-                        current_level: 1,
-                    };
+                    // Extract game data from the blockchain model  
+                    let game_entity = parse_game_entity_from_model(&format!("{:#x}", event.entity_id));
 
-                    // If we're creating a game, emit GameCreatedEvent
-                    if game_state.is_creating_game {
-                        game_created_events.write(GameCreatedEvent {
-                            game_id: game_entity.game_id,
-                            player_address: game_entity.player.clone(),
-                        });
+                    match game_entity {
+                        Ok(game) => {
+                            info!(
+                                "Successfully parsed Game entity: ID={}, Player={}, Status={}, Level={}",
+                                game.game_id, game.player, game.status, game.current_level
+                            );
+
+                            // If we're creating a game, emit GameCreatedEvent
+                            if game_state.is_creating_game {
+                                game_created_events.write(GameCreatedEvent {
+                                    game_id: game.game_id,
+                                    player_address: game.player.clone(),
+                                });
+                            }
+
+                            // Always emit game data received event for UI updates
+                            game_data_events.write(GameDataReceivedEvent { game });
+                        }
+                        Err(e) => {
+                            error!("Failed to parse Game entity from blockchain data: {}", e);
+                            
+                            // Fallback: create minimal game entity if we're expecting one
+                            if game_state.is_creating_game {
+                                warn!("Using fallback game entity due to parsing error");
+                                let fallback_game = GameEntity {
+                                    game_id: 1, // Default game ID
+                                    player: "0x123".to_string(), // Placeholder player
+                                    status: 0,  // NotStarted
+                                    current_level: 1,
+                                };
+
+                                game_created_events.write(GameCreatedEvent {
+                                    game_id: fallback_game.game_id,
+                                    player_address: fallback_game.player.clone(),
+                                });
+
+                                game_data_events.write(GameDataReceivedEvent { game: fallback_game });
+                            }
+                        }
                     }
-
-                    // Always emit game data received event for UI updates
-                    game_data_events.write(GameDataReceivedEvent { game: game_entity });
                 }
                 "PlayerStats" => {
                     info!("Received PlayerStats update");
@@ -250,4 +275,18 @@ fn fetch_game_data_after_creation(
             }
         }
     }
+}
+
+/// Helper function to parse GameEntity from blockchain model data
+fn parse_game_entity_from_model(_entity_id: &str) -> Result<GameEntity, String> {
+    // TODO: Implement proper model parsing when the dojo_bevy_plugin API is stable
+    // For now, return a placeholder that will be replaced with blockchain data
+    
+    warn!("Model parsing not yet implemented - using placeholder game entity");
+    Ok(GameEntity {
+        game_id: 1, // Will be extracted from blockchain
+        player: "0x123".to_string(), // Will be extracted from blockchain
+        status: 0,  // NotStarted status
+        current_level: 1,
+    })
 }

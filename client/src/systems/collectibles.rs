@@ -1,8 +1,6 @@
 use crate::assets::ModelAssets;
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use bevy_yarnspinner::prelude::*;
-use bevy_yarnspinner::events::ExecuteCommandEvent;
 use std::sync::Arc;
 
 use crate::systems::dojo::PickupItemEvent;
@@ -42,6 +40,13 @@ pub enum CollectibleType {
     FirstAidKit,
 }
 
+/// Component to track blockchain item ID for collectibles
+#[derive(Component, Debug, Clone)]
+pub struct BlockchainItemId {
+    pub item_id: u32,
+    pub game_id: u32,
+}
+
 
 // Removed NextItemToAdd resource - replaced with proper event system
 
@@ -71,11 +76,6 @@ pub struct InteractionPromptEvent {
     pub text: String,
 }
 
-/// Event to trigger book dialogue
-#[derive(Event, Debug)]
-pub struct StartBookDialogueEvent {
-    pub book_entity: Entity,
-}
 
 /// Resource to track current interactable object
 #[derive(Resource, Default)]
@@ -92,6 +92,7 @@ pub struct CollectibleConfig {
     pub scale: f32,
     pub rotation: Option<CollectibleRotation>,
     pub on_collect: Arc<dyn Fn(&mut Commands, Entity) + Send + Sync>,
+    pub blockchain_item_id: Option<BlockchainItemId>,
 }
 
 // ===== PLUGIN =====
@@ -105,10 +106,8 @@ impl Plugin for CollectiblesPlugin {
         })
         .add_event::<InteractionEvent>()
         .add_event::<InteractionPromptEvent>()
-        .add_event::<StartBookDialogueEvent>()
         .add_event::<ItemCollectedEvent>()
         .init_resource::<NearbyInteractable>()
-        .init_resource::<CurrentBookEntity>()
         .add_systems(
             Update,
             (
@@ -117,9 +116,6 @@ impl Plugin for CollectiblesPlugin {
                 rotate_collectibles,
                 detect_nearby_interactables,
                 handle_interactions,
-                handle_book_dialogue_events,
-                handle_dialogue_commands,
-                debug_dialogue_system,
                 update_interaction_prompts,
             )
                 .run_if(in_state(Screen::GamePlay)),
@@ -170,13 +166,17 @@ pub fn spawn_collectible(
     if let Some(rotation) = config.rotation {
         entity.insert(rotation);
     }
+
+    if let Some(blockchain_id) = config.blockchain_item_id {
+        entity.insert(blockchain_id);
+    }
 }
 
 fn collect_items(
     mut commands: Commands,
     mut collectible_counter: ResMut<CollectibleCounter>,
     player_query: Query<(Entity, &Transform), With<CharacterController>>,
-    collectible_query: Query<(Entity, &Transform, &CollectibleType, &Collectible), (With<Sensor>, Without<Interactable>, Without<Collected>)>,
+    collectible_query: Query<(Entity, &Transform, &CollectibleType, &Collectible, Option<&BlockchainItemId>), (With<Sensor>, Without<Interactable>, Without<Collected>)>,
     mut pickup_events: EventWriter<PickupItemEvent>,
     mut item_collected_events: EventWriter<ItemCollectedEvent>,
 ) {
@@ -186,7 +186,7 @@ fn collect_items(
         return;
     };
 
-    for (collectible_entity, collectible_transform, collectible_type, collectible) in
+    for (collectible_entity, collectible_transform, collectible_type, collectible, blockchain_item_id) in
         collectible_query.iter()
     {
         let distance = player_transform
@@ -211,11 +211,18 @@ fn collect_items(
             match collectible_type {
                 CollectibleType::FirstAidKit => {
                     // Trigger blockchain transaction for FirstAidKit
-                    info!("🏥 FirstAidKit collected - triggering blockchain transaction");
-                    pickup_events.write(PickupItemEvent {
-                        item_type: *collectible_type,
-                        item_entity: collectible_entity,
-                    });
+                    if let Some(blockchain_id) = blockchain_item_id {
+                        info!("🏥 FirstAidKit collected - triggering blockchain transaction (item_id: {})", blockchain_id.item_id);
+                        pickup_events.write(PickupItemEvent {
+                            item_type: *collectible_type,
+                            item_entity: collectible_entity,
+                            item_id: blockchain_id.item_id,
+                        });
+                    } else {
+                        warn!("🏥 FirstAidKit collected but no blockchain item_id found - skipping blockchain transaction");
+                        // Fallback: collect locally without blockchain
+                        (collectible.on_collect)(&mut commands, collectible_entity);
+                    }
                     
                     // Note: The item will be removed from the world when the blockchain transaction is confirmed
                     // in the pickup_item system's handle_item_picked_up_events
@@ -322,13 +329,12 @@ fn detect_nearby_interactables(
 
 /// System to handle interaction events
 fn handle_interactions(
+    mut commands: Commands,
     mut interaction_events: EventReader<InteractionEvent>,
-    _commands: Commands,
     mut collectible_counter: ResMut<CollectibleCounter>,
     nearby_interactable: Res<NearbyInteractable>,
-    interactable_query: Query<(&CollectibleType, &Collectible), With<Interactable>>,
+    interactable_query: Query<(&CollectibleType, &Collectible, Option<&BlockchainItemId>), With<Interactable>>,
     mut prompt_events: EventWriter<InteractionPromptEvent>,
-    mut book_dialogue_events: EventWriter<StartBookDialogueEvent>,
     mut pickup_events: EventWriter<PickupItemEvent>,
 ) {
     for _event in interaction_events.read() {
@@ -337,30 +343,40 @@ fn handle_interactions(
         if let Some(entity) = nearby_interactable.entity {
             // warn!("✅ Found nearby interactable entity: {:?}", entity);
             
-            if let Ok((collectible_type, _collectible)) = interactable_query.get(entity) {
+            if let Ok((collectible_type, _collectible, blockchain_item_id)) = interactable_query.get(entity) {
                 // warn!("✅ Entity is valid with type: {:?}", collectible_type);
                 
-                // Trigger dialogue for books, blockchain transaction for FirstAidKit, direct collection for others
+                // Handle different collectible types
                 match collectible_type {
                     CollectibleType::Book => {
-                        // warn!("📚 BOOK DETECTED! Triggering StartBookDialogueEvent...");
-                        book_dialogue_events.write(StartBookDialogueEvent {
-                            book_entity: entity,
-                        });
-                        // warn!("📚 StartBookDialogueEvent SENT!");
-                    }
-                    CollectibleType::FirstAidKit => {
-                        // Trigger blockchain transaction for FirstAidKit
-                        info!("🏥 FirstAidKit interacted with - triggering blockchain transaction");
-                        pickup_events.write(PickupItemEvent {
-                            item_type: *collectible_type,
-                            item_entity: entity,
-                        });
+                        info!("📚 Book collected - You found an ancient tome!");
+                        info!("The book's wisdom becomes part of your understanding.");
+                        
+                        // Collect the book directly
+                        (_collectible.on_collect)(&mut commands, entity);
                         collectible_counter.collectibles_collected += 1;
                         info!(
                             "Total collectibles collected: {}",
                             collectible_counter.collectibles_collected
                         );
+                    }
+                    CollectibleType::FirstAidKit => {
+                        // Trigger blockchain transaction for FirstAidKit
+                        if let Some(blockchain_id) = blockchain_item_id {
+                            info!("🏥 FirstAidKit interacted with - triggering blockchain transaction (item_id: {})", blockchain_id.item_id);
+                            pickup_events.write(PickupItemEvent {
+                                item_type: *collectible_type,
+                                item_entity: entity,
+                                item_id: blockchain_id.item_id,
+                            });
+                            collectible_counter.collectibles_collected += 1;
+                            info!(
+                                "Total collectibles collected: {}",
+                                collectible_counter.collectibles_collected
+                            );
+                        } else {
+                            warn!("🏥 FirstAidKit interacted with but no blockchain item_id found - skipping blockchain transaction");
+                        }
                     }
                 }
 
@@ -374,154 +390,6 @@ fn handle_interactions(
             }
         } else {
             // warn!("❌ No nearby interactable entity when E was pressed!");
-        }
-    }
-}
-
-/// Resource to track current book being interacted with
-#[derive(Resource, Default)]
-pub struct CurrentBookEntity {
-    pub entity: Option<Entity>,
-}
-
-/// System to handle book dialogue events
-fn handle_book_dialogue_events(
-    mut book_dialogue_events: EventReader<StartBookDialogueEvent>,
-    mut dialogue_runner_query: Query<&mut DialogueRunner>,
-    mut commands: Commands,
-    mut collectible_counter: ResMut<CollectibleCounter>,
-    mut current_book: ResMut<CurrentBookEntity>,
-    book_query: Query<&Collectible, With<CollectibleType>>,
-) {
-    for event in book_dialogue_events.read() {
-        warn!("🎯 BOOK INTERACTION EVENT TRIGGERED! Starting dialogue for book entity: {:?}", event.book_entity);
-        
-        // Store the current book entity so we can collect it later
-        current_book.entity = Some(event.book_entity);
-        
-        // Try different approaches to start dialogue
-        match dialogue_runner_query.single_mut() {
-            Ok(mut dialogue_runner) => {
-                warn!("✅ Found DialogueRunner, attempting to start Ancient_Tome dialogue");
-                
-                // Check if dialogue is already running
-                if dialogue_runner.is_running() {
-                    // warn!("⚠️  DialogueRunner is already running dialogue - stopping first");
-                    dialogue_runner.stop();
-                }
-                
-                // Detailed logging before starting dialogue
-                // warn!("🎬 STARTING DIALOGUE:");
-                // warn!("  📍 Node: 'Ancient_Tome'");
-                // warn!("  🏃 Runner state before: running={}", dialogue_runner.is_running());
-                
-                // Start the dialogue - this method doesn't return Result, just starts the node
-                dialogue_runner.start_node("Ancient_Tome");
-                
-                // Immediately check state after starting
-                warn!("🎉 SUCCESS: DialogueRunner.start_node('Ancient_Tome') called!");
-                warn!("🔄 Runner state after: running={}", dialogue_runner.is_running());
-                
-                // Force an immediate continue to ensure first line appears
-                // warn!("🔄 Calling continue_in_next_update() to trigger first event...");
-                dialogue_runner.continue_in_next_update();
-            }
-            Err(_e) => {
-                // No DialogueRunner found - try to create one for this interaction
-                warn!("❌ No DialogueRunner found: {:?}. Available runners: {}", _e, dialogue_runner_query.iter().count());
-                
-                // Fallback to simple book collection
-                info!("📖 Fallback: You found an ancient tome! It contains mystical knowledge about Elysium's depths.");
-                info!("The book's wisdom becomes part of your understanding.");
-                
-                // Collect the book
-                if let Ok(collectible) = book_query.get(event.book_entity) {
-                    (collectible.on_collect)(&mut commands, event.book_entity);
-                    collectible_counter.collectibles_collected += 1;
-                    info!("Book collected! Total collectibles: {}", collectible_counter.collectibles_collected);
-                }
-            }
-        }
-    }
-}
-
-/// System to handle dialogue commands like collect_book
-fn handle_dialogue_commands(
-    mut command_events: EventReader<ExecuteCommandEvent>,
-    mut commands: Commands,
-    mut collectible_counter: ResMut<CollectibleCounter>,
-    mut current_book: ResMut<CurrentBookEntity>,
-    book_query: Query<&Collectible, With<CollectibleType>>,
-) {
-    for command_event in command_events.read() {
-        info!("Received dialogue command: {:?}", command_event.command);
-        
-        match command_event.command.name.as_str() {
-            "collect_book" => {
-                if let Some(book_entity) = current_book.entity {
-                    info!("Collecting book from dialogue command");
-                    if let Ok(collectible) = book_query.get(book_entity) {
-                        (collectible.on_collect)(&mut commands, book_entity);
-                        collectible_counter.collectibles_collected += 1;
-                        info!(
-                            "Total collectibles collected: {}",
-                            collectible_counter.collectibles_collected
-                        );
-                    }
-                    current_book.entity = None; // Clear the current book
-                } else {
-                    warn!("collect_book command received but no current book entity");
-                }
-            }
-            _ => {
-                info!("Unknown dialogue command: {:?}", command_event.command);
-            }
-        }
-    }
-}
-
-/// System to debug dialogue system state
-fn debug_dialogue_system(
-    dialogue_runners: Query<&DialogueRunner>,
-    yarn_project: Option<Res<YarnProject>>,
-    mut debug_timer: Local<f32>,
-    time: Res<Time>,
-) {
-    *debug_timer += time.delta_secs();
-    
-    // Only log every 5 seconds to avoid spam
-    if *debug_timer > 5.0 {
-        *debug_timer = 0.0;
-        
-        let runner_count = dialogue_runners.iter().count();
-        let _project_exists = yarn_project.is_some();
-        
-        if runner_count == 0 {
-            // warn!("🔍 YARN DEBUG: DialogueRunners: {}, YarnProject exists: {}", 
-            //       runner_count, project_exists);
-            // warn!("❌ No DialogueRunner entities found! This is why dialogue isn't working.");
-        } else {
-            // info!("✅ YARN DEBUG: Found {} DialogueRunner(s), YarnProject exists: {}", 
-            //       runner_count, project_exists);
-            
-            // Check if any runners are actually running dialogue
-            let mut _active_runners = 0;
-            for runner in dialogue_runners.iter() {
-                if runner.is_running() {
-                    _active_runners += 1;
-                }
-            }
-            
-            // if active_runners > 0 {
-            //     info!("🎯 ACTIVE DIALOGUE: {} runner(s) currently running dialogue", active_runners);
-            // } else {
-            //     info!("⚠️  IDLE RUNNERS: All {} runner(s) are idle (no dialogue running)", runner_count);
-            // }
-            
-            // YarnProject exists, dialogue should work
-            // if yarn_project.is_some() {
-            //     info!("✅ YarnProject resource exists - dialogue system should be ready");
-            // }
         }
     }
 }

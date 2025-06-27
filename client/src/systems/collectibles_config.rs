@@ -12,6 +12,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(25.0, 2.0, 60.0),
@@ -21,6 +22,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(40.0, 2.0, 60.0),
@@ -30,6 +32,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(55.0, 2.0, 60.0),
@@ -39,6 +42,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(58.5, 5.0, 50.0),
@@ -48,6 +52,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(60.0, 8.0, 48.0),
@@ -57,6 +62,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(60.0, 12.0, 42.0),
@@ -66,6 +72,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(60.0, 12.0, 32.0),
@@ -75,6 +82,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(60.0, 12.0, 22.0),
@@ -84,6 +92,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(75.0, 12.0, 22.0),
@@ -93,6 +102,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(90.0, 12.0, 22.0),
@@ -102,6 +112,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(90.0, 12.0, 12.0),
@@ -111,6 +122,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(90.0, 12.0, 2.0),
@@ -120,6 +132,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(90.0, 12.0, -10.0),
@@ -129,6 +142,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(90.0, 12.0, -22.0),
@@ -138,6 +152,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(90.0, 12.0, -34.0),
@@ -147,6 +162,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(90.0, 15.0, -40.0),
@@ -156,6 +172,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(90.0, 18.0, -46.0),
@@ -165,6 +182,7 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
     CollectibleConfig {
         position: Vec3::new(90.0, 22.0, -54.0),
@@ -174,5 +192,6 @@ pub static COLLECTIBLES: Lazy<Vec<CollectibleConfig>> = Lazy::new(|| vec![
         on_collect: Arc::new(|commands, entity| {
             commands.entity(entity).despawn();
         }),
+        blockchain_item_id: None, // Will be populated when blockchain items are loaded
     },
 ]); 

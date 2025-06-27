@@ -10,6 +10,7 @@ use starknet::core::types::Call;
 pub struct PickupItemEvent {
     pub item_type: CollectibleType,
     pub item_entity: Entity,
+    pub item_id: u32, // Item ID required by contract
 }
 
 /// Event emitted when an item pickup is successfully processed on blockchain
@@ -17,6 +18,7 @@ pub struct PickupItemEvent {
 pub struct ItemPickedUpEvent {
     pub item_type: CollectibleType,
     pub item_entity: Entity,
+    pub item_id: u32,
     pub transaction_hash: String,
 }
 
@@ -30,7 +32,7 @@ pub struct ItemPickupFailedEvent {
 /// Resource to track pending pickup transactions
 #[derive(Resource, Debug, Default)]
 pub struct PickupTransactionState {
-    pub pending_pickups: Vec<(Entity, CollectibleType)>,
+    pub pending_pickups: Vec<(Entity, CollectibleType, u32)>, // (entity, type, item_id)
 }
 
 pub(super) fn plugin(app: &mut App) {
@@ -57,47 +59,56 @@ fn handle_pickup_item_events(
     tokio: Res<TokioRuntime>,
     dojo_config: Res<super::DojoSystemState>,
     mut pickup_state: ResMut<PickupTransactionState>,
-    _game_state: Res<super::create_game::GameState>,
+    game_state: Res<super::create_game::GameState>,
     mut item_picked_up_events: EventWriter<ItemPickedUpEvent>,
 ) {
     for event in events.read() {
+        // Check if we have a valid game_id
+        let Some(game_id) = game_state.current_game_id else {
+            error!("Cannot pickup item - no active game found");
+            continue;
+        };
+
         info!(
-            "Picking up {:?} item on blockchain (contract uses caller address for identification)",
-            event.item_type
+            "Picking up {:?} item (ID: {}) on blockchain for game {}",
+            event.item_type, event.item_id, game_id
         );
 
         // Create the contract call for pickup_item function
-        // pickup_item() - takes no parameters according to contract interface
+        // pickup_item(game_id: u32, item_id: u32) -> bool
         let call = Call {
             to: dojo_config.config.action_address,
             selector: PICKUP_ITEM_SELECTOR,
-            calldata: vec![], // No parameters required
+            calldata: vec![
+                starknet::core::types::Felt::from(game_id), // game_id parameter
+                starknet::core::types::Felt::from(event.item_id), // item_id parameter
+            ],
         };
 
         // Queue the call to the blockchain
         dojo.queue_tx(&tokio, vec![call]);
         
         // Track this pickup transaction
-        pickup_state.pending_pickups.push((event.item_entity, event.item_type));
+        pickup_state.pending_pickups.push((event.item_entity, event.item_type, event.item_id));
         
         info!(
-            "Pickup item call queued successfully for {:?}",
-            event.item_type
+            "Pickup item call queued successfully for {:?} (item_id: {}, game_id: {})",
+            event.item_type, event.item_id, game_id
         );
         
-        // Since the contract currently always returns true and has no real logic,
-        // we can immediately trigger the success event to remove the item
-        // In a real implementation, this would wait for actual blockchain confirmation
-        info!("⚡ Fast-tracking item removal since contract is stubbed (always returns true)");
+        // For development: immediately trigger success event for testing
+        // In production, this should wait for blockchain confirmation
+        info!("⚡ Fast-tracking item removal for development testing");
         
         // Immediately trigger successful pickup to remove item from world
         item_picked_up_events.write(ItemPickedUpEvent {
             item_type: event.item_type,
             item_entity: event.item_entity,
+            item_id: event.item_id,
             transaction_hash: "0x123456789abcdef".to_string(), // Mock transaction hash
         });
         
-        warn!("🚀 Item pickup success event triggered for {:?}", event.item_type);
+        warn!("🚀 Item pickup success event triggered for {:?} (ID: {})", event.item_type, event.item_id);
     }
 }
 
@@ -156,10 +167,11 @@ fn handle_pickup_entity_updates(
                     
                     // For now, assume any inventory update means pickup succeeded
                     // In a full implementation, you'd parse the model data to confirm
-                    if let Some((entity, item_type)) = pickup_state.pending_pickups.pop() {
+                    if let Some((entity, item_type, item_id)) = pickup_state.pending_pickups.pop() {
                         item_picked_up_events.write(ItemPickedUpEvent {
                             item_type,
                             item_entity: entity,
+                            item_id,
                             transaction_hash: "0x123".to_string(), // TODO: Extract real TX hash
                         });
                     }
