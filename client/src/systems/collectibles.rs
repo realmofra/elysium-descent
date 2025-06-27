@@ -59,9 +59,7 @@ pub struct InteractionEvent;
 
 /// Event triggered when player starts being near an interactable object
 #[derive(Event, Debug)]
-pub struct InteractionPromptEvent {
-    pub show: bool,
-}
+pub struct InteractionPromptEvent;
 
 /// Resource to track current interactable object
 #[derive(Resource, Default)]
@@ -263,9 +261,7 @@ fn detect_nearby_interactables(
                 // New interactable entered range
                 nearby_interactable.entity = Some(entity);
                 nearby_interactable.distance = distance;
-                prompt_events.write(InteractionPromptEvent {
-                    show: true,
-                });
+                prompt_events.write(InteractionPromptEvent);
             } else {
                 // Update distance for existing interactable
                 nearby_interactable.distance = distance;
@@ -276,9 +272,7 @@ fn detect_nearby_interactables(
                 // Left interaction range
                 nearby_interactable.entity = None;
                 nearby_interactable.distance = 0.0;
-                prompt_events.write(InteractionPromptEvent {
-                    show: false,
-                });
+                prompt_events.write(InteractionPromptEvent);
             }
         }
     }
@@ -319,9 +313,7 @@ fn handle_interactions(
                 }
 
                 // Hide the interaction prompt
-                prompt_events.write(InteractionPromptEvent {
-                    show: false,
-                });
+                prompt_events.write(InteractionPromptEvent);
             }
         }
     }
@@ -329,9 +321,7 @@ fn handle_interactions(
 
 /// Resource to track current book being interacted with
 #[derive(Resource, Default)]
-pub struct CurrentBookEntity {
-    pub entity: Option<Entity>,
-}
+pub struct CurrentBookEntity;
 
 /// Helper function to spawn an interactable book
 pub fn spawn_interactable_book(

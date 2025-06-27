@@ -1,7 +1,6 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
-use bevy::ui::{UiRect, BackgroundColor};
 
 use super::{Screen, despawn_scene};
 use crate::assets::ModelAssets;
@@ -10,23 +9,24 @@ use crate::systems::character_controller::{
 };
 use crate::keybinding;
 use bevy_enhanced_input::prelude::*;
-use crate::systems::collectibles::{CollectiblesPlugin, spawn_collectible, spawn_interactable_book, CollectibleType, Interactable};
+use crate::systems::collectibles::{CollectiblesPlugin, spawn_collectible, spawn_interactable_book, CollectibleType};
 use crate::systems::collectibles_config::COLLECTIBLES;
 use crate::ui::inventory::spawn_inventory_ui;
+use crate::ui::dialog::{DialogPlugin, spawn_dialog, create_book_dialog};
 use crate::assets::FontAssets;
-pub use crate::ui::widgets::label_widget;
 
 // ===== PLUGIN SETUP =====
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(Screen::GamePlay), (PlayingScene::spawn_environment, set_gameplay_clear_color, spawn_press_e_dialog))
-        .add_systems(Update, (camera_follow_player, animate_press_e_dialog, check_book_proximity).run_if(in_state(Screen::GamePlay)))
+    app.add_systems(OnEnter(Screen::GamePlay), (PlayingScene::spawn_environment, set_gameplay_clear_color, spawn_book_dialog))
+        .add_systems(Update, camera_follow_player.run_if(in_state(Screen::GamePlay)))
         .add_systems(OnExit(Screen::GamePlay), despawn_scene::<PlayingScene>)
         .add_plugins(PhysicsPlugins::default())
         // .add_plugins(PhysicsDebugPlugin::default())
         .add_plugins(CharacterControllerPlugin)
         .add_plugins(GltfAnimationPlugin)
-        .add_plugins(CollectiblesPlugin);
+        .add_plugins(CollectiblesPlugin)
+        .add_plugins(DialogPlugin);
 }
 
 // ===== SYSTEMS =====
@@ -66,87 +66,13 @@ struct PlayingScene;
 #[derive(Component)]
 struct EnvironmentMarker;
 
-#[derive(Component)]
-struct PressEDialog;
-
-fn spawn_press_e_dialog(
-    mut commands: Commands,
+fn spawn_book_dialog(
+    commands: Commands,
     font_assets: Res<FontAssets>,
     windows: Query<&Window>,
 ) {
-    let window = windows.single().expect("No primary window");
-    let window_height = window.height();
-
-    commands.spawn((
-        Node {
-            width: Val::Percent(40.0),
-            height: Val::Percent(8.0),
-            position_type: PositionType::Absolute,
-            bottom: Val::Percent(4.0),
-            left: Val::Percent(30.0),
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            border: UiRect::all(Val::Px(2.0)),
-            ..default()
-        },
-        BackgroundColor(Color::srgba(0.1, 0.1, 0.2, 0.6)),
-        BorderColor(Color::srgba(0.2, 0.2, 0.3, 0.8)),
-        PressEDialog,
-        PlayingScene,
-        Name::new("PressEDialog"),
-        Visibility::Hidden, // Start hidden
-    )).with_children(|parent| {
-        parent.spawn(label_widget(
-            window_height,
-            font_assets.rajdhani_bold.clone(),
-            "Press E to enter"
-        ));
-    });
-}
-
-fn animate_press_e_dialog(
-    time: Res<Time>,
-    mut query: Query<&mut BackgroundColor, With<PressEDialog>>,
-) {
-    let t = (time.elapsed_secs().sin() * 0.5 + 0.5) * 0.5 + 0.5;
-    for mut bg in &mut query {
-        // Use a dark semi-transparent background that pulses
-        let base_alpha = 0.4;
-        let pulse_alpha = 0.3;
-        let new_alpha = base_alpha + pulse_alpha * t;
-        *bg = BackgroundColor(Color::srgba(0.1, 0.1, 0.2, new_alpha));
-    }
-}
-
-fn check_book_proximity(
-    player_query: Query<&Transform, With<CharacterController>>,
-    book_query: Query<(Entity, &Transform, &Interactable), (With<CollectibleType>, Without<CharacterController>)>,
-    mut dialog_query: Query<&mut Visibility, With<PressEDialog>>,
-) {
-    let Ok(player_transform) = player_query.single() else {
-        return;
-    };
-
-    let mut near_book = false;
-    let book_interaction_radius = 10.0; // 10 meters
-
-    // Check if player is near any book
-    for (_, book_transform, interactable) in book_query.iter() {
-        let distance = player_transform.translation.distance(book_transform.translation);
-        if distance <= book_interaction_radius {
-            near_book = true;
-            break;
-        }
-    }
-
-    // Show/hide dialog based on proximity
-    if let Ok(mut visibility) = dialog_query.single_mut() {
-        if near_book {
-            *visibility = Visibility::Visible;
-        } else {
-            *visibility = Visibility::Hidden;
-        }
-    }
+    let dialog_config = create_book_dialog();
+    spawn_dialog(commands, font_assets, windows, dialog_config, PlayingScene);
 }
 
 // ===== PLAYING SCENE IMPLEMENTATION =====
