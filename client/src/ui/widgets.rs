@@ -6,7 +6,7 @@ use crate::ui::styles::ElysiumDescentColorPalette;
 pub fn label_widget(window_height: f32, font: Handle<Font>, text: impl Into<String> + Clone) -> impl Bundle {
     (
         Node {
-            width: Val::Percent(50.0),
+            width: Val::Percent(100.0),
             height: Val::Percent(20.0),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,

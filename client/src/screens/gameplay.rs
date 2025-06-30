@@ -71,7 +71,8 @@ fn spawn_book_dialog(
     font_assets: Res<FontAssets>,
     windows: Query<&Window>,
 ) {
-    let dialog_config = create_book_dialog();
+    let mut dialog_config = create_book_dialog();
+    dialog_config.height = 14.0; // Custom height for this usage
     spawn_dialog(commands, font_assets, windows, dialog_config, PlayingScene);
 }
 

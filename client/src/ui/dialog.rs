@@ -151,7 +151,7 @@ pub fn create_book_dialog() -> DialogConfig {
     DialogConfig {
         text: "Press E to enter".to_string(),
         width: 40.0,
-        height: 8.0,
+        height: 14.0,
         position: DialogPosition::BottomCenter { bottom_margin: 4.0 },
         background_color: Color::srgba(0.1, 0.1, 0.2, 0.6),
         border_color: Color::srgba(0.2, 0.2, 0.3, 0.8),

@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use bevy_gltf_animation::prelude::GltfSceneRoot;
 use super::{Screen, despawn_scene};
 use crate::assets::ModelAssets;
+use avian3d::prelude::{Friction, Restitution, GravityScale};
+use bevy_enhanced_input::prelude::Actions;
 
 // ===== PLUGIN SETUP =====
 
@@ -46,19 +48,19 @@ fn spawn_fight_scene(mut commands: Commands, assets: Res<ModelAssets>) {
         FightScene,
     ));
 
-    // Spawn the floor model
+    // Spawn the dungeon model
     commands.spawn((
-        Name::new("Fight Floor"),
-        SceneRoot(assets.floor.clone()),
+        Name::new("Fight Dungeon"),
+        SceneRoot(assets.dungeon.clone()),
         Transform {
             translation: Vec3::new(0.0, 0.0, 0.0), // Position at ground level
             rotation: Quat::IDENTITY, // No rotation
-            scale: Vec3::splat(7.0), // Scale 5x larger
+            scale: Vec3::splat(7.0), // Scale 7x larger
         },
         FightScene,
     ));
 
-    // Spawn the player model on the floor
+    // Spawn the player model on the dungeon
     commands.spawn((
         Name::new("Fight Player"),
         GltfSceneRoot::new(assets.player.clone()),
