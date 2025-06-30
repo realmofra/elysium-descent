@@ -122,7 +122,7 @@ pub fn check_dialog_proximity(
     };
 
     let mut near_target = false;
-    let hide_distance = 10.0; // Default distance for book proximity
+    let hide_distance = 5.0; // Reduced distance for book proximity
 
     // Check if player is near any target
     for (_, target_transform, _interactable) in target_query.iter() {
