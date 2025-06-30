@@ -368,7 +368,7 @@ pub fn spawn_interactable_book(
     // Add interaction components
     entity.insert((
         Interactable {
-            interaction_radius: 10.0,
+            interaction_radius: 5.0,
         },
         CollectibleRotation {
             enabled: true,
