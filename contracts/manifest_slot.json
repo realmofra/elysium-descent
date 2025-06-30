@@ -1782,18 +1782,6 @@
       "class_hash": "0x3c69280f559b8a138563475a39027cb8b4be86c9d98f100a12b5f29beee99ad",
       "tag": "elysium_001-LevelStarted",
       "selector": "0x6baa58d422637916a19f2a55ecb8780ec1b0262d5f982aa76487a935ec58cd9"
-    },
-    {
-      "members": [],
-      "class_hash": "0x702d5440a155e0704b268f8d6dbf74cb8ae09b164064fe3b4f896cf725dcac7",
-      "tag": "elysium_001-TrophyCreation",
-      "selector": "0x7a1fad62f21e8e08ed0407443b9c3c88e64c32e056bc8505b694ecbf905e803"
-    },
-    {
-      "members": [],
-      "class_hash": "0x113e43bc604068a5811205b126a3e318b21e5c72746138efa6fb40277067f00",
-      "tag": "elysium_001-TrophyProgression",
-      "selector": "0x4d2c7f58371e79e8a6fef924af3585132c3af7b3aa87a695efde2c37dd4ddef"
     }
   ],
   "external_contracts": []

@@ -4,111 +4,256 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Elysium Descent is a Fully On-Chain Game (FOCG) combining a Rust/Bevy 0.16.0 client with Cairo smart contracts on Starknet using Dojo v1.5.0 framework. The game is a roguelike where core game logic runs on the blockchain.
+Elysium Descent is a fully on-chain game (FOCG) combining a Bevy 0.16.0 game client with Cairo smart contracts on Starknet using the Dojo v1.5.1 framework. The project follows the **Shinigami Design Pattern** for hierarchical smart contract architecture.
 
-## Common Development Commands
+## Build and Development Commands
 
-### Docker Setup (Recommended)
+### Smart Contracts (Cairo/Dojo)
 ```bash
 cd contracts
-docker compose up  # Starts Katana, Sozo, and Torii services
-```
-
-### Manual Development Setup
-```bash
-# Terminal 1: Start local blockchain
-katana --dev --dev.no-fee
-
-# Terminal 2: Build and deploy contracts
-cd contracts
-sozo build
-sozo migrate
-
-# Terminal 3: Start indexer (replace with actual world address)
-torii --world <WORLD_ADDRESS> --http.cors_origins "*"
-
-# Terminal 4: Run game client
-cd client
-cargo run
-```
-
-### Testing
-```bash
-# Test client
-cd client && cargo test
-
-# Test contracts
-cd contracts && sozo test
-```
-
-### Building
-```bash
-# Build client
-cd client && cargo build
 
 # Build contracts
-cd contracts && sozo build
+sozo build
+
+# Run tests
+sozo test
+
+# Deploy to local Katana devnet
+sozo migrate
+
+# Start local development environment
+katana --dev --dev.no-fee
+
+# Start indexer (replace <WORLD_ADDRESS> with actual address)
+torii --world <WORLD_ADDRESS> --http.cors_origins "*"
+```
+
+### Game Client (Rust/Bevy)
+```bash
+cd client
+
+# Build client
+cargo build
+
+# Run client
+cargo run
+
+# Run tests
+cargo test
+
+# Format code
+cargo fmt
+
+# Check code quality
+cargo clippy
+```
+
+### Development Environment Setup
+```bash
+# Option 1: Docker (Recommended)
+cd contracts
+docker compose up
+
+# Option 2: Manual setup
+# Terminal 1: Start blockchain
+katana --dev --dev.no-fee
+
+# Terminal 2: Deploy contracts
+cd contracts && sozo build && sozo migrate
+
+# Terminal 3: Start indexer
+torii --world <WORLD_ADDRESS> --http.cors_origins "*"
+
+# Terminal 4: Run client
+cd client && cargo run
 ```
 
 ## Architecture Overview
 
-### Client (Rust/Bevy 0.16.0)
-- **ECS Architecture**: Uses Bevy's Entity Component System
-- **Systems**: Located in `client/src/systems/` - handle game logic, Dojo integration, input
-- **Screens**: State management in `client/src/screens/` - menu, gameplay, settings
-- **Resources**: Asset and configuration management
-- **Dojo Integration**: Custom plugin connecting Bevy to Starknet contracts
+### Smart Contract Architecture (Shinigami Pattern)
+The contracts follow a strict hierarchical pattern:
 
-### Smart Contracts (Cairo/Dojo)
-- **Models**: Game state data structures in `contracts/src/models/`
-- **Systems**: Game logic and player actions in `contracts/src/systems/`
-- **World**: Central registry managing all models and systems
-- **Events**: State change notifications for indexing
+```
+📊 Systems     ← Game API endpoints and entry points
+📦 Components  ← Business logic orchestration layer
+📋 Models      ← Persistent blockchain state management
+🏷️ Types       ← Enumerators and data structures
+🛠️ Helpers     ← Utilities and data access abstractions
+```
 
-### Key Components
-- **Character Controller**: Player movement and input handling
+**Key Principles:**
+- Higher layers depend on lower layers only (never reverse)
+- Components are composable across different Systems
+- Strong typing with comprehensive validation
+- Event-driven communication between systems
 
-## Critical Technical Notes
+### Project Structure
+```
+contracts/src/
+├── systems/actions.cairo      # Main contract interface (IActions)
+├── components/               # Business logic layer
+│   ├── game.cairo           # Game lifecycle management
+│   └── inventory.cairo      # Item and inventory operations
+├── models/                  # Persistent state models
+│   ├── player.cairo         # Player stats and progression
+│   ├── game.cairo          # Game instances and levels
+│   ├── inventory.cairo     # Player inventory management
+│   └── world_state.cairo   # World items and positioning
+├── types/                   # Type definitions and enums
+├── helpers/store.cairo      # Unified data access layer
+└── elements/               # Item definitions and factory patterns
 
-### Bevy 0.16.0 Breaking Changes
-- `Query::single()` returns `Result` - always handle with `expect()` or proper error handling
-- Required Components replace Bundles - components automatically inject dependencies
-- Built-in entity relationships - use parent-child system for hierarchies
-- Observer system for reactive programming - prefer over direct system dependencies
+client/src/
+├── systems/                # Game systems
+│   ├── dojo/              # Dojo integration
+│   ├── character_controller.rs
+│   └── collectibles.rs
+├── screens/               # Game screens (menu, gameplay, etc.)
+├── ui/                   # User interface components
+└── resources/            # Assets and audio management
+```
 
-### Dojo Integration
-- Game state synchronization between client and blockchain
-- Use `dojo_bevy_plugin` for Starknet connectivity
-- World address configuration required for Torii indexer
-- Contract deployment needed before client connection
+### Key Contracts and Interfaces
 
-### Performance Considerations
-- GPU instancing for similar objects
-- Texture atlasing for UI elements
-- Spatial indexing for efficient collision detection
-- LOD system for 3D models at distance
+**Main Contract Interface (`systems/actions.cairo`):**
+```cairo
+trait IActions<T> {
+    fn create_game(ref self: T) -> u32;
+    fn start_level(ref self: T, game_id: u32, level: u32);
+    fn pickup_item(ref self: T, game_id: u32, item_id: u32) -> bool;
+    fn get_player_stats(self: @T, player: ContractAddress) -> Player;
+    fn get_player_inventory(self: @T, player: ContractAddress) -> PlayerInventory;
+    fn get_level_items(self: @T, game_id: u32, level: u32) -> LevelItems;
+}
+```
+
+**Store Pattern:** 
+All data access uses the Store abstraction in `helpers/store.cairo`:
+```cairo
+let store: Store = StoreTrait::new(world);
+let player = store.get_player(player_address);
+store.set_player(updated_player);
+```
+
+### Core Game Models
+
+**Player:** Health, level, experience, and lifetime stats
+**Game:** Game instances with status, level, and score tracking  
+**PlayerInventory:** Item storage with capacity limits
+**LevelItems:** Procedurally generated items per game level
+
+### Client Architecture (Bevy)
+
+**Key Systems:**
+- `dojo/`: Blockchain integration systems
+- `character_controller.rs`: Player movement and physics
+- `collectibles.rs`: Item interaction and pickup logic
+- `dialogue_view.rs`: Book reading and narrative systems
+
+**Dependencies:**
+- Bevy 0.16.0 with custom feature set
+- `dojo_bevy_plugin` for blockchain integration
+- `bevy_lunex` for UI system
+- `avian3d` for 3D physics
+- `bevy_yarnspinner` for dialogue system
+
+## Testing Infrastructure
+
+### Smart Contract Tests
+- **13 comprehensive test cases** with 100% pass rate
+- Multi-layered testing: unit, integration, and workflow
+- Centralized setup in `tests/setup.cairo`
+- Store pattern usage throughout tests
+- Gas optimization with appropriate limits (3M-30M gas)
+
+### Test Categories:
+1. **Model Operations:** CRUD validation (`test_simple.cairo`)
+2. **System Integration:** End-to-end workflows (`test_comprehensive.cairo`)
+3. **Component Logic:** Business logic validation (`test_component_layer.cairo`)
+4. **Error Handling:** Expected failure scenarios (`test_error_conditions.cairo`)
+5. **Performance:** Gas usage optimization (`test_performance.cairo`)
+
+### Running Specific Tests
+```bash
+cd contracts
+
+# Run all tests
+sozo test
+
+# Run specific test file
+sozo test --path src/tests/test_simple.cairo
+```
+
+## Game Mechanics
+
+### Core Game Flow
+1. **Game Creation:** `create_game()` returns unique game ID
+2. **Level Start:** `start_level(game_id, level)` spawns procedural items
+3. **Item Collection:** `pickup_item(game_id, item_id)` with capacity validation
+4. **Player Progression:** Experience gain, leveling, health increases
+5. **Level Completion:** Collect all items to advance
+
+### Item Types
+- **HealthPotion:** Restores player health
+- **SurvivalKit:** Multi-use survival items
+- **Book:** Knowledge items that trigger dialogue system
+
+### Deterministic Systems
+- Uses Poseidon hashing for reproducible item generation
+- Multi-player support with isolated game instances
+- Progressive difficulty scaling by level
 
 ## Development Guidelines
 
-### Code Organization
-- Client logic in `client/src/` with clear separation of systems, screens, and resources
-- Contract logic in `contracts/src/` following Dojo model/system patterns
-- Assets organized by type in `client/assets/`
+### Smart Contract Development
+- Follow the Shinigami pattern hierarchy strictly
+- Use the Store pattern for all data access
+- Emit events for all significant state changes
+- Validate ownership and parameters at System layer
+- Test gas usage with performance tests
 
-### Blockchain Development
-- Always test contracts with `sozo test` before deployment
-- Use Katana devnet for local development
-- Torii indexer required for client-blockchain communication
-- World address changes require client configuration updates
+### Client Development
+- Follow Bevy ECS patterns and conventions
+- Use the plugin system for modular features
+- Leverage the asset loader for resources
+- Implement proper error handling for Dojo interactions
+- Test client-contract integration thoroughly
 
-### Asset Management
-- 3D models in glTF format
-- Audio files in OGG format for cross-platform compatibility
-- Texture atlasing for optimized rendering
-- Font consistency using Rajdhani family
+### Code Quality
+- Run `cargo fmt` and `cargo clippy` for Rust code
+- Use semantic commit messages
+- Add comprehensive tests for new features
+- Document public APIs and complex logic
+- Follow the project's naming conventions
 
-## Project Structure Context
+## Configuration
 
-- `client/AI_DOCS/`: Contains detailed Bevy 0.16 migration documentation
-- `docs/src/gdd/`: Game Design Document
-- Individual CLAUDE.md files exist in `client/` and `contracts/` subdirectories for specific guidance
+### Dojo Configuration
+- **Namespace:** `elysium_001` for consistent world access
+- **Network:** Local Katana devnet for development
+- **World Seed:** `elysium_001`
+
+### Key Files
+- `contracts/dojo_dev.toml` - Development configuration
+- `contracts/Scarb.toml` - Cairo dependencies and build settings
+- `client/Cargo.toml` - Rust dependencies and optimization settings
+
+## Troubleshooting
+
+### Common Issues
+1. **Contract deployment fails:** Ensure Katana is running and has the correct account setup
+2. **Tests fail:** Check that all dependencies are installed and Scarb version is correct (2.10.1)
+3. **Client can't connect:** Verify Torii is running and world address is correct
+4. **Performance issues:** Check gas limits and optimize query patterns
+
+### Debug Commands
+```bash
+# Check Katana status
+curl -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"starknet_chainId","params":[],"id":1}' http://localhost:5050
+
+# Check deployed contracts
+sozo model list
+
+# Monitor events
+torii --world <WORLD_ADDRESS> --events-to-stdout
+```
