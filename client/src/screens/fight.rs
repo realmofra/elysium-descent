@@ -17,7 +17,7 @@ pub(super) fn plugin(app: &mut App) {
 
 // ===== SYSTEMS =====
 
-fn spawn_fight_scene(mut commands: Commands, assets: Res<ModelAssets>) {
+fn spawn_fight_scene(mut commands: Commands, assets: Res<ModelAssets>, ui_assets: Res<crate::assets::UiAssets>, font_assets: Res<crate::assets::FontAssets>) {
     // Set up ambient light (match gameplay)
     commands.insert_resource(AmbientLight {
         color: Color::srgb_u8(68, 71, 88),
@@ -111,6 +111,38 @@ fn spawn_fight_scene(mut commands: Commands, assets: Res<ModelAssets>) {
         },
         FightScene,
     )).with_children(|parent| {
+        // Health bars row
+        parent.spawn((
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Px(80.0),
+                position_type: PositionType::Absolute,
+                top: Val::Px(16.0),
+                left: Val::Px(0.0),
+                justify_content: JustifyContent::SpaceBetween,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+        )).with_children(|row| {
+            use crate::ui::widgets::health_bar_widget;
+            use crate::ui::styles::ElysiumDescentColorPalette;
+            row.spawn(health_bar_widget(
+                ui_assets.player_avatar.clone(),
+                "Player",
+                80,
+                100,
+                Color::ELYSIUM_DESCENT_BLUE,
+                font_assets.rajdhani_bold.clone(),
+            ));
+            row.spawn(health_bar_widget(
+                ui_assets.enemy_avatar.clone(),
+                "Enemy",
+                120,
+                150,
+                Color::ELYSIUM_DESCENT_RED,
+                font_assets.rajdhani_medium.clone(),
+            ));
+        });
         parent.spawn((
             Text::new("FIGHT SCENE\nPress ESC to return to gameplay"),
             TextFont {
