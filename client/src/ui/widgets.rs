@@ -276,17 +276,17 @@ pub fn player_hud_widget(
             // Avatar and Level
             (
                 Node {
-                    width: Val::Px(70.0),
-                    height: Val::Px(70.0),
+                    width: Val::Px(64.0),
+                    height: Val::Px(64.0),
+                    margin: UiRect::all(Val::Px(4.0)),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
                     ..default()
                 },
-                BorderRadius::MAX,
-                BackgroundColor(Color::WHITE),
                 children![
                     (
                         ImageNode { image: avatar.clone(), ..Default::default() },
+                        BorderRadius::all(Val::Px(32.0)),
                     ),
                     (
                         Node {
