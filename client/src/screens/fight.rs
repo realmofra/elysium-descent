@@ -1,10 +1,11 @@
 use bevy::prelude::*;
 use bevy_gltf_animation::prelude::GltfSceneRoot;
 use super::{Screen, despawn_scene};
-use crate::assets::ModelAssets;
+use crate::assets::{ModelAssets, FontAssets, UiAssets};
 use crate::systems::character_controller::CharacterControllerBundle;
 use avian3d::prelude::{Friction, Restitution, GravityScale, ColliderConstructorHierarchy, ColliderConstructor, RigidBody};
 use bevy_enhanced_input::prelude::Actions;
+use crate::ui::widgets::{player_hud_widget, HudPosition};
 
 // ===== PLUGIN SETUP =====
 
@@ -188,6 +189,23 @@ fn camera_follow_fight_player(
             camera_transform.look_at(player_pos + Vec3::Y * 2.0, Vec3::Y);
         }
     }
+}
+
+fn spawn_fight_huds(
+    mut commands: Commands,
+    font_assets: Res<FontAssets>,
+    ui_assets: Res<UiAssets>,
+) {
+    // Example values, replace with actual player/enemy data
+    let player_avatar = ui_assets.player_avatar.clone();
+    let enemy_avatar = ui_assets.enemy_avatar.clone();
+    let font = font_assets.rajdhani_bold.clone();
+
+    // Player HUD (top left)
+    commands.spawn(player_hud_widget(player_avatar, "Player", 2, (105, 115), (80, 100), font.clone(), HudPosition::Left));
+
+    // Enemy HUD (top right)
+    commands.spawn(player_hud_widget(enemy_avatar, "Enemy", 3, (120, 120), (90, 100), font, HudPosition::Right));
 }
 
 // ===== SCENE MARKER =====
