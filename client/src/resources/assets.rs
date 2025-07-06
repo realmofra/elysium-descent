@@ -53,7 +53,7 @@ pub struct UiAssets {
     #[asset(path = "avatars/player.png")]
     pub player_avatar: Handle<Image>,
 
-    #[asset(path = "avatars/enemy.jpeg")]
+    #[asset(path = "avatars/enemy.png")]
     pub enemy_avatar: Handle<Image>,
 }
 

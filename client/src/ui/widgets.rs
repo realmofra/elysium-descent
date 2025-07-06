@@ -256,15 +256,15 @@ pub fn player_hud_widget(
     let health_percent = health.0 as f32 / health.1 as f32;
     let xp_percent = xp.0 as f32 / xp.1 as f32;
     let (left, right) = match position {
-        HudPosition::Left => (Val::Px(16.0), Val::Auto),
-        HudPosition::Right => (Val::Auto, Val::Px(16.0)),
+        HudPosition::Left => (Val::Px(32.0), Val::Auto),
+        HudPosition::Right => (Val::Auto, Val::Px(32.0)),
     };
     (
         Node {
             position_type: PositionType::Absolute,
             left,
             right,
-            top: Val::Px(16.0),
+            top: Val::Px(24.0),
             width: Val::Px(400.0),
             height: Val::Px(100.0),
             justify_content: JustifyContent::FlexStart,
@@ -319,14 +319,14 @@ pub fn player_hud_widget(
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::FlexStart,
-                    margin: UiRect::left(Val::Px(8.0)),
+                    margin: UiRect::left(Val::Px(20.0)),
                     ..default()
                 },
                 children![
                     // Name
                     (
                         Text::new(name),
-                        TextFont { font: font.clone(), font_size: 24.0, ..default() },
+                        TextFont { font: font.clone(), font_size: 28.0, ..default() },
                         TextColor::WHITE,
                     ),
                     // Health Bar
@@ -337,7 +337,7 @@ pub fn player_hud_widget(
                             border: UiRect::all(Val::Px(2.0)),
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::FlexStart,
-                            margin: UiRect::top(Val::Px(4.0)),
+                            margin: UiRect::top(Val::Px(8.0)),
                             ..default()
                         },
                         BackgroundColor(Color::srgb(0.2, 0.2, 0.2)),
