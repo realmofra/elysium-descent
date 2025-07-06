@@ -163,82 +163,6 @@ where
     });
 }
 
-pub fn health_bar_widget(
-    avatar: Handle<Image>,
-    name: &str,
-    current: u32,
-    max: u32,
-    bar_color: Color,
-    font: Handle<Font>,
-) -> impl Bundle {
-    let health_percent = current as f32 / max as f32;
-    (
-        Node {
-            width: Val::Px(340.0),
-            height: Val::Px(64.0),
-            position_type: PositionType::Relative,
-            justify_content: JustifyContent::FlexStart,
-            align_items: AlignItems::Center,
-            margin: UiRect::all(Val::Px(8.0)),
-            ..default()
-        },
-        Name::new(format!("{} Health Bar", name)),
-        Pickable::IGNORE,
-        children![
-            (
-                Node {
-                    width: Val::Px(64.0),
-                    height: Val::Px(64.0),
-                    margin: UiRect::all(Val::Px(4.0)),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    ..default()
-                },
-                ImageNode {
-                    image: avatar.clone(),
-                    ..Default::default()
-                },
-                BorderRadius::all(Val::Px(32.0)),
-            ),
-            (
-                Node {
-                    width: Val::Px(200.0),
-                    height: Val::Px(24.0),
-                    border: UiRect::all(Val::Px(2.0)),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::FlexStart,
-                    margin: UiRect::left(Val::Px(8.0)),
-                    ..default()
-                },
-                BackgroundColor(Color::srgb(0.2, 0.2, 0.2)),
-                children![
-                    (
-                        Node {
-                            width: Val::Px(200.0 * health_percent),
-                            height: Val::Px(24.0),
-                            ..default()
-                        },
-                        BackgroundColor(bar_color),
-                    )
-                ]
-            ),
-            (
-                Node {
-                    margin: UiRect::left(Val::Px(12.0)),
-                    ..default()
-                },
-                Text2d::new(format!("{}/{}", current, max)),
-                TextFont {
-                    font: font.clone(),
-                    font_size: 22.0,
-                    ..default()
-                },
-                TextColor::WHITE,
-            )
-        ],
-    )
-}
-
 pub enum HudPosition {
     Left,
     Right,
@@ -256,8 +180,8 @@ pub fn player_hud_widget(
     let health_percent = health.0 as f32 / health.1 as f32;
     let xp_percent = xp.0 as f32 / xp.1 as f32;
     let (left, right) = match position {
-        HudPosition::Left => (Val::Px(32.0), Val::Auto),
-        HudPosition::Right => (Val::Auto, Val::Px(32.0)),
+        HudPosition::Left => (Val::Px(48.0), Val::Auto),
+        HudPosition::Right => (Val::Auto, Val::Px(-64.0)),
     };
     (
         Node {
