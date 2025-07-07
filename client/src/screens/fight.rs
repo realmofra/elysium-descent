@@ -13,8 +13,6 @@ pub(super) fn plugin(app: &mut App) {
         .add_systems(OnExit(Screen::FightScene), despawn_scene::<FightScene>)
         .add_systems(Update, handle_fight_input.run_if(in_state(Screen::FightScene)))
         .add_systems(Update, camera_follow_fight_player.run_if(in_state(Screen::FightScene)));
-        .add_systems(Update, handle_fight_input.run_if(in_state(Screen::FightScene)))
-        .add_systems(Update, camera_follow_fight_player.run_if(in_state(Screen::FightScene)));
 }
 
 // ===== SYSTEMS =====
@@ -28,25 +26,7 @@ fn spawn_fight_scene(mut commands: Commands, assets: Res<ModelAssets>, ui_assets
     });
 
     // Spawn the dungeon model (match gameplay environment)
-fn spawn_fight_scene(mut commands: Commands, assets: Res<ModelAssets>, ui_assets: Res<crate::assets::UiAssets>, font_assets: Res<crate::assets::FontAssets>) {
-    // Set up ambient light (match gameplay)
-    commands.insert_resource(AmbientLight {
-        color: Color::srgb_u8(68, 71, 88),
-        brightness: 120.0,
-        ..default()
-    });
-
-    // Spawn the dungeon model (match gameplay environment)
     commands.spawn((
-        Name::new("Fight Dungeon"),
-        SceneRoot(assets.dungeon.clone()),
-        Transform {
-            translation: Vec3::new(0.0, -1.5, 0.0),
-            rotation: Quat::from_rotation_y(-core::f32::consts::PI * 0.5),
-            scale: Vec3::splat(7.5),
-        },
-        ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
-        RigidBody::Static,
         Name::new("Fight Dungeon"),
         SceneRoot(assets.dungeon.clone()),
         Transform {
@@ -60,19 +40,14 @@ fn spawn_fight_scene(mut commands: Commands, assets: Res<ModelAssets>, ui_assets
     ));
 
     // Add directional light (match gameplay)
-    // Add directional light (match gameplay)
     commands.spawn((
         Name::new("Directional Light"),
-        Name::new("Directional Light"),
         DirectionalLight {
-            illuminance: 80_000.0,
             illuminance: 80_000.0,
             shadows_enabled: true,
             ..default()
         },
         Transform::from_rotation(Quat::from_euler(
-            EulerRot::XYZ,
-            -std::f32::consts::FRAC_PI_3,
             EulerRot::XYZ,
             -std::f32::consts::FRAC_PI_3,
             std::f32::consts::FRAC_PI_4,
@@ -100,7 +75,6 @@ fn spawn_fight_scene(mut commands: Commands, assets: Res<ModelAssets>, ui_assets
         ))
         .observe(crate::systems::character_controller::setup_idle_animation);
 
-    // Spawn the enemy model at the opposite end (unchanged)
     // Spawn the enemy model at the opposite end (unchanged)
     commands.spawn((
         Name::new("Fight Enemy"),
@@ -139,26 +113,6 @@ fn spawn_fight_scene(mut commands: Commands, assets: Res<ModelAssets>, ui_assets
         },
         FightScene,
     )).with_children(|parent| {
-        // Health bars row
-        // Use player_hud_widget for both player and enemy
-        parent.spawn(crate::ui::widgets::player_hud_widget(
-            ui_assets.player_avatar.clone(),
-            "Player",
-            2, // example level
-            (80, 100), // example health
-            (50, 100), // example xp
-            font_assets.rajdhani_bold.clone(),
-            crate::ui::widgets::HudPosition::Left,
-        ));
-        parent.spawn(crate::ui::widgets::player_hud_widget(
-            ui_assets.enemy_avatar.clone(),
-            "Enemy",
-            3, // example level
-            (120, 150), // example health
-            (90, 100), // example xp
-            font_assets.rajdhani_medium.clone(),
-            crate::ui::widgets::HudPosition::Right,
-        ));
         // Health bars row
         // Use player_hud_widget for both player and enemy
         parent.spawn(crate::ui::widgets::player_hud_widget(

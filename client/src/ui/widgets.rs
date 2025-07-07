@@ -2,13 +2,10 @@ use bevy::prelude::*;
 use bevy::ecs::system::IntoObserverSystem;
 use bevy::ecs::relationship::{RelatedSpawnerCommands, Relationship};
 use crate::ui::styles::ElysiumDescentColorPalette;
-use bevy::prelude::{BackgroundColor, Val};
-use bevy::prelude::{BackgroundColor, Val};
 
 pub fn label_widget(window_height: f32, font: Handle<Font>, text: impl Into<String> + Clone) -> impl Bundle {
     (
         Node {
-            width: Val::Percent(100.0),
             width: Val::Percent(100.0),
             height: Val::Percent(20.0),
             justify_content: JustifyContent::Center,
