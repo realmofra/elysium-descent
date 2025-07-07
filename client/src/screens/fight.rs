@@ -3,7 +3,7 @@ use bevy_gltf_animation::prelude::GltfSceneRoot;
 use super::{Screen, despawn_scene};
 use crate::assets::ModelAssets;
 use crate::systems::character_controller::CharacterControllerBundle;
-use avian3d::prelude::{Friction, Restitution, GravityScale, ColliderConstructorHierarchy, ColliderConstructor, RigidBody};
+use avian3d::prelude::{Collider, ColliderConstructor, ColliderConstructorHierarchy, Friction, GravityScale, Restitution, RigidBody};
 use bevy_enhanced_input::prelude::Actions;
 
 // ===== PLUGIN SETUP =====
@@ -62,7 +62,7 @@ fn spawn_fight_scene(mut commands: Commands, assets: Res<ModelAssets>, ui_assets
             Name::new("Fight Player"),
             GltfSceneRoot::new(assets.player.clone()),
             Transform {
-                translation: Vec3::new(0.0, 2.0, 0.0),
+                translation: Vec3::new(5.0, 2.0, -10.0),
                 scale: Vec3::splat(4.0),
                 ..default()
             },
@@ -80,11 +80,13 @@ fn spawn_fight_scene(mut commands: Commands, assets: Res<ModelAssets>, ui_assets
         Name::new("Fight Enemy"),
         SceneRoot(assets.enemy.clone()),
         Transform {
-            translation: Vec3::new(0.0, -1.65, 0.0),
+            translation: Vec3::new(5.0, -1.65, 0.0),
             rotation: Quat::from_rotation_y(std::f32::consts::PI),
             scale: Vec3::splat(4.0),
             ..default()
         },
+        Collider::capsule(0.5, 1.5),
+        RigidBody::Static,
         FightScene,
     ));
 
