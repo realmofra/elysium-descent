@@ -80,7 +80,7 @@ fn spawn_fight_scene(mut commands: Commands, assets: Res<ModelAssets>, ui_assets
         Name::new("Fight Enemy"),
         SceneRoot(assets.enemy.clone()),
         Transform {
-            translation: Vec3::new(0.0, 0.0, 4.0),
+            translation: Vec3::new(0.0, -1.65, 0.0),
             rotation: Quat::from_rotation_y(std::f32::consts::PI),
             scale: Vec3::splat(4.0),
             ..default()
