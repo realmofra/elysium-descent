@@ -20,7 +20,9 @@ pub fn plugin(app: &mut App) {
         .add_observer(sprint_started)
         .add_observer(sprint_completed)
         .add_observer(handle_create_game)
-        .add_observer(handle_interact);
+        .add_observer(handle_interact)
+        .add_observer(handle_fight_move_1)
+        .add_observer(handle_fight_move_2);
 }
 
 fn spawn_system_action(mut commands: Commands) {
@@ -52,6 +54,16 @@ fn player_binding(trigger: Trigger<Binding<Player>>, mut players: Query<&mut Act
         actions
             .bind::<Interact>()
             .to(KeyCode::KeyE);
+        
+        // Fight Move 1 (X key)
+        actions
+            .bind::<FightMove1>()
+            .to(KeyCode::KeyX);
+        
+        // Fight Move 2 (Shift + X key) - will be handled in the observer
+        actions
+            .bind::<FightMove2>()
+            .to(KeyCode::KeyX);
     } else {
         error!(
             "Failed to get player actions for entity {:?}",
@@ -155,6 +167,14 @@ pub struct Sprint;
 #[input_action(output = bool)]
 pub struct Interact;
 
+#[derive(Debug, InputAction)]
+#[input_action(output = bool)]
+pub struct FightMove1;
+
+#[derive(Debug, InputAction)]
+#[input_action(output = bool)]
+pub struct FightMove2;
+
 /// Input context for the Elysium game
 #[derive(InputContext)]
 pub struct SystemInput;
@@ -227,5 +247,27 @@ fn handle_interact(
     if trigger.value {
         info!("Interact key pressed - triggering interaction");
         interaction_events.write(crate::systems::collectibles::InteractionEvent);
+    }
+}
+
+fn handle_fight_move_1(
+    trigger: Trigger<Started<FightMove1>>,
+    mut movement_events: EventWriter<crate::systems::character_controller::MovementAction>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+) {
+    if trigger.value && !keyboard.pressed(KeyCode::ShiftLeft) {
+        info!("Fight Move 1 key pressed (X) - triggering fight move 1");
+        movement_events.write(crate::systems::character_controller::MovementAction::FightMove1);
+    }
+}
+
+fn handle_fight_move_2(
+    trigger: Trigger<Started<FightMove2>>,
+    mut movement_events: EventWriter<crate::systems::character_controller::MovementAction>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+) {
+    if trigger.value && keyboard.pressed(KeyCode::ShiftLeft) {
+        info!("Fight Move 2 key pressed (Shift+X) - triggering fight move 2");
+        movement_events.write(crate::systems::character_controller::MovementAction::FightMove2);
     }
 }
