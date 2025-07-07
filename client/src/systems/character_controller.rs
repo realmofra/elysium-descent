@@ -277,11 +277,11 @@ fn update_animations(
 
         // Determine which animation should be playing
         let target_animation = if !is_moving {
-            2 // Idle
+            3 // Idle
         } else if animation_state.forward_hold_time >= 3.0 {
-            3 // Special animation after 3 seconds
+            4 // Running
         } else {
-            4 // Regular running
+            7 // Regular walking
         };
 
         // Only change animation if we need to
