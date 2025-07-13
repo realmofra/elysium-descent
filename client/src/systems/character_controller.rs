@@ -151,21 +151,25 @@ fn movement(
                         CharacterMovementConfig::MOVEMENT_DECELERATION
                     };
 
-                    // Apply movement
-                    let speed_multiplier = if animation_state.current_animation == 3 {
-                        1.5
+                    // Apply movement with stability for running
+                    let target_velocity = movement_direction * target_speed;
+                    
+                    // Use more stable interpolation for running
+                    let interpolation_factor = if animation_state.forward_hold_time >= 3.0 {
+                        // More stable interpolation for running
+                        (acceleration * delta_time).min(0.8)
                     } else {
-                        1.0
+                        // Normal interpolation for walking
+                        acceleration * delta_time
                     };
-                    let target_velocity = movement_direction * target_speed * speed_multiplier;
 
                     // Smoothly interpolate current velocity to target velocity
                     linear_velocity.x = linear_velocity
                         .x
-                        .lerp(target_velocity.x, acceleration * delta_time);
+                        .lerp(target_velocity.x, interpolation_factor);
                     linear_velocity.z = linear_velocity
                         .z
-                        .lerp(target_velocity.z, acceleration * delta_time);
+                        .lerp(target_velocity.z, interpolation_factor);
                 }
                 MovementAction::Jump => {
                     if jump_cooldown.last_jump_time >= jump_cooldown.cooldown_duration {
@@ -188,12 +192,21 @@ fn movement(
 
 /// Applies movement damping
 fn apply_movement_damping(
-    mut query: Query<&mut LinearVelocity, With<CharacterController>>,
+    mut query: Query<(&mut LinearVelocity, &AnimationState), With<CharacterController>>,
 ) {
-    for mut linear_velocity in &mut query {
+    for (mut linear_velocity, animation_state) in &mut query {
+        // Apply different damping based on movement state
+        let damping_factor = if animation_state.forward_hold_time >= 3.0 {
+            // More stable damping for running
+            CharacterMovementConfig::AIR_RESISTANCE * 0.95
+        } else {
+            // Normal damping for walking
+            CharacterMovementConfig::AIR_RESISTANCE
+        };
+
         // Apply air resistance
-        linear_velocity.x *= CharacterMovementConfig::AIR_RESISTANCE;
-        linear_velocity.z *= CharacterMovementConfig::AIR_RESISTANCE;
+        linear_velocity.x *= damping_factor;
+        linear_velocity.z *= damping_factor;
 
         // Prevent tiny residual movement
         if linear_velocity.x.abs() < CharacterMovementConfig::MIN_MOVEMENT_THRESHOLD {
