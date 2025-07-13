@@ -178,14 +178,14 @@ pub fn add_item_to_inventory(
                     // spawn the image
                     item_parent.spawn((
                         Node {
-                            width: Val::Px(150.0),
-                            height: Val::Px(150.0),
+                            width: Val::Percent(120.0),
+                            height: Val::Percent(120.0),
                             position_type: PositionType::Absolute,
                             align_content: AlignContent::Center,
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
                             top: Val::Percent(-10.0),
-                            left: Val::Percent(-3.5),
+                            left: Val::Percent(-10.0),
                             ..default()
                         },
                         ImageNode {
@@ -202,8 +202,8 @@ pub fn add_item_to_inventory(
                     item_parent.spawn((
                         Node {
                             position_type: PositionType::Absolute,
-                            width: Val::Px(40.0),
-                            height: Val::Px(40.0),
+                            width: Val::Percent(25.0),
+                            height: Val::Percent(25.0),
                             left: Val::Percent(7.5),
                             top: Val::Percent(10.0),
                             align_items: AlignItems::Center,
