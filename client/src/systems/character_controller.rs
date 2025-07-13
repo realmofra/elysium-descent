@@ -194,7 +194,7 @@ fn movement(
 fn apply_movement_damping(
     mut query: Query<(&mut LinearVelocity, &AnimationState, &Transform), With<CharacterController>>,
 ) {
-    for (mut linear_velocity, animation_state, transform) in &mut query {
+    for (mut linear_velocity, animation_state, _transform) in &mut query {
         // Check for unwanted climbing behavior
         let horizontal_speed = Vec2::new(linear_velocity.x, linear_velocity.z).length();
         let is_moving_horizontally = horizontal_speed > 0.1;
