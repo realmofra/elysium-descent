@@ -1,7 +1,6 @@
 use crate::assets::ModelAssets;
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use std::sync::Arc;
 
 use crate::systems::dojo::PickupItemEvent;
 use crate::{systems::character_controller::CharacterController, ui::inventory};
@@ -15,9 +14,7 @@ pub struct CollectibleCounter {
 }
 
 #[derive(Component)]
-pub struct Collectible {
-    pub on_collect: Arc<dyn Fn(&mut Commands, Entity) + Send + Sync>,
-}
+pub struct Collectible;
 
 #[derive(Component, Clone)]
 pub struct CollectibleRotation {
@@ -36,7 +33,7 @@ pub struct FloatingItem {
 #[derive(Component, Clone, Copy, Debug, PartialEq)]
 pub enum CollectibleType {
     Book,
-    FirstAidKit,
+    Coin,
 }
 
 
@@ -75,7 +72,6 @@ pub struct CollectibleConfig {
     pub collectible_type: CollectibleType,
     pub scale: f32,
     pub rotation: Option<CollectibleRotation>,
-    pub on_collect: Arc<dyn Fn(&mut Commands, Entity) + Send + Sync>,
 }
 
 // ===== PLUGIN =====
@@ -118,7 +114,7 @@ pub fn spawn_collectible(
 ) {
     let model_handle = match config.collectible_type {
         CollectibleType::Book => assets.book.clone(),
-        CollectibleType::FirstAidKit => assets.first_aid_kit.clone(),
+        CollectibleType::Coin => assets.coin.clone(),
     };
 
     let mut entity = commands.spawn((
@@ -134,9 +130,7 @@ pub fn spawn_collectible(
         Visibility::Visible,
         InheritedVisibility::default(),
         ViewVisibility::default(),
-        Collectible {
-            on_collect: config.on_collect,
-        },
+        Collectible,
         config.collectible_type,
         FloatingItem {
             base_height: config.position.y,
@@ -163,21 +157,21 @@ fn collect_items(
         return;
     };
 
-    for (collectible_entity, collectible_transform, collectible_type, collectible) in
+    for (collectible_entity, collectible_transform, collectible_type, _collectible) in
         collectible_query.iter()
     {
         let distance = player_transform
             .translation
             .distance(collectible_transform.translation);
         if distance < 5.0 {
-            // Collection radius - only for non-interactable items (like FirstAidKit)
+            // Collection radius - only for non-interactable items (like Coin)
             info!("Collected a {:?}!", collectible_type);
             commands.insert_resource(NextItemToAdd(*collectible_type));
 
             match collectible_type {
-                CollectibleType::FirstAidKit => {
-                    // Trigger blockchain transaction for FirstAidKit
-                    info!("🏥 FirstAidKit collected - triggering blockchain transaction");
+                CollectibleType::Coin => {
+                    // Trigger blockchain transaction for Coin
+                    info!("🪙 Coin collected - triggering blockchain transaction");
                     pickup_events.write(PickupItemEvent {
                         item_type: *collectible_type,
                         item_entity: collectible_entity,
@@ -186,9 +180,16 @@ fn collect_items(
                     // Note: The item will be removed from the world when the blockchain transaction is confirmed
                     // in the pickup_item system's handle_item_picked_up_events
                 }
-                _ => {
-                    // For other items (not FirstAidKit), use the old local collection method
-                    (collectible.on_collect)(&mut commands, collectible_entity);
+                CollectibleType::Book => {
+                    // Trigger blockchain transaction for Book
+                    info!("📚 Book collected - triggering blockchain transaction");
+                    pickup_events.write(PickupItemEvent {
+                        item_type: *collectible_type,
+                        item_entity: collectible_entity,
+                    });
+                    
+                    // Note: The item will be removed from the world when the blockchain transaction is confirmed
+                    // in the pickup_item system's handle_item_picked_up_events
                 }
             }
 
@@ -291,16 +292,16 @@ fn handle_interactions(
     for _event in interaction_events.read() {
         if let Some(entity) = nearby_interactable.entity {
             if let Ok((collectible_type, _collectible)) = interactable_query.get(entity) {
-                // Trigger dialogue for books, blockchain transaction for FirstAidKit, direct collection for others
+                // Trigger dialogue for books, blockchain transaction for Coin, direct collection for others
                 match collectible_type {
                     CollectibleType::Book => {
                         // Transition to fight scene when book is interacted with
                         info!("📚 Book interacted with - transitioning to fight scene");
                         next_state.set(Screen::FightScene);
                     }
-                    CollectibleType::FirstAidKit => {
-                        // Trigger blockchain transaction for FirstAidKit
-                        info!("🏥 FirstAidKit interacted with - triggering blockchain transaction");
+                    CollectibleType::Coin => {
+                        // Trigger blockchain transaction for Coin
+                        info!("🪙 Coin interacted with - triggering blockchain transaction");
                         collectible_counter.collectibles_collected += 1;
                         info!(
                             "Total collectibles collected: {}",
@@ -326,7 +327,6 @@ pub fn spawn_interactable_book(
     assets: &Res<ModelAssets>,
     position: Vec3,
     scale: f32,
-    on_collect: Arc<dyn Fn(&mut Commands, Entity) + Send + Sync>,
     scene_marker: impl Component + Clone,
 ) {
     let mut entity = commands.spawn((
@@ -355,7 +355,7 @@ pub fn spawn_interactable_book(
 
     // Add collectible components
     entity.insert((
-        Collectible { on_collect },
+        Collectible,
         CollectibleType::Book,
         FloatingItem {
             base_height: position.y,

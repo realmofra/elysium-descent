@@ -188,7 +188,7 @@ pub fn add_item_to_inventory(
                         },
                         ImageNode {
                             image: match collectible_type.0 {
-                                CollectibleType::FirstAidKit => ui_assets.first_aid_kit.clone(),
+                                CollectibleType::Coin => ui_assets.coin.clone(),
                                 CollectibleType::Book => ui_assets.book.clone(),
                             },
                             ..default()
