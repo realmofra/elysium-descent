@@ -178,12 +178,14 @@ pub fn add_item_to_inventory(
                     // spawn the image
                     item_parent.spawn((
                         Node {
-                            width: Val::Percent(100.0),
-                            height: Val::Percent(100.0),
+                            width: Val::Px(150.0),
+                            height: Val::Px(150.0),
                             position_type: PositionType::Absolute,
                             align_content: AlignContent::Center,
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
+                            top: Val::Percent(-10.0),
+                            left: Val::Percent(-3.5),
                             ..default()
                         },
                         ImageNode {
@@ -200,22 +202,22 @@ pub fn add_item_to_inventory(
                     item_parent.spawn((
                         Node {
                             position_type: PositionType::Absolute,
-                            width: Val::Percent(30.0),
-                            height: Val::Percent(30.0),
-                            left: Val::Percent(2.0),
-                            top: Val::Percent(2.0),
+                            width: Val::Px(40.0),
+                            height: Val::Px(40.0),
+                            left: Val::Percent(7.5),
+                            top: Val::Percent(10.0),
                             align_items: AlignItems::Center,
                             justify_content: JustifyContent::Center,
                             ..default()
                         },
                         BorderRadius::MAX,
-                        BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.8)),
+                        BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.9)),
                         ZIndex(2),
                     )).with_children(|text_parent| {
                         text_parent.spawn((
                             TextFont {
-                                font_size: 32.0,
-                                font: font_assets.rajdhani_bold.clone(),
+                                font_size: 20.0,
+                                font: font_assets.rajdhani_extra_bold.clone(),
                                 ..default()
                             },
                             Text::new("1"),
