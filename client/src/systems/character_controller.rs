@@ -190,11 +190,25 @@ fn movement(
     }
 }
 
-/// Applies movement damping
+/// Applies movement damping and prevents unwanted climbing
 fn apply_movement_damping(
-    mut query: Query<(&mut LinearVelocity, &AnimationState), With<CharacterController>>,
+    mut query: Query<(&mut LinearVelocity, &AnimationState, &Transform), With<CharacterController>>,
 ) {
-    for (mut linear_velocity, animation_state) in &mut query {
+    for (mut linear_velocity, animation_state, transform) in &mut query {
+        // Check for unwanted climbing behavior
+        let horizontal_speed = Vec2::new(linear_velocity.x, linear_velocity.z).length();
+        let is_moving_horizontally = horizontal_speed > 0.1;
+        let is_rising_gradually = linear_velocity.y > 0.1 && linear_velocity.y < 2.0;
+        
+        // If moving horizontally and rising gradually, this is likely unwanted climbing
+        if is_moving_horizontally && is_rising_gradually {
+            // Reduce the climbing effect
+            linear_velocity.y *= 0.1;
+            // Also reduce horizontal movement slightly to prevent getting stuck
+            linear_velocity.x *= 0.8;
+            linear_velocity.z *= 0.8;
+        }
+        
         // Apply different damping based on movement state
         let damping_factor = if animation_state.forward_hold_time >= 3.0 {
             // More stable damping for running
@@ -315,15 +329,15 @@ pub fn setup_idle_animation(
 
 impl CharacterControllerBundle {
     pub fn new() -> Self {
-        // Improved collider for better stair climbing
-        let length = 0.6;  // Reduced height for better step clearance
-        let radius = 0.25; // Slightly smaller radius
+        // Improved collider for better collision handling
+        let length = 0.5;  // Reduced height to prevent climbing
+        let radius = 0.2; // Smaller radius for more precise collision
         let offset = Vec3::new(0.0, (length / 2.0) + radius, 0.0);
         let capsule = Collider::capsule(radius, length);
         let collider = Collider::compound(vec![(offset, Quat::IDENTITY, capsule)]);
         
         // Smaller ground caster for more precise ground detection
-        let caster_shape = Collider::sphere(0.3);
+        let caster_shape = Collider::sphere(0.2);
 
         Self {
             character_controller: CharacterController,
@@ -335,7 +349,7 @@ impl CharacterControllerBundle {
                 Quaternion::default(),
                 Dir3::NEG_Y,
             )
-            .with_max_distance(CharacterMovementConfig::GROUND_SNAP_DISTANCE + 0.1), // Adjusted detection distance
+            .with_max_distance(CharacterMovementConfig::GROUND_SNAP_DISTANCE + 0.1),
             locked_axes: LockedAxes::ROTATION_LOCKED,
             movement: MovementBundle::new(CharacterMovementConfig::MOVEMENT_ACCELERATION, 0.9, 7.0),
             animation_state: AnimationState {
