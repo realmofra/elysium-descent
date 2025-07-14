@@ -119,7 +119,7 @@ pub fn spawn_collectible(
         },
         Sensor,
         scene_marker.clone(),
-        Interactable { interaction_radius: 5.0 },
+        Interactable { interaction_radius: 4.0 },
     ));
 
     if let Some(rotation) = config.rotation {
