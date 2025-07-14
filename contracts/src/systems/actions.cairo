@@ -1,10 +1,6 @@
-use elysium_descent::models::{
-    GAME_COUNTER_ID, Game, GameCounter, GameStatus, ItemType, LevelItems, PlayerInventory,
-    PlayerStats, WorldItem,
-};
-use starknet::{ContractAddress, get_block_timestamp};
+use elysium_descent::models::index::{LevelItems, PlayerInventory, PlayerStats};
+use starknet::ContractAddress;
 
-// define the interface
 #[starknet::interface]
 pub trait IActions<T> {
     fn create_game(ref self: T) -> u32;
@@ -14,18 +10,16 @@ pub trait IActions<T> {
     fn get_player_inventory(self: @T, player: ContractAddress) -> PlayerInventory;
     fn get_level_items(self: @T, game_id: u32, level: u32) -> LevelItems;
 }
-//fn _pickup_item(ref self: T, game_id: u32, item_id: u32) -> bool;
 
-// dojo decorator
 #[dojo::contract]
 pub mod actions {
     use core::poseidon::poseidon_hash_span;
     use dojo::model::ModelStorage;
     use dojo::world::{WorldStorage, WorldStorageTrait};
-    use starknet::{ContractAddress, get_caller_address};
-    use super::{
-        GAME_COUNTER_ID, Game, GameCounter, GameStatus, IActions, ItemType, LevelItems,
-        PlayerInventory, PlayerStats, WorldItem, get_block_timestamp,
+    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
+    use super::{IActions, LevelItems, PlayerInventory, PlayerStats};
+    use elysium_descent::models::index::{
+        GAME_COUNTER_ID, Game, GameCounter, GameStatus, ItemType, WorldItem,
     };
     use elysium_descent::constants::world::{DEFAULT_NS};
     use tournaments::components::libs::lifecycle::{
