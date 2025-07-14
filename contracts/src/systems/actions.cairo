@@ -20,48 +20,24 @@ pub trait IActions<T> {
 #[dojo::contract]
 pub mod actions {
     use core::poseidon::poseidon_hash_span;
-    use dojo::event::EventStorage;
     use dojo::model::ModelStorage;
+    use dojo::world::{WorldStorage, WorldStorageTrait};
     use starknet::{ContractAddress, get_caller_address};
     use super::{
         GAME_COUNTER_ID, Game, GameCounter, GameStatus, IActions, ItemType, LevelItems,
         PlayerInventory, PlayerStats, WorldItem, get_block_timestamp,
     };
+    use elysium_descent::constants::world::{DEFAULT_NS};
+    use tournaments::components::libs::lifecycle::{
+        LifecycleAssertionsImpl, LifecycleAssertionsTrait,
+    };
+    use tournaments::components::models::game::TokenMetadata;
 
-    #[derive(Copy, Drop, Serde)]
-    #[dojo::event]
-    pub struct GameCreated {
-        #[key]
-        pub player: ContractAddress,
-        pub game_id: u32,
-        pub created_at: u64,
-    }
-
-    #[derive(Copy, Drop, Serde)]
-    #[dojo::event]
-    pub struct LevelStarted {
-        #[key]
-        pub player: ContractAddress,
-        pub game_id: u32,
-        pub level: u32,
-        pub items_spawned: u32,
-    }
-
-    #[derive(Copy, Drop, Serde)]
-    #[dojo::event]
-    pub struct ItemPickedUp {
-        #[key]
-        pub player: ContractAddress,
-        pub game_id: u32,
-        pub item_id: u32,
-        pub item_type: ItemType,
-        pub level: u32,
-    }
 
     #[abi(embed_v0)]
     impl ActionsImpl of IActions<ContractState> {
         fn create_game(ref self: ContractState) -> u32 {
-            let mut world = self.world_default();
+            let mut world: WorldStorage = self.world(@DEFAULT_NS());
             let player = get_caller_address();
 
             // Get or initialize the game counter
@@ -106,14 +82,11 @@ pub mod actions {
             };
             world.write_model(@inventory);
 
-            // Emit game created event
-            world.emit_event(@GameCreated { player, game_id, created_at: get_block_timestamp() });
-
             game_id
         }
 
         fn start_level(ref self: ContractState, game_id: u32, level: u32) {
-            let mut world = self.world_default();
+            let mut world: WorldStorage = self.world(@DEFAULT_NS());
             let player = get_caller_address();
 
             // Verify game exists and player owns it
@@ -219,11 +192,10 @@ pub mod actions {
             };
 
             let total_items = health_potions_count + survival_kits_count + books_count;
-            world.emit_event(@LevelStarted { player, game_id, level, items_spawned: total_items });
         }
 
         fn pickup_item(ref self: ContractState) -> bool {
-            let mut world = self.world_default();
+            let mut world: WorldStorage = self.world(@DEFAULT_NS());
             let player = get_caller_address();
 
             // Verify game exists and player owns it
@@ -273,45 +245,27 @@ pub mod actions {
 
             //world.write_model(@player_stats);
 
-            //// Emit pickup event
-            //world
-            //    .emit_event(
-            //        @ItemPickedUp {
-            //            player,
-            //            game_id,
-            //            item_id,
-            //            item_type: world_item.item_type,
-            //            level: world_item.level,
-            //        },
-            //    );
-
             true
         }
 
         fn get_player_stats(self: @ContractState, player: ContractAddress) -> PlayerStats {
-            let world = self.world_default();
+            let mut world: WorldStorage = self.world(@DEFAULT_NS());
             world.read_model(player)
         }
 
         fn get_player_inventory(self: @ContractState, player: ContractAddress) -> PlayerInventory {
-            let world = self.world_default();
+            let mut world: WorldStorage = self.world(@DEFAULT_NS());
             world.read_model(player)
         }
 
         fn get_level_items(self: @ContractState, game_id: u32, level: u32) -> LevelItems {
-            let world = self.world_default();
+            let mut world: WorldStorage = self.world(@DEFAULT_NS());
             world.read_model((game_id, level))
         }
     }
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-        /// Use the default namespace "elysium_descent". This function is handy since the ByteArray
-        /// can't be const.
-        fn world_default(self: @ContractState) -> dojo::world::WorldStorage {
-            self.world(@"elysium_001")
-        }
-
         /// Calculate number of health potions for a level
         fn calculate_level_health_potions(self: @ContractState, level: u32) -> u32 {
             // Formula: base 3 potions + 1 per level, max 10
