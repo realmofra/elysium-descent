@@ -16,6 +16,9 @@ pub struct CollectibleCounter {
 #[derive(Component)]
 pub struct Collectible;
 
+#[derive(Component)]
+pub struct Collected;
+
 #[derive(Component, Clone)]
 pub struct CollectibleRotation {
     pub enabled: bool,
@@ -150,7 +153,7 @@ fn collect_items(
     mut commands: Commands,
     mut collectible_counter: ResMut<CollectibleCounter>,
     player_query: Query<&Transform, With<CharacterController>>,
-    collectible_query: Query<(Entity, &Transform, &CollectibleType, &Collectible), (With<Sensor>, Without<Interactable>)>,
+    collectible_query: Query<(Entity, &Transform, &CollectibleType, &Collectible), (With<Sensor>, Without<Interactable>, Without<Collected>)>,
     mut pickup_events: EventWriter<PickupItemEvent>,
 ) {
     let Ok(player_transform) = player_query.single() else {
@@ -167,6 +170,9 @@ fn collect_items(
             // Collection radius - only for non-interactable items (like Coin)
             info!("Collected a {:?}!", collectible_type);
             commands.insert_resource(NextItemToAdd(*collectible_type));
+
+            // Mark as collected to prevent double counting
+            commands.entity(collectible_entity).insert(Collected);
 
             match collectible_type {
                 CollectibleType::Coin => {
@@ -230,7 +236,7 @@ pub fn rotate_collectibles(
 /// System to detect when player is near interactable objects
 fn detect_nearby_interactables(
     player_query: Query<&Transform, With<CharacterController>>,
-    interactable_query: Query<(Entity, &Transform, &Interactable)>,
+    interactable_query: Query<(Entity, &Transform, &Interactable), Without<Collected>>,
     mut nearby_interactable: ResMut<NearbyInteractable>,
     mut prompt_events: EventWriter<InteractionPromptEvent>,
 ) {
@@ -282,16 +288,19 @@ fn detect_nearby_interactables(
 /// System to handle interaction events
 fn handle_interactions(
     mut interaction_events: EventReader<InteractionEvent>,
-    _commands: Commands,
+    mut commands: Commands,
     mut collectible_counter: ResMut<CollectibleCounter>,
     nearby_interactable: Res<NearbyInteractable>,
-    interactable_query: Query<(&CollectibleType, &Collectible), With<Interactable>>,
+    interactable_query: Query<(&CollectibleType, &Collectible), (With<Interactable>, Without<Collected>)>,
     mut prompt_events: EventWriter<InteractionPromptEvent>,
     mut next_state: ResMut<NextState<Screen>>,
 ) {
     for _event in interaction_events.read() {
         if let Some(entity) = nearby_interactable.entity {
             if let Ok((collectible_type, _collectible)) = interactable_query.get(entity) {
+                // Mark as collected to prevent double counting
+                commands.entity(entity).insert(Collected);
+                
                 // Trigger dialogue for books, blockchain transaction for Coin, direct collection for others
                 match collectible_type {
                     CollectibleType::Book => {
@@ -302,11 +311,8 @@ fn handle_interactions(
                     CollectibleType::Coin => {
                         // Trigger blockchain transaction for Coin
                         info!("🪙 Coin interacted with - triggering blockchain transaction");
-                        collectible_counter.collectibles_collected += 1;
-                        info!(
-                            "Total collectibles collected: {}",
-                            collectible_counter.collectibles_collected
-                        );
+                        // Note: Counter is already incremented in collect_items system
+                        // No need to increment again here
                     }
                 }
 
