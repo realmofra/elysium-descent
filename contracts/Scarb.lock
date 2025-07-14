@@ -2,6 +2,66 @@
 version = 1
 
 [[package]]
+name = "alexandria_bytes"
+version = "0.3.0"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?tag=v0.3.0#e3715428c990665afc495b5428ef08ab9a2089cd"
+dependencies = [
+ "alexandria_data_structures",
+ "alexandria_math",
+]
+
+[[package]]
+name = "alexandria_data_structures"
+version = "0.3.0"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?tag=v0.3.0#e3715428c990665afc495b5428ef08ab9a2089cd"
+
+[[package]]
+name = "alexandria_encoding"
+version = "0.3.0"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?tag=v0.3.0#e3715428c990665afc495b5428ef08ab9a2089cd"
+dependencies = [
+ "alexandria_bytes",
+ "alexandria_data_structures",
+ "alexandria_math",
+ "alexandria_numeric",
+]
+
+[[package]]
+name = "alexandria_math"
+version = "0.3.0"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?tag=v0.3.0#e3715428c990665afc495b5428ef08ab9a2089cd"
+
+[[package]]
+name = "alexandria_numeric"
+version = "0.3.0"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?tag=v0.3.0#e3715428c990665afc495b5428ef08ab9a2089cd"
+dependencies = [
+ "alexandria_math",
+ "alexandria_searching",
+]
+
+[[package]]
+name = "alexandria_searching"
+version = "0.3.0"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?tag=v0.3.0#e3715428c990665afc495b5428ef08ab9a2089cd"
+dependencies = [
+ "alexandria_data_structures",
+]
+
+[[package]]
+name = "death_mountain"
+version = "0.1.0"
+source = "git+https://github.com/okhaimie-dev/death-mountain.git#89a016624d7e215bb68ded05e1968d0f3058d32a"
+dependencies = [
+ "alexandria_encoding",
+ "dojo",
+ "graffiti",
+ "openzeppelin_introspection",
+ "openzeppelin_token",
+ "tournaments",
+]
+
+[[package]]
 name = "dojo"
 version = "1.6.0-alpha.0"
 source = "git+https://github.com/dojoengine/dojo?tag=v1.6.0-alpha.2#184a4e8368269815823004d61e71f0699059ad77"
@@ -26,6 +86,64 @@ source = "git+https://github.com/dojoengine/dojo?tag=v1.6.0-alpha.2#184a4e836826
 name = "elysium_descent"
 version = "0.0.1"
 dependencies = [
+ "death_mountain",
  "dojo",
  "dojo_cairo_test",
+ "openzeppelin_introspection",
+ "openzeppelin_token",
+ "tournaments",
+]
+
+[[package]]
+name = "graffiti"
+version = "0.1.0"
+source = "git+https://github.com/rsodre/graffiti?rev=url#e8b0854798ebbcebde504ea299ed556900564ff2"
+
+[[package]]
+name = "openzeppelin_access"
+version = "1.0.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v1.0.0#755ce1adbf8d89ed23fbb8daa328fcbeab7c6424"
+dependencies = [
+ "openzeppelin_introspection",
+ "openzeppelin_utils",
+]
+
+[[package]]
+name = "openzeppelin_account"
+version = "1.0.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v1.0.0#755ce1adbf8d89ed23fbb8daa328fcbeab7c6424"
+dependencies = [
+ "openzeppelin_introspection",
+ "openzeppelin_utils",
+]
+
+[[package]]
+name = "openzeppelin_introspection"
+version = "1.0.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v1.0.0#755ce1adbf8d89ed23fbb8daa328fcbeab7c6424"
+
+[[package]]
+name = "openzeppelin_token"
+version = "1.0.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v1.0.0#755ce1adbf8d89ed23fbb8daa328fcbeab7c6424"
+dependencies = [
+ "openzeppelin_access",
+ "openzeppelin_account",
+ "openzeppelin_introspection",
+ "openzeppelin_utils",
+]
+
+[[package]]
+name = "openzeppelin_utils"
+version = "1.0.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v1.0.0#755ce1adbf8d89ed23fbb8daa328fcbeab7c6424"
+
+[[package]]
+name = "tournaments"
+version = "0.0.1"
+source = "git+https://github.com/okhaimie-dev/tournaments.git#1410d380bd3de29ce64c298253d041ffa9759f07"
+dependencies = [
+ "dojo",
+ "openzeppelin_introspection",
+ "openzeppelin_token",
 ]

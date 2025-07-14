@@ -35,7 +35,7 @@ jobs:
         uses: Leafwing-Studios/cargo-cache@v2
         with:
           sweep-cache: true
-          cargo-cache-dir: "./client/target"
+          # cargo-cache-dir: "./client/target"
           manifest-path: "./client/Cargo.toml"
 
       - name: Run tests
@@ -68,7 +68,7 @@ jobs:
         uses: Leafwing-Studios/cargo-cache@v2
         with:
           sweep-cache: true
-          cargo-cache-dir: "./client/target"
+          # cargo-cache-dir: "./client/target"
           manifest-path: "./client/Cargo.toml"
 
       - name: Run clippy lints

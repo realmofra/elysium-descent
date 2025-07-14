@@ -8,14 +8,26 @@ edition = "2024_07"
 sierra-replace-ids = true
 
 [dependencies]
+death_mountain = { git = "https://github.com/okhaimie-dev/death-mountain.git" }
 dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.6.0-alpha.2" }
+openzeppelin_token = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v1.0.0" }
+openzeppelin_introspection = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v1.0.0" }
 starknet = "2.10.1"
+tournaments = { git = "https://github.com/okhaimie-dev/tournaments.git" }
 
 [dev-dependencies]
 dojo_cairo_test = { git = "https://github.com/dojoengine/dojo", tag = "v1.6.0-alpha.2" }
 cairo_test = "2.10.1"
 
 [[target.starknet-contract]]
-build-external-contracts = ["dojo::world::world_contract::world"]
+build-external-contracts = [
+    "dojo::world::world_contract::world",
+    "tournaments::components::models::game::m_GameMetadata",
+    "tournaments::components::models::game::m_TokenMetadata",
+    "tournaments::components::models::game::m_GameCounter",
+    "tournaments::components::models::game::m_Score",
+    "tournaments::components::models::game::m_Settings",
+    "tournaments::components::models::game::m_SettingsDetails",
+    "tournaments::components::models::game::m_SettingsCounter",]
 
 [profile.slot]
