@@ -2,7 +2,6 @@ use crate::assets::ModelAssets;
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
-use crate::keybinding::Interact;
 use crate::screens::Screen;
 use crate::systems::dojo::PickupItemEvent;
 use crate::{systems::character_controller::CharacterController};

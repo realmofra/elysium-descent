@@ -4,8 +4,6 @@ use crate::systems::collectibles::CollectibleType;
 use bevy::prelude::*;
 use dojo_bevy_plugin::{DojoEntityUpdated, DojoResource};
 use starknet::core::types::Call;
-use bevy::tasks::{AsyncComputeTaskPool, Task};
-use futures_lite::future;
 use starknet::accounts::Account;
 use tokio::task::JoinHandle;
 use futures::FutureExt;
@@ -22,7 +20,6 @@ pub struct PickupItemEvent {
 #[derive(Event, Debug)]
 pub struct ItemPickedUpEvent {
     pub item_type: CollectibleType,
-    pub item_entity: Entity,
     pub transaction_hash: String,
 }
 
@@ -98,7 +95,7 @@ fn handle_pickup_item_events(
 fn handle_item_picked_up_events(
     mut events: EventReader<ItemPickedUpEvent>,
     // mut commands: Commands, // No longer needed for despawn
-    world: &World,
+    _world: &World,
 ) {
     for event in events.read() {
         info!(
@@ -143,9 +140,9 @@ fn handle_pickup_entity_updates(
                     // For now, assume any inventory update means pickup succeeded
                     // In a full implementation, you'd parse the model data to confirm
                     if let Some((entity, item_type)) = pickup_state.pending_pickups.pop() {
+                        let _entity = entity;
                         item_picked_up_events.write(ItemPickedUpEvent {
                             item_type,
-                            item_entity: entity,
                             transaction_hash: "0x123".to_string(), // TODO: Extract real TX hash
                         });
                     }
@@ -172,14 +169,15 @@ fn poll_pickup_tasks(
         if let Some(result) = handle.now_or_never() {
             match result {
                 Ok(Ok((entity, item_type, tx_hash))) => {
+                    let _entity = entity;
                     info!("Blockchain pickup tx completed: {} for {:?}", tx_hash, item_type);
                     item_picked_up_events.write(ItemPickedUpEvent {
                         item_type,
-                        item_entity: entity,
                         transaction_hash: tx_hash,
                     });
                 }
                 Ok(Err((entity, item_type, err))) => {
+                    let _entity = entity;
                     item_pickup_failed_events.write(ItemPickupFailedEvent {
                         item_type,
                         error: err,
