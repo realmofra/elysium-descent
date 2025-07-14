@@ -145,6 +145,9 @@ fn auto_collect_nearby_interactables(
             // Insert NextItemToAdd so inventory system will add it
             commands.insert_resource(NextItemToAdd(*collectible_type));
 
+            // Despawn the entity immediately
+            commands.entity(entity).despawn();
+
             // Trigger blockchain event
             pickup_events.write(PickupItemEvent {
                 item_type: *collectible_type,

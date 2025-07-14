@@ -7,6 +7,9 @@ use starknet::core::types::Call;
 use bevy::tasks::{AsyncComputeTaskPool, Task};
 use futures_lite::future;
 use starknet::accounts::Account;
+use tokio::task::JoinHandle;
+use futures::FutureExt;
+use dojo_bevy_plugin::TokioRuntime;
 
 /// Event to trigger item pickup on the blockchain
 #[derive(Event, Debug)]
@@ -37,7 +40,7 @@ pub struct PickupTransactionState {
 }
 
 #[derive(Resource, Default)]
-pub struct PendingPickupTasks(pub Vec<Task<Result<(Entity, CollectibleType, String), (Entity, CollectibleType, String)>>>);
+pub struct PendingPickupTasks(pub Vec<JoinHandle<Result<(Entity, CollectibleType, String), (Entity, CollectibleType, String)>>>);
 
 pub(super) fn plugin(app: &mut App) {
     app.add_event::<PickupItemEvent>()
@@ -63,9 +66,9 @@ fn handle_pickup_item_events(
     mut events: EventReader<PickupItemEvent>,
     dojo: Res<DojoResource>,
     dojo_config: Res<super::DojoSystemState>,
+    tokio: Res<TokioRuntime>,
     mut pending_tasks: ResMut<PendingPickupTasks>,
 ) {
-    let thread_pool = AsyncComputeTaskPool::get();
     let account = dojo.sn.account.clone();
     for event in events.read() {
         let call = Call {
@@ -76,7 +79,7 @@ fn handle_pickup_item_events(
         let entity = event.item_entity;
         let item_type = event.item_type;
         let account = account.clone();
-        let task = thread_pool.spawn(async move {
+        let handle = tokio.runtime.spawn(async move {
             if let Some(account) = account {
                 let tx = account.execute_v3(vec![call]);
                 match tx.send().await {
@@ -87,14 +90,14 @@ fn handle_pickup_item_events(
                 Err((entity, item_type, "No account available".to_string()))
             }
         });
-        pending_tasks.0.push(task);
+        pending_tasks.0.push(handle);
     }
 }
 
 /// System to handle successful item pickup
 fn handle_item_picked_up_events(
     mut events: EventReader<ItemPickedUpEvent>,
-    mut commands: Commands,
+    // mut commands: Commands, // No longer needed for despawn
     world: &World,
 ) {
     for event in events.read() {
@@ -102,20 +105,7 @@ fn handle_item_picked_up_events(
             "Item pickup confirmed on blockchain! {:?} (TX: {})",
             event.item_type, event.transaction_hash
         );
-
-        // Check if the entity still exists before trying to despawn it
-        if world.get_entity(event.item_entity).is_ok() {
-            commands.entity(event.item_entity).despawn();
-            info!(
-                "Item {:?} successfully removed from game world",
-                event.item_type
-            );
-        } else {
-            info!(
-                "Item {:?} entity no longer exists (ID: {:?}) - likely already removed",
-                event.item_type, event.item_entity
-            );
-        }
+        // Entity is already despawned immediately on pickup
     }
 }
 
@@ -178,26 +168,30 @@ fn poll_pickup_tasks(
     mut item_picked_up_events: EventWriter<ItemPickedUpEvent>,
     mut item_pickup_failed_events: EventWriter<ItemPickupFailedEvent>,
 ) {
-    pending_tasks.0.retain_mut(|task| {
-        if let Some(result) = future::block_on(future::poll_once(task)) {
+    pending_tasks.0.retain_mut(|handle| {
+        if let Some(result) = handle.now_or_never() {
             match result {
-                Ok((entity, item_type, tx_hash)) => {
+                Ok(Ok((entity, item_type, tx_hash))) => {
+                    info!("Blockchain pickup tx completed: {} for {:?}", tx_hash, item_type);
                     item_picked_up_events.write(ItemPickedUpEvent {
                         item_type,
                         item_entity: entity,
                         transaction_hash: tx_hash,
                     });
                 }
-                Err((entity, item_type, err)) => {
+                Ok(Err((entity, item_type, err))) => {
                     item_pickup_failed_events.write(ItemPickupFailedEvent {
                         item_type,
                         error: err,
                     });
                 }
+                Err(join_err) => {
+                    error!("JoinHandle error in pickup task: {:?}", join_err);
+                }
             }
-            false // Remove finished task
+            false // Remove finished handle
         } else {
-            true // Keep unfinished task
+            true // Keep unfinished handle
         }
     });
 }
