@@ -2,6 +2,7 @@ use crate::assets::ModelAssets;
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
+use crate::keybinding::Interact;
 use crate::screens::Screen;
 use crate::systems::dojo::PickupItemEvent;
 use crate::{systems::character_controller::CharacterController};
@@ -66,11 +67,13 @@ pub struct CollectiblesPlugin;
 impl Plugin for CollectiblesPlugin {
     fn build(&self, app: &mut App) {
         app
+            .add_event::<InteractionEvent>()
             .insert_resource(crate::ui::inventory::InventoryVisibilityState::default())
             .add_systems(
                 Update,
                 (
                     auto_collect_nearby_interactables,
+                    handle_interactions,
                     update_floating_items,
                     rotate_collectibles,
                     crate::ui::inventory::add_item_to_inventory,
@@ -139,21 +142,59 @@ fn auto_collect_nearby_interactables(
     for (entity, transform, interactable, collectible_type) in interactable_query.iter() {
         let distance = player_transform.translation.distance(transform.translation);
         if distance <= interactable.interaction_radius {
-            // Mark as collected
-            commands.entity(entity).insert(Collected);
-
-            // Insert NextItemToAdd so inventory system will add it
-            commands.insert_resource(NextItemToAdd(*collectible_type));
-
-            // Despawn the entity immediately
-            commands.entity(entity).despawn();
-
-            // Trigger blockchain event
-            pickup_events.write(PickupItemEvent {
-                item_type: *collectible_type,
-                item_entity: entity,
-            });
+            if *collectible_type == CollectibleType::Coin {
+                // Mark as collected
+                commands.entity(entity).insert(Collected);
+                // Insert NextItemToAdd so inventory system will add it
+                commands.insert_resource(NextItemToAdd(*collectible_type));
+                // Despawn the entity immediately
+                commands.entity(entity).despawn();
+                // Trigger blockchain event
+                pickup_events.write(PickupItemEvent {
+                    item_type: *collectible_type,
+                    item_entity: entity,
+                });
+            }
         }
+    }
+}
+
+/// System to handle pressing E near a Book
+fn handle_interactions(
+    mut commands: Commands,
+    player_query: Query<&Transform, With<CharacterController>>,
+    interactable_query: Query<
+        (Entity, &Transform, &Interactable, &CollectibleType),
+        Without<Collected>,
+    >,
+    mut pickup_events: EventWriter<PickupItemEvent>,
+    mut interaction_events: EventReader<InteractionEvent>,
+    mut next_state: ResMut<NextState<Screen>>,
+) {
+    let Ok(player_transform) = player_query.single() else { return; };
+    let mut interacted = false;
+    for _ in interaction_events.read() {
+        for (entity, transform, interactable, collectible_type) in interactable_query.iter() {
+            let distance = player_transform.translation.distance(transform.translation);
+            if distance <= interactable.interaction_radius && *collectible_type == CollectibleType::Book {
+                // Mark as collected
+                commands.entity(entity).insert(Collected);
+                // Insert NextItemToAdd so inventory system will add it
+                commands.insert_resource(NextItemToAdd(*collectible_type));
+                // Despawn the entity immediately
+                commands.entity(entity).despawn();
+                // Trigger blockchain event
+                pickup_events.write(PickupItemEvent {
+                    item_type: *collectible_type,
+                    item_entity: entity,
+                });
+                // Transition to fight scene
+                next_state.set(Screen::FightScene);
+                interacted = true;
+                break;
+            }
+        }
+        if interacted { break; }
     }
 }
 
