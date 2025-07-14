@@ -2,6 +2,14 @@
 version = 1
 
 [[package]]
+name = "achievement"
+version = "0.0.0"
+source = "git+https://github.com/cartridge-gg/arcade?rev=bf2f7ac36430e698a5f3da732188238534374cfb#bf2f7ac36430e698a5f3da732188238534374cfb"
+dependencies = [
+ "dojo",
+]
+
+[[package]]
 name = "alexandria_bytes"
 version = "0.3.0"
 source = "git+https://github.com/keep-starknet-strange/alexandria.git?tag=v0.3.0#e3715428c990665afc495b5428ef08ab9a2089cd"
@@ -86,6 +94,7 @@ source = "git+https://github.com/dojoengine/dojo?tag=v1.6.0-alpha.2#184a4e836826
 name = "elysium_descent"
 version = "0.0.1"
 dependencies = [
+ "achievement",
  "death_mountain",
  "dojo",
  "dojo_cairo_test",

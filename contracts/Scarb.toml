@@ -8,6 +8,7 @@ edition = "2024_07"
 sierra-replace-ids = true
 
 [dependencies]
+achievement = { git = "https://github.com/cartridge-gg/arcade", rev = "bf2f7ac36430e698a5f3da732188238534374cfb" }
 death_mountain = { git = "https://github.com/okhaimie-dev/death-mountain.git" }
 dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.6.0-alpha.2" }
 openzeppelin_token = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v1.0.0" }
@@ -22,6 +23,8 @@ cairo_test = "2.10.1"
 [[target.starknet-contract]]
 build-external-contracts = [
     "dojo::world::world_contract::world",
+    "achievement::events::index::e_TrophyCreation",
+    "achievement::events::index::e_TrophyProgression",
     "tournaments::components::models::game::m_GameMetadata",
     "tournaments::components::models::game::m_TokenMetadata",
     "tournaments::components::models::game::m_GameCounter",
