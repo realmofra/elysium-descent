@@ -2289,6 +2289,7 @@ dependencies = [
  "bevy_kira_audio",
  "bevy_lunex",
  "dojo_bevy_plugin",
+ "futures-lite",
  "log",
  "once_cell",
  "starknet 0.16.0",

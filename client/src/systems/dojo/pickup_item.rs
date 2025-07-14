@@ -2,8 +2,11 @@ use crate::constants::dojo::PICKUP_ITEM_SELECTOR;
 use crate::screens::Screen;
 use crate::systems::collectibles::CollectibleType;
 use bevy::prelude::*;
-use dojo_bevy_plugin::{DojoEntityUpdated, DojoResource, TokioRuntime};
+use dojo_bevy_plugin::{DojoEntityUpdated, DojoResource};
 use starknet::core::types::Call;
+use bevy::tasks::{AsyncComputeTaskPool, Task};
+use futures_lite::future;
+use starknet::accounts::Account;
 
 /// Event to trigger item pickup on the blockchain
 #[derive(Event, Debug)]
@@ -33,15 +36,20 @@ pub struct PickupTransactionState {
     pub pending_pickups: Vec<(Entity, CollectibleType)>,
 }
 
+#[derive(Resource, Default)]
+pub struct PendingPickupTasks(pub Vec<Task<Result<(Entity, CollectibleType, String), (Entity, CollectibleType, String)>>>);
+
 pub(super) fn plugin(app: &mut App) {
     app.add_event::<PickupItemEvent>()
         .add_event::<ItemPickedUpEvent>()
         .add_event::<ItemPickupFailedEvent>()
         .init_resource::<PickupTransactionState>()
+        .init_resource::<PendingPickupTasks>()
         .add_systems(
             Update,
             (
                 handle_pickup_item_events,
+                poll_pickup_tasks,
                 handle_item_picked_up_events,
                 handle_item_pickup_failed_events,
                 handle_pickup_entity_updates,
@@ -53,56 +61,33 @@ pub(super) fn plugin(app: &mut App) {
 /// System to handle PickupItemEvent and call the blockchain
 fn handle_pickup_item_events(
     mut events: EventReader<PickupItemEvent>,
-    mut dojo: ResMut<DojoResource>,
-    tokio: Res<TokioRuntime>,
+    dojo: Res<DojoResource>,
     dojo_config: Res<super::DojoSystemState>,
-    mut pickup_state: ResMut<PickupTransactionState>,
-    _game_state: Res<super::create_game::GameState>,
-    mut item_picked_up_events: EventWriter<ItemPickedUpEvent>,
+    mut pending_tasks: ResMut<PendingPickupTasks>,
 ) {
+    let thread_pool = AsyncComputeTaskPool::get();
+    let account = dojo.sn.account.clone();
     for event in events.read() {
-        info!(
-            "Picking up {:?} item on blockchain (contract uses caller address for identification)",
-            event.item_type
-        );
-
-        // Create the contract call for pickup_item function
-        // pickup_item() - takes no parameters according to contract interface
         let call = Call {
             to: dojo_config.config.action_address,
             selector: PICKUP_ITEM_SELECTOR,
-            calldata: vec![], // No parameters required
+            calldata: vec![],
         };
-
-        // Queue the call to the blockchain
-        dojo.queue_tx(&tokio, vec![call]);
-
-        // Track this pickup transaction
-        pickup_state
-            .pending_pickups
-            .push((event.item_entity, event.item_type));
-
-        info!(
-            "Pickup item call queued successfully for {:?}",
-            event.item_type
-        );
-
-        // Since the contract currently always returns true and has no real logic,
-        // we can immediately trigger the success event to remove the item
-        // In a real implementation, this would wait for actual blockchain confirmation
-        info!("⚡ Fast-tracking item removal since contract is stubbed (always returns true)");
-
-        // Immediately trigger successful pickup to remove item from world
-        item_picked_up_events.write(ItemPickedUpEvent {
-            item_type: event.item_type,
-            item_entity: event.item_entity,
-            transaction_hash: "0x123456789abcdef".to_string(), // Mock transaction hash
+        let entity = event.item_entity;
+        let item_type = event.item_type;
+        let account = account.clone();
+        let task = thread_pool.spawn(async move {
+            if let Some(account) = account {
+                let tx = account.execute_v3(vec![call]);
+                match tx.send().await {
+                    Ok(result) => Ok((entity, item_type, format!("{:#x}", result.transaction_hash))),
+                    Err(e) => Err((entity, item_type, format!("{:?}", e))),
+                }
+            } else {
+                Err((entity, item_type, "No account available".to_string()))
+            }
         });
-
-        warn!(
-            "🚀 Item pickup success event triggered for {:?}",
-            event.item_type
-        );
+        pending_tasks.0.push(task);
     }
 }
 
@@ -185,4 +170,34 @@ fn handle_pickup_entity_updates(
             }
         }
     }
+}
+
+// Poll background tasks and emit events when done
+fn poll_pickup_tasks(
+    mut pending_tasks: ResMut<PendingPickupTasks>,
+    mut item_picked_up_events: EventWriter<ItemPickedUpEvent>,
+    mut item_pickup_failed_events: EventWriter<ItemPickupFailedEvent>,
+) {
+    pending_tasks.0.retain_mut(|task| {
+        if let Some(result) = future::block_on(future::poll_once(task)) {
+            match result {
+                Ok((entity, item_type, tx_hash)) => {
+                    item_picked_up_events.write(ItemPickedUpEvent {
+                        item_type,
+                        item_entity: entity,
+                        transaction_hash: tx_hash,
+                    });
+                }
+                Err((entity, item_type, err)) => {
+                    item_pickup_failed_events.write(ItemPickupFailedEvent {
+                        item_type,
+                        error: err,
+                    });
+                }
+            }
+            false // Remove finished task
+        } else {
+            true // Keep unfinished task
+        }
+    });
 }
