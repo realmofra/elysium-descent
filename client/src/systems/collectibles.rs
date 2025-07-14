@@ -3,8 +3,8 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 
 use crate::screens::Screen;
+use crate::systems::character_controller::CharacterController;
 use crate::systems::dojo::PickupItemEvent;
-use crate::{systems::character_controller::CharacterController};
 
 // ===== COMPONENTS & RESOURCES =====
 
@@ -65,8 +65,7 @@ pub struct CollectiblesPlugin;
 
 impl Plugin for CollectiblesPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_event::<InteractionEvent>()
+        app.add_event::<InteractionEvent>()
             .insert_resource(crate::ui::inventory::InventoryVisibilityState::default())
             .add_systems(
                 Update,
@@ -78,7 +77,7 @@ impl Plugin for CollectiblesPlugin {
                     crate::ui::inventory::add_item_to_inventory,
                     crate::ui::inventory::toggle_inventory_visibility,
                 )
-                .run_if(in_state(Screen::GamePlay)),
+                    .run_if(in_state(Screen::GamePlay)),
             );
     }
 }
@@ -118,7 +117,9 @@ pub fn spawn_collectible(
         },
         Sensor,
         scene_marker.clone(),
-        Interactable { interaction_radius: 4.0 },
+        Interactable {
+            interaction_radius: 4.0,
+        },
     ));
 
     if let Some(rotation) = config.rotation {
@@ -136,7 +137,9 @@ fn auto_collect_nearby_interactables(
     >,
     mut pickup_events: EventWriter<PickupItemEvent>,
 ) {
-    let Ok(player_transform) = player_query.single() else { return; };
+    let Ok(player_transform) = player_query.single() else {
+        return;
+    };
 
     for (entity, transform, interactable, collectible_type) in interactable_query.iter() {
         let distance = player_transform.translation.distance(transform.translation);
@@ -170,12 +173,16 @@ fn handle_interactions(
     mut interaction_events: EventReader<InteractionEvent>,
     mut next_state: ResMut<NextState<Screen>>,
 ) {
-    let Ok(player_transform) = player_query.single() else { return; };
+    let Ok(player_transform) = player_query.single() else {
+        return;
+    };
     let mut interacted = false;
     for _ in interaction_events.read() {
         for (entity, transform, interactable, collectible_type) in interactable_query.iter() {
             let distance = player_transform.translation.distance(transform.translation);
-            if distance <= interactable.interaction_radius && *collectible_type == CollectibleType::Book {
+            if distance <= interactable.interaction_radius
+                && *collectible_type == CollectibleType::Book
+            {
                 // Mark as collected
                 commands.entity(entity).insert(Collected);
                 // Insert NextItemToAdd so inventory system will add it
@@ -193,7 +200,9 @@ fn handle_interactions(
                 break;
             }
         }
-        if interacted { break; }
+        if interacted {
+            break;
+        }
     }
 }
 

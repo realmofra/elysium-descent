@@ -2,12 +2,12 @@ use crate::constants::dojo::PICKUP_ITEM_SELECTOR;
 use crate::screens::Screen;
 use crate::systems::collectibles::CollectibleType;
 use bevy::prelude::*;
-use dojo_bevy_plugin::{DojoEntityUpdated, DojoResource};
-use starknet::core::types::Call;
-use starknet::accounts::Account;
-use tokio::task::JoinHandle;
-use futures::FutureExt;
 use dojo_bevy_plugin::TokioRuntime;
+use dojo_bevy_plugin::{DojoEntityUpdated, DojoResource};
+use futures::FutureExt;
+use starknet::accounts::Account;
+use starknet::core::types::Call;
+use tokio::task::JoinHandle;
 
 /// Event to trigger item pickup on the blockchain
 #[derive(Event, Debug)]
@@ -37,7 +37,11 @@ pub struct PickupTransactionState {
 }
 
 #[derive(Resource, Default)]
-pub struct PendingPickupTasks(pub Vec<JoinHandle<Result<(Entity, CollectibleType, String), (Entity, CollectibleType, String)>>>);
+pub struct PendingPickupTasks(
+    pub  Vec<
+        JoinHandle<Result<(Entity, CollectibleType, String), (Entity, CollectibleType, String)>>,
+    >,
+);
 
 pub(super) fn plugin(app: &mut App) {
     app.add_event::<PickupItemEvent>()
@@ -80,7 +84,9 @@ fn handle_pickup_item_events(
             if let Some(account) = account {
                 let tx = account.execute_v3(vec![call]);
                 match tx.send().await {
-                    Ok(result) => Ok((entity, item_type, format!("{:#x}", result.transaction_hash))),
+                    Ok(result) => {
+                        Ok((entity, item_type, format!("{:#x}", result.transaction_hash)))
+                    }
                     Err(e) => Err((entity, item_type, format!("{:?}", e))),
                 }
             } else {
@@ -170,7 +176,10 @@ fn poll_pickup_tasks(
             match result {
                 Ok(Ok((entity, item_type, tx_hash))) => {
                     let _entity = entity;
-                    info!("Blockchain pickup tx completed: {} for {:?}", tx_hash, item_type);
+                    info!(
+                        "Blockchain pickup tx completed: {} for {:?}",
+                        tx_hash, item_type
+                    );
                     item_picked_up_events.write(ItemPickedUpEvent {
                         item_type,
                         transaction_hash: tx_hash,

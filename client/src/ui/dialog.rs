@@ -111,9 +111,7 @@ pub fn check_dialog_proximity(
             &crate::systems::collectibles::Interactable,
             &crate::systems::collectibles::CollectibleType,
         ),
-        (
-            Without<crate::systems::character_controller::CharacterController>,
-        ),
+        (Without<crate::systems::character_controller::CharacterController>,),
     >,
     mut dialog_query: Query<&mut Visibility, With<Dialog>>,
 ) {
