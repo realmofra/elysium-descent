@@ -36,7 +36,7 @@ jobs:
           tar -xzf dojo-linux-x86_64.tar.gz
           sudo mv sozo /usr/local/bin/
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup Scarb
         uses: software-mansion/setup-scarb@v1
         with:
