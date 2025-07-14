@@ -35,6 +35,7 @@ jobs:
           sweep-cache: true
 
       - name: Run tests
+        working-directory: ./client
         run: |
           cargo test --locked --workspace --all-features --all-targets
           # Workaround for https://github.com/rust-lang/cargo/issues/6669
@@ -63,6 +64,7 @@ jobs:
           sweep-cache: true
 
       - name: Run clippy lints
+        working-directory: ./client
         run: cargo clippy --locked --workspace --all-targets --all-features -- --deny warnings
 
   # Check formatting.
@@ -80,6 +82,7 @@ jobs:
           components: rustfmt
 
       - name: Run cargo fmt
+        working-directory: ./client
         run: cargo fmt --all -- --check
 
   # Check for typos.
