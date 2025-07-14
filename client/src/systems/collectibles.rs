@@ -289,7 +289,6 @@ fn detect_nearby_interactables(
 fn handle_interactions(
     mut interaction_events: EventReader<InteractionEvent>,
     mut commands: Commands,
-    mut collectible_counter: ResMut<CollectibleCounter>,
     nearby_interactable: Res<NearbyInteractable>,
     interactable_query: Query<(&CollectibleType, &Collectible), (With<Interactable>, Without<Collected>)>,
     mut prompt_events: EventWriter<InteractionPromptEvent>,
