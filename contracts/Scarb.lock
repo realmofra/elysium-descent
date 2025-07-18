@@ -100,7 +100,6 @@ dependencies = [
  "dojo_cairo_test",
  "openzeppelin_introspection",
  "openzeppelin_token",
- "tournaments",
 ]
 
 [[package]]

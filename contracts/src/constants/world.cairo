@@ -5,5 +5,3 @@ pub fn DEFAULT_NS() -> ByteArray {
 pub fn SETTINGS_MODEL() -> ByteArray {
     "GameSettings"
 }
-
-pub mod DEFAULT_SETTINGS {}

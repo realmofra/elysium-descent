@@ -14,7 +14,7 @@ dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.6.0" }
 openzeppelin_token = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v1.0.0" }
 openzeppelin_introspection = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v1.0.0" }
 starknet = "2.10.1"
-tournaments = { git = "https://github.com/okhaimie-dev/tournaments.git", rev = "f7b6897" }
+# tournaments = { git = "https://github.com/okhaimie-dev/tournaments.git", rev = "f7b6897" }
 
 [dev-dependencies]
 dojo_cairo_test = { git = "https://github.com/dojoengine/dojo", tag = "v1.6.0" }

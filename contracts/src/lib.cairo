@@ -1,9 +1,17 @@
 pub mod systems {
     pub mod actions;
+    pub mod elysium_descent;
 }
 
 pub mod models {
     pub mod index;
+    pub mod loot;
+    pub mod game;
+    pub mod game_counter;
+}
+
+pub mod components {
+    pub mod countable;
 }
 
 pub mod constants {
@@ -14,6 +22,7 @@ pub mod utils {
     pub mod trophies;
     pub mod tasks;
     pub mod achievements;
+    pub mod store;
 }
 
 #[cfg(test)]

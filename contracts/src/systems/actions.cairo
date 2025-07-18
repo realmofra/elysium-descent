@@ -37,14 +37,14 @@ pub mod actions {
             // Get or initialize the game counter
             let mut counter: GameCounter = world.read_model(GAME_COUNTER_ID);
 
-            // Always ensure the counter_id is set correctly (for new instances)
-            if counter.next_game_id == 0 {
-                counter.counter_id = GAME_COUNTER_ID; // ✅ CRITICAL: Set the key field!
-                counter.next_game_id = 1; // Initialize if first game
+            // Always ensure the id is set correctly (for new instances)
+            if counter.count == 0 {
+                counter.id = GAME_COUNTER_ID; // ✅ CRITICAL: Set the key field!
+                counter.count = 1; // Initialize if first game
             }
 
-            let game_id = counter.next_game_id;
-            counter.next_game_id += 1;
+            let game_id = counter.count;
+            counter.count += 1;
 
             // Save updated counter
             world.write_model(@counter);

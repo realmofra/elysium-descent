@@ -49,8 +49,8 @@ pub struct PlayerStats {
 #[dojo::model]
 pub struct GameCounter {
     #[key]
-    pub counter_id: u32, // Use constant GAME_COUNTER_ID
-    pub next_game_id: u32,
+    pub id: u32,
+    pub count: u128,
 }
 
 // Constants for special identifiers
@@ -115,4 +115,3 @@ pub struct WorldItem {
     pub is_collected: bool,
     pub level: u32,
 }
-
