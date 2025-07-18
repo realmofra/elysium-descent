@@ -8,6 +8,6 @@ pub impl Collector of TaskTrait {
 
     #[inline]
     fn description(count: u32) -> ByteArray {
-        format!("Collect {} gold coins", count),
+        format!("Collect {} gold coins", count)
     }
 }

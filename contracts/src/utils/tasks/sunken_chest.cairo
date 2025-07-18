@@ -8,6 +8,6 @@ pub impl LootSunkenChest of TaskTrait {
 
     #[inline]
     fn description(count: u32) -> ByteArray {
-        format!("Open {} sunken chest", count),
+        format!("Open {} sunken chest", count)
     }
 }

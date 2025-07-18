@@ -8,6 +8,6 @@ pub impl SpeakWithFisherman of TaskTrait {
 
     #[inline]
     fn description(count: u32) -> ByteArray {
-        "Speak with the fisherman",
+        "Speak with the fisherman"
     }
 }

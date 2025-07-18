@@ -8,6 +8,6 @@ pub impl DefeatWreckGuardian of TaskTrait {
 
     #[inline]
     fn description(count: u32) -> ByteArray {
-        format!("Defeat {} wreck guardian", count),
+        format!("Defeat {} wreck guardian", count)
     }
 }
