@@ -1,23 +1,23 @@
 #[starknet::component]
-mod CountableComponent {
+pub mod CountableComponent {
     // Dojo imports
     use dojo::world::WorldStorage;
 
     // Internal imports
     use elysium_descent::utils::store::{Store, StoreTrait};
-    use elysium_descent::models::game_counter::GameCounterTrait;
+    use elysium_descent::models::game_counter::{GameCounter, GameCounterTrait};
 
     // Storage
     #[storage]
-    struct Storage {}
+    pub struct Storage {}
 
     // Events
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {}
+    pub enum Event {}
 
     #[generate_trait]
-    impl InternalImpl<TState, +HasComponent<TState>> of InternalTrait<TState> {
+    pub impl InternalImpl<TState, +HasComponent<TState>> of InternalTrait<TState> {
         /// Initializes the game counter
         ///
         /// # Arguments
@@ -29,12 +29,12 @@ mod CountableComponent {
         fn initialize(self: @ComponentState<TState>, world: WorldStorage) {
             // [Effect] Initialize component
             let mut store: Store = StoreTrait::new(world);
-            let current_game_counter = store.get_game_counter(1);
+            let current_game_counter: GameCounter = store.get_game_counter(1);
 
             assert(current_game_counter.count == 0, 'Counter already initialized');
 
             // [Effect] Create GameCounter
-            let mut game_counter = GameCounterTrait::new();
+            let mut game_counter: GameCounter = GameCounterTrait::new();
 
             // [Effect] GameCounter increment
             game_counter.increment();
