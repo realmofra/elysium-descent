@@ -61,9 +61,9 @@ pub impl LootSunkenChest of TrophyTrait {
     #[inline]
     fn tasks(level: u8) -> Span<BushidoTask> {
         let count: u32 = match level {
-            0 => 30,
-            1 => 100,
-            2 => 1000,
+            0 => 2,
+            1 => 10,
+            2 => 100,
             _ => 0,
         };
         Task::LootSunkenChest.tasks(count)

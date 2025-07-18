@@ -11,7 +11,6 @@ pub enum Task {
     Collector,
     DefeatWreckGuardian,
     LootSunkenChest,
-    SpeakWithFisherman,
 }
 
 // Implementations
@@ -24,7 +23,6 @@ pub impl TaskImpl of TaskTrait {
             Task::Collector => tasks::collector::Collector::identifier(),
             Task::DefeatWreckGuardian => tasks::wreck_guardian::DefeatWreckGuardian::identifier(),
             Task::LootSunkenChest => tasks::sunken_chest::LootSunkenChest::identifier(),
-            Task::SpeakWithFisherman => tasks::fisherman::SpeakWithFisherman::identifier(),
         }
     }
 
@@ -37,7 +35,6 @@ pub impl TaskImpl of TaskTrait {
                 count,
             ),
             Task::LootSunkenChest => tasks::sunken_chest::LootSunkenChest::description(count),
-            Task::SpeakWithFisherman => tasks::fisherman::SpeakWithFisherman::description(count),
         }
     }
 
@@ -57,7 +54,6 @@ impl IntoTaskU8 of core::traits::Into<Task, u8> {
             Task::Collector => 1,
             Task::DefeatWreckGuardian => 2,
             Task::LootSunkenChest => 3,
-            Task::SpeakWithFisherman => 4,
         }
     }
 }
@@ -71,7 +67,6 @@ impl IntoU8Task of core::traits::Into<u8, Task> {
             1 => Task::Collector,
             2 => Task::DefeatWreckGuardian,
             3 => Task::LootSunkenChest,
-            4 => Task::SpeakWithFisherman,
             _ => Task::None,
         }
     }

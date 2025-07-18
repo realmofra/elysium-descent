@@ -6,7 +6,7 @@ pub impl Collector of TrophyTrait {
     #[inline]
     fn identifier(level: u8) -> felt252 {
         match level {
-            0 => 'CollectorI',
+            0 => 'Collector_I',
             1 => 'Collector_II',
             2 => 'Collector_III',
             _ => '',
@@ -61,7 +61,7 @@ pub impl Collector of TrophyTrait {
     #[inline]
     fn tasks(level: u8) -> Span<BushidoTask> {
         let count: u32 = match level {
-            0 => 30,
+            0 => 10,
             1 => 100,
             2 => 1000,
             _ => 0,

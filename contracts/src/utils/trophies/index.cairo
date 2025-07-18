@@ -1,7 +1,7 @@
 use achievement::types::task::Task as BushidoTask;
 use elysium_descent::utils::trophies;
 
-pub const TROPHY_COUNT: u8 = 12;
+pub const TROPHY_COUNT: u8 = 9;
 
 #[derive(Copy, Drop)]
 enum Trophy {
@@ -15,9 +15,6 @@ enum Trophy {
     WreckedGuardI,
     WreckedGuardII,
     WreckedGuardIII,
-    FishermanI,
-    FishermanII,
-    FishermanIII,
 }
 
 #[generate_trait]
@@ -35,9 +32,6 @@ impl TrophyImpl of TrophyTrait {
             Trophy::WreckedGuardI => trophies::wreck_guardian::DefeatWreckGuardian::identifier(0),
             Trophy::WreckedGuardII => trophies::wreck_guardian::DefeatWreckGuardian::identifier(1),
             Trophy::WreckedGuardIII => trophies::wreck_guardian::DefeatWreckGuardian::identifier(2),
-            Trophy::FishermanI => trophies::fisherman::SpeakWithFisherman::identifier(0),
-            Trophy::FishermanII => trophies::fisherman::SpeakWithFisherman::identifier(1),
-            Trophy::FishermanIII => trophies::fisherman::SpeakWithFisherman::identifier(2),
         }
     }
 
@@ -54,9 +48,6 @@ impl TrophyImpl of TrophyTrait {
             Trophy::WreckedGuardI => trophies::wreck_guardian::DefeatWreckGuardian::hidden(2),
             Trophy::WreckedGuardII => trophies::wreck_guardian::DefeatWreckGuardian::hidden(0),
             Trophy::WreckedGuardIII => trophies::wreck_guardian::DefeatWreckGuardian::hidden(1),
-            Trophy::FishermanI => trophies::fisherman::SpeakWithFisherman::hidden(2),
-            Trophy::FishermanII => trophies::fisherman::SpeakWithFisherman::hidden(0),
-            Trophy::FishermanIII => trophies::fisherman::SpeakWithFisherman::hidden(0),
         }
     }
 
@@ -73,9 +64,6 @@ impl TrophyImpl of TrophyTrait {
             Trophy::WreckedGuardI => trophies::wreck_guardian::DefeatWreckGuardian::index(2),
             Trophy::WreckedGuardII => trophies::wreck_guardian::DefeatWreckGuardian::index(0),
             Trophy::WreckedGuardIII => trophies::wreck_guardian::DefeatWreckGuardian::index(1),
-            Trophy::FishermanI => trophies::fisherman::SpeakWithFisherman::index(2),
-            Trophy::FishermanII => trophies::fisherman::SpeakWithFisherman::index(1),
-            Trophy::FishermanIII => trophies::fisherman::SpeakWithFisherman::index(0),
         }
     }
 
@@ -92,9 +80,6 @@ impl TrophyImpl of TrophyTrait {
             Trophy::WreckedGuardI => trophies::wreck_guardian::DefeatWreckGuardian::points(0),
             Trophy::WreckedGuardII => trophies::wreck_guardian::DefeatWreckGuardian::points(1),
             Trophy::WreckedGuardIII => trophies::wreck_guardian::DefeatWreckGuardian::points(2),
-            Trophy::FishermanI => trophies::fisherman::SpeakWithFisherman::points(0),
-            Trophy::FishermanII => trophies::fisherman::SpeakWithFisherman::points(1),
-            Trophy::FishermanIII => trophies::fisherman::SpeakWithFisherman::points(2),
         }
     }
 
@@ -111,9 +96,6 @@ impl TrophyImpl of TrophyTrait {
             Trophy::WreckedGuardI => trophies::wreck_guardian::DefeatWreckGuardian::group(),
             Trophy::WreckedGuardII => trophies::wreck_guardian::DefeatWreckGuardian::group(),
             Trophy::WreckedGuardIII => trophies::wreck_guardian::DefeatWreckGuardian::group(),
-            Trophy::FishermanI => trophies::fisherman::SpeakWithFisherman::group(),
-            Trophy::FishermanII => trophies::fisherman::SpeakWithFisherman::group(),
-            Trophy::FishermanIII => trophies::fisherman::SpeakWithFisherman::group(),
         }
     }
 
@@ -130,9 +112,6 @@ impl TrophyImpl of TrophyTrait {
             Trophy::WreckedGuardI => trophies::wreck_guardian::DefeatWreckGuardian::icon(0),
             Trophy::WreckedGuardII => trophies::wreck_guardian::DefeatWreckGuardian::icon(1),
             Trophy::WreckedGuardIII => trophies::wreck_guardian::DefeatWreckGuardian::icon(2),
-            Trophy::FishermanI => trophies::fisherman::SpeakWithFisherman::icon(0),
-            Trophy::FishermanII => trophies::fisherman::SpeakWithFisherman::icon(1),
-            Trophy::FishermanIII => trophies::fisherman::SpeakWithFisherman::icon(2),
         }
     }
 
@@ -149,9 +128,6 @@ impl TrophyImpl of TrophyTrait {
             Trophy::WreckedGuardI => trophies::wreck_guardian::DefeatWreckGuardian::title(0),
             Trophy::WreckedGuardII => trophies::wreck_guardian::DefeatWreckGuardian::title(1),
             Trophy::WreckedGuardIII => trophies::wreck_guardian::DefeatWreckGuardian::title(2),
-            Trophy::FishermanI => trophies::fisherman::SpeakWithFisherman::title(0),
-            Trophy::FishermanII => trophies::fisherman::SpeakWithFisherman::title(1),
-            Trophy::FishermanIII => trophies::fisherman::SpeakWithFisherman::title(2),
         }
     }
 
@@ -170,9 +146,6 @@ impl TrophyImpl of TrophyTrait {
             Trophy::WreckedGuardIII => trophies::wreck_guardian::DefeatWreckGuardian::description(
                 2,
             ),
-            Trophy::FishermanI => trophies::fisherman::SpeakWithFisherman::description(0),
-            Trophy::FishermanII => trophies::fisherman::SpeakWithFisherman::description(1),
-            Trophy::FishermanIII => trophies::fisherman::SpeakWithFisherman::description(2),
         }
     }
 
@@ -189,9 +162,6 @@ impl TrophyImpl of TrophyTrait {
             Trophy::WreckedGuardI => trophies::wreck_guardian::DefeatWreckGuardian::tasks(0),
             Trophy::WreckedGuardII => trophies::wreck_guardian::DefeatWreckGuardian::tasks(1),
             Trophy::WreckedGuardIII => trophies::wreck_guardian::DefeatWreckGuardian::tasks(2),
-            Trophy::FishermanI => trophies::fisherman::SpeakWithFisherman::tasks(0),
-            Trophy::FishermanII => trophies::fisherman::SpeakWithFisherman::tasks(1),
-            Trophy::FishermanIII => trophies::fisherman::SpeakWithFisherman::tasks(2),
         }
     }
 
@@ -215,9 +185,6 @@ impl IntoTrophyU8 of core::traits::Into<Trophy, u8> {
             Trophy::WreckedGuardI => 7,
             Trophy::WreckedGuardII => 8,
             Trophy::WreckedGuardIII => 9,
-            Trophy::FishermanI => 10,
-            Trophy::FishermanII => 11,
-            Trophy::FishermanIII => 12,
         }
     }
 }
@@ -237,9 +204,6 @@ impl IntoU8Trophy of core::traits::Into<u8, Trophy> {
             7 => Trophy::WreckedGuardI,
             8 => Trophy::WreckedGuardII,
             9 => Trophy::WreckedGuardIII,
-            10 => Trophy::FishermanI,
-            11 => Trophy::FishermanII,
-            12 => Trophy::FishermanIII,
             _ => Trophy::None,
         }
     }
