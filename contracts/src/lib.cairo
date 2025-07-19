@@ -6,7 +6,7 @@ pub mod systems {
 pub mod models {
     pub mod index;
     //pub mod loot;
-    //pub mod game;
+    pub mod game;
     pub mod game_counter;
 }
 

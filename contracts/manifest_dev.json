@@ -1329,7 +1329,7 @@
   "contracts": [
     {
       "address": "0x29081381a736798bf1fd59116a390d0359f9cf957fd8623e0593edd61a931e2",
-      "class_hash": "0x7bb7071f7d5d599f4fbf6a3a4f8fb468d819119fa35b25a392d74e762f854f1",
+      "class_hash": "0x6464da517dd5dcbb90f15a2a19ad053aa9b09797e976b563f105549923a43af",
       "abi": [
         {
           "type": "impl",
@@ -1595,6 +1595,12 @@
   ],
   "libraries": [],
   "models": [
+    {
+      "members": [],
+      "class_hash": "0x2c491aa9ebfd8df21a8110105fd1534b8f163b34bd285327d50ac9ff18f0b0b",
+      "tag": "elysium_001-EGame",
+      "selector": "0x1c16f45b4c2c32b7229a1e252789c2121cef0e2c94c74a9c842d30c9bfb0090"
+    },
     {
       "members": [],
       "class_hash": "0x2f829147dc06dcdd24c86e1fe4b597ac4de419d6681b8d81b14788d68036bc8",

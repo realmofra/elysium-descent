@@ -13,9 +13,11 @@ mod game {
     use elysium_descent::constants::world::{DEFAULT_NS};
     use elysium_descent::utils::store::{Store, StoreTrait};
     use elysium_descent::models::game_counter::{GameCounter, GameCounterTrait};
+    use elysium_descent::models::game::{EGame, ImplGame};
     use dojo::event::EventStorage;
     use dojo::model::{Model, ModelStorage, ModelValueStorage};
     use dojo::world::{WorldStorage, WorldStorageTrait};
+    use death_mountain::models::adventurer::adventurer::Adventurer;
 
     component!(path: CountableComponent, storage: countable, event: CountableEvent);
     impl CountableImpl = CountableComponent::InternalImpl<ContractState>;
@@ -42,7 +44,9 @@ mod game {
         fn start_game(ref self: ContractState) {
             let world = self.world_storage();
             let mut store: Store = StoreTrait::new(world);
-            let mut game_id = store.get_game_counter(1);
+            let mut game_id: GameCounter = store.get_game_counter(1);
+
+            ImplGame::new(game_id.count);
 
             // Initialize game ID
             game_id.increment();

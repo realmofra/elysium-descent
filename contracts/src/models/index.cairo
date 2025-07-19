@@ -1,4 +1,5 @@
 use starknet::ContractAddress;
+use death_mountain::models::adventurer::adventurer::Adventurer;
 
 // Game management models
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
@@ -114,4 +115,21 @@ pub struct WorldItem {
     pub y_position: u32,
     pub is_collected: bool,
     pub level: u32,
+}
+
+// Player stats
+#[derive(Copy, Drop, Serde)]
+#[dojo::model]
+pub struct EGame {
+    #[key]
+    pub game_id: u128,
+    pub player: ContractAddress,
+    pub adventurer: Adventurer,
+}
+
+#[dojo::model]
+#[derive(Copy, Drop, Serde)]
+pub struct Loot {
+    #[key]
+    pub loot_id: u128,
 }
