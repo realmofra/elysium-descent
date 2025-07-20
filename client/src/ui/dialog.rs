@@ -42,8 +42,8 @@ impl Default for DialogConfig {
 // ===== DIALOG SYSTEMS =====
 
 pub fn spawn_dialog(
-    mut commands: Commands,
-    font_assets: Res<FontAssets>,
+    commands: &mut Commands,
+    font_assets: &Res<FontAssets>,
     windows: Query<&Window>,
     config: DialogConfig,
     scene_marker: impl Component + Clone,
@@ -120,11 +120,11 @@ pub fn check_dialog_proximity(
     };
 
     let mut near_target = false;
-    let hide_distance = 5.0; // Reduced distance for book proximity
+    let hide_distance = 5.0; // Reduced distance for mystery box proximity
 
-    // Check if player is near any Book
+    // Check if player is near any MysteryBox
     for (_, target_transform, _interactable, collectible_type) in target_query.iter() {
-        if *collectible_type == crate::systems::collectibles::CollectibleType::Book {
+        if *collectible_type == crate::systems::collectibles::CollectibleType::MysteryBox {
             let distance = player_transform
                 .translation
                 .distance(target_transform.translation);
@@ -146,19 +146,6 @@ pub fn check_dialog_proximity(
 }
 
 // ===== CONVENIENCE FUNCTIONS =====
-
-pub fn create_book_dialog() -> DialogConfig {
-    DialogConfig {
-        text: "Press E to enter".to_string(),
-        width: 40.0,
-        height: 14.0,
-        position: DialogPosition::BottomCenter { bottom_margin: 4.0 },
-        background_color: Color::srgba(0.1, 0.1, 0.2, 0.6),
-        border_color: Color::srgba(0.2, 0.2, 0.3, 0.8),
-        border_width: 2.0,
-        font_size_multiplier: 1.0,
-    }
-}
 
 // ===== DIALOG PLUGIN =====
 

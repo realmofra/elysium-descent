@@ -44,9 +44,6 @@ pub struct UiAssets {
     #[asset(path = "images/ui/components/chevron_right.png")]
     pub chevron_right: Handle<Image>,
 
-    #[asset(path = "images/collectibles/book.png")]
-    pub book: Handle<Image>,
-
     #[asset(path = "images/collectibles/coin.png")]
     pub coin: Handle<Image>,
 
@@ -83,11 +80,11 @@ pub struct FontAssets {
 // Model Assets (for future use)
 #[derive(AssetCollection, Resource)]
 pub struct ModelAssets {
-    #[asset(path = "models/book.glb#Scene0")]
-    pub book: Handle<Scene>,
-
     #[asset(path = "models/coin.glb#Scene0")]
     pub coin: Handle<Scene>,
+
+    #[asset(path = "models/mystery_box.glb#Scene0")]
+    pub mystery_box: Handle<Scene>,
 
     #[asset(path = "models/player.glb")]
     pub player: Handle<Gltf>,

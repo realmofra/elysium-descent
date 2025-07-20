@@ -30,8 +30,8 @@ pub struct FloatingItem {
 
 #[derive(Component, Clone, Copy, Debug, PartialEq)]
 pub enum CollectibleType {
-    Book,
     Coin,
+    MysteryBox,
 }
 
 #[derive(Resource)]
@@ -91,8 +91,8 @@ pub fn spawn_collectible(
     scene_marker: impl Component + Clone,
 ) {
     let model_handle = match config.collectible_type {
-        CollectibleType::Book => assets.book.clone(),
         CollectibleType::Coin => assets.coin.clone(),
+        CollectibleType::MysteryBox => assets.mystery_box.clone(),
     };
 
     let mut entity = commands.spawn((
@@ -161,7 +161,7 @@ fn auto_collect_nearby_interactables(
     }
 }
 
-/// System to handle pressing E near a Book
+/// System to handle pressing E near a MysteryBox
 fn handle_interactions(
     mut commands: Commands,
     player_query: Query<&Transform, With<CharacterController>>,
@@ -171,7 +171,6 @@ fn handle_interactions(
     >,
     mut pickup_events: EventWriter<PickupItemEvent>,
     mut interaction_events: EventReader<InteractionEvent>,
-    mut next_state: ResMut<NextState<Screen>>,
 ) {
     let Ok(player_transform) = player_query.single() else {
         return;
@@ -181,7 +180,7 @@ fn handle_interactions(
         for (entity, transform, interactable, collectible_type) in interactable_query.iter() {
             let distance = player_transform.translation.distance(transform.translation);
             if distance <= interactable.interaction_radius
-                && *collectible_type == CollectibleType::Book
+                && *collectible_type == CollectibleType::MysteryBox
             {
                 // Mark as collected
                 commands.entity(entity).insert(Collected);
@@ -194,8 +193,7 @@ fn handle_interactions(
                     item_type: *collectible_type,
                     item_entity: entity,
                 });
-                // Transition to fight scene
-                next_state.set(Screen::FightScene);
+                // Optionally, trigger a dialog or event here
                 interacted = true;
                 break;
             }
@@ -228,62 +226,4 @@ pub fn rotate_collectibles(
             transform.rotate_y(rotation_amount);
         }
     }
-}
-
-/// Resource to track current book being interacted with
-#[derive(Resource, Default)]
-pub struct CurrentBookEntity;
-
-/// Helper function to spawn an interactable book
-pub fn spawn_interactable_book(
-    commands: &mut Commands,
-    assets: &Res<ModelAssets>,
-    position: Vec3,
-    scale: f32,
-    scene_marker: impl Component + Clone,
-) {
-    let mut entity = commands.spawn((
-        Name::new("Interactable Book"),
-        SceneRoot(assets.book.clone()),
-        Transform {
-            translation: position,
-            scale: Vec3::splat(scale),
-            ..default()
-        },
-        scene_marker.clone(),
-    ));
-
-    // Add physics components - simple sphere collider to avoid character movement interference
-    entity.insert((Collider::sphere(0.5), RigidBody::Kinematic));
-
-    // Add visibility components
-    entity.insert((
-        Visibility::Visible,
-        InheritedVisibility::default(),
-        ViewVisibility::default(),
-    ));
-
-    // Add collectible components
-    entity.insert((
-        Collectible,
-        CollectibleType::Book,
-        FloatingItem {
-            base_height: position.y,
-            hover_amplitude: 0.2,
-            hover_speed: 2.0,
-        },
-        Sensor,
-    ));
-
-    // Add interaction components
-    entity.insert((
-        Interactable {
-            interaction_radius: 5.0,
-        },
-        CollectibleRotation {
-            enabled: true,
-            clockwise: true,
-            speed: 1.0,
-        },
-    ));
 }

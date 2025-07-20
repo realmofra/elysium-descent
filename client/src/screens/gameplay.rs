@@ -9,12 +9,13 @@ use crate::systems::character_controller::{
     CharacterController, CharacterControllerBundle, CharacterControllerPlugin, setup_idle_animation,
 };
 use crate::systems::collectibles::{
-    CollectibleType, CollectiblesPlugin, spawn_collectible, spawn_interactable_book,
+    CollectibleType, CollectiblesPlugin, spawn_collectible,
 };
 use crate::systems::collectibles_config::COLLECTIBLES;
-use crate::ui::dialog::{DialogPlugin, create_book_dialog, spawn_dialog};
+use crate::ui::dialog::{DialogPlugin, spawn_dialog, DialogConfig};
 use crate::ui::inventory::spawn_inventory_ui;
 use crate::ui::widgets::{HudPosition, player_hud_widget};
+use crate::ui::dialog::DialogPosition::BottomCenter;
 use bevy_enhanced_input::prelude::*;
 
 // ===== PLUGIN SETUP =====
@@ -25,7 +26,6 @@ pub(super) fn plugin(app: &mut App) {
         (
             PlayingScene::spawn_environment,
             set_gameplay_clear_color,
-            spawn_book_dialog,
         ),
     )
     .add_systems(
@@ -91,12 +91,6 @@ struct EnvironmentMarker;
 #[derive(Component)]
 struct GameplayHud;
 
-fn spawn_book_dialog(commands: Commands, font_assets: Res<FontAssets>, windows: Query<&Window>) {
-    let mut dialog_config = create_book_dialog();
-    dialog_config.height = 14.0; // Custom height for this usage
-    spawn_dialog(commands, font_assets, windows, dialog_config, PlayingScene);
-}
-
 fn spawn_player_hud(
     commands: &mut Commands,
     font_assets: &Res<FontAssets>,
@@ -130,6 +124,7 @@ impl PlayingScene {
         assets: Res<ModelAssets>,
         font_assets: Res<FontAssets>,
         ui_assets: Res<UiAssets>,
+        windows: Query<&Window>,
     ) {
         // Set up ambient light
         commands.insert_resource(AmbientLight {
@@ -196,18 +191,22 @@ impl PlayingScene {
         // Spawn collectibles using imported array
         for config in COLLECTIBLES.iter() {
             match config.collectible_type {
-                CollectibleType::Book => {
-                    // Use the special interactable book spawning function
-                    spawn_interactable_book(
-                        &mut commands,
-                        &assets,
-                        config.position,
-                        config.scale,
-                        PlayingScene,
-                    );
+                CollectibleType::MysteryBox => {
+                    spawn_collectible(&mut commands, &assets, config.clone(), PlayingScene);
+                    // Spawn dialog for MysteryBox
+                    let dialog_config = DialogConfig {
+                        text: "Press E to open".to_string(),
+                        width: 40.0,
+                        height: 14.0,
+                        position: BottomCenter { bottom_margin: 4.0 },
+                        background_color: Color::srgba(0.1, 0.1, 0.2, 0.6),
+                        border_color: Color::srgba(0.2, 0.2, 0.3, 0.8),
+                        border_width: 2.0,
+                        font_size_multiplier: 1.0,
+                    };
+                    spawn_dialog(&mut commands, &font_assets, windows, dialog_config, PlayingScene);
                 }
                 _ => {
-                    // Use normal collectible spawning for other items
                     spawn_collectible(&mut commands, &assets, config.clone(), PlayingScene);
                 }
             }

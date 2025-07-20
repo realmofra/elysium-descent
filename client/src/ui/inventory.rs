@@ -195,7 +195,7 @@ pub fn add_item_to_inventory(
                             ImageNode {
                                 image: match collectible_type.0 {
                                     CollectibleType::Coin => ui_assets.coin.clone(),
-                                    CollectibleType::Book => ui_assets.book.clone(),
+                                    CollectibleType::MysteryBox => ui_assets.coin.clone(), // Use coin image as placeholder, or add a mystery_box image if available
                                 },
                                 ..default()
                             },
