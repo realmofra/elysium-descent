@@ -5,6 +5,8 @@ use bevy::prelude::*;
 use crate::screens::Screen;
 use crate::systems::character_controller::CharacterController;
 use crate::systems::dojo::PickupItemEvent;
+use rand::prelude::*;
+use crate::screens::gameplay::PlayingScene;
 
 // ===== COMPONENTS & RESOURCES =====
 
@@ -37,6 +39,27 @@ pub enum CollectibleType {
 #[derive(Resource)]
 pub struct NextItemToAdd(pub CollectibleType);
 
+#[derive(Resource)]
+pub struct CollectibleSpawner {
+    pub coins_spawned: usize,
+    pub boxes_spawned: usize,
+    pub coins_collected: usize,
+    pub boxes_collected: usize,
+    pub timer: Timer,
+}
+
+impl Default for CollectibleSpawner {
+    fn default() -> Self {
+        Self {
+            coins_spawned: 0,
+            boxes_spawned: 0,
+            coins_collected: 0,
+            boxes_collected: 0,
+            timer: Timer::from_seconds(2.0, TimerMode::Repeating),
+        }
+    }
+}
+
 #[derive(Component)]
 pub struct Sensor;
 
@@ -59,6 +82,13 @@ pub struct CollectibleConfig {
     pub rotation: Option<CollectibleRotation>,
 }
 
+#[derive(Resource, Default)]
+pub struct PlayerMovementTracker {
+    pub last_position: Option<Vec3>,
+    pub time_stationary: f32,
+    pub paused: bool,
+}
+
 // ===== PLUGIN =====
 
 pub struct CollectiblesPlugin;
@@ -67,6 +97,8 @@ impl Plugin for CollectiblesPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<InteractionEvent>()
             .insert_resource(crate::ui::inventory::InventoryVisibilityState::default())
+            .init_resource::<CollectibleSpawner>()
+            .init_resource::<PlayerMovementTracker>()
             .add_systems(
                 Update,
                 (
@@ -76,6 +108,8 @@ impl Plugin for CollectiblesPlugin {
                     rotate_collectibles,
                     crate::ui::inventory::add_item_to_inventory,
                     crate::ui::inventory::toggle_inventory_visibility,
+                    collectible_spawner_system,
+                    track_player_movement,
                 )
                     .run_if(in_state(Screen::GamePlay)),
             );
@@ -225,5 +259,125 @@ pub fn rotate_collectibles(
             };
             transform.rotate_y(rotation_amount);
         }
+    }
+}
+
+// System to track player movement and update PlayerMovementTracker
+fn track_player_movement(
+    time: Res<Time>,
+    player_query: Query<&Transform, With<CharacterController>>,
+    mut tracker: ResMut<PlayerMovementTracker>,
+) {
+    let Ok(player_transform) = player_query.get_single() else { return; };
+    let pos = player_transform.translation;
+    let moved = if let Some(last) = tracker.last_position {
+        pos.distance(last) > 0.05 // movement threshold
+    } else {
+        true
+    };
+    if moved {
+        tracker.time_stationary = 0.0;
+        tracker.paused = false;
+        tracker.last_position = Some(pos);
+    } else {
+        tracker.time_stationary += time.delta_secs();
+        if tracker.time_stationary >= 4.0 {
+            tracker.paused = true;
+        }
+    }
+}
+
+pub fn collectible_spawner_system(
+    mut commands: Commands,
+    mut spawner: ResMut<CollectibleSpawner>,
+    time: Res<Time>,
+    player_query: Query<&Transform, With<CharacterController>>,
+    assets: Res<ModelAssets>,
+    existing_collectibles: Query<&Transform, With<Collectible>>,
+    mut tracker: ResMut<PlayerMovementTracker>,
+) {
+    if tracker.paused {
+        return;
+    }
+    spawner.timer.tick(time.delta());
+    if !spawner.timer.finished() {
+        return;
+    }
+    let mut rng = rand::thread_rng();
+    let max_coins: usize = 100;
+    let max_boxes: usize = 10;
+    let mut to_spawn = 3;
+    let mut spawn_types = Vec::new();
+    let coins_left = max_coins.saturating_sub(spawner.coins_spawned);
+    let boxes_left = max_boxes.saturating_sub(spawner.boxes_spawned);
+    for _ in 0..to_spawn {
+        if coins_left + boxes_left == 0 {
+            break;
+        }
+        let roll = rng.gen_range(0..(coins_left + boxes_left));
+        if roll < coins_left {
+            spawn_types.push(CollectibleType::Coin);
+            spawner.coins_spawned += 1;
+        } else {
+            spawn_types.push(CollectibleType::MysteryBox);
+            spawner.boxes_spawned += 1;
+        }
+    }
+    if spawn_types.is_empty() {
+        return;
+    }
+    let Ok(player_transform) = player_query.get_single() else { return; };
+    let player_pos = player_transform.translation;
+    let player_y = player_pos.y;
+    // Elevation-based spawning rules
+    if player_y >= -0.5 && player_y <= 7.5 {
+        return; // Do not spawn
+    }
+    if player_y >= 9.5 && player_y <= 17.4 {
+        return; // Do not spawn
+    }
+    // Log the player's y position once every 2 seconds
+    info!("Player elevation (y): {}", player_pos.y);
+    let min_distance = 5.0; // at least 5m ahead
+    let num_to_spawn = spawn_types.len();
+    let arc_angle = std::f32::consts::FRAC_PI_2; // 90 degrees (π/2 radians)
+    let base_distance = 15.0; // meters ahead of player
+    let forward = -player_transform.forward();
+    let right = Vec3::new(forward.z, 0.0, -forward.x); // Perpendicular to forward
+    for (i, collectible_type) in spawn_types.into_iter().enumerate() {
+        let t = if num_to_spawn == 1 {
+            0.5
+        } else {
+            i as f32 / (num_to_spawn - 1) as f32
+        };
+        let angle = -arc_angle / 2.0 + t * arc_angle;
+        let dir = (forward * angle.cos() + right * angle.sin()).normalize();
+        let mut pos = player_pos + dir * base_distance;
+        // Elevation rules for collectible y
+        if player_y <= -1.5 {
+            pos.y = (player_y + 3.0).max(1.0);
+        } else if (8.4..=8.6).contains(&player_y) {
+            pos.y = (player_y + 3.0).max(11.0);
+        } else if (17.3..=17.5).contains(&player_y) {
+            pos.y = (player_y + 3.0).max(20.0);
+        } else {
+            pos.y = player_y + 3.0;
+        }
+        // Check for spacing from other collectibles
+        let too_close = existing_collectibles.iter().any(|t| t.translation.distance(pos) < min_distance);
+        if too_close {
+            continue;
+        }
+        let config = CollectibleConfig {
+            position: pos,
+            collectible_type,
+            scale: if collectible_type == CollectibleType::Coin { 0.7 } else { 1.0 },
+            rotation: Some(CollectibleRotation {
+                enabled: true,
+                clockwise: rng.gen_bool(0.5),
+                speed: rng.gen_range(1.0..3.0),
+            }),
+        };
+        spawn_collectible(&mut commands, &assets, config, PlayingScene);
     }
 }

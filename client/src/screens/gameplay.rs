@@ -9,9 +9,8 @@ use crate::systems::character_controller::{
     CharacterController, CharacterControllerBundle, CharacterControllerPlugin, setup_idle_animation,
 };
 use crate::systems::collectibles::{
-    CollectibleType, CollectiblesPlugin, spawn_collectible,
+    CollectibleType, CollectiblesPlugin, collectible_spawner_system,
 };
-use crate::systems::collectibles_config::COLLECTIBLES;
 use crate::ui::dialog::{DialogPlugin, spawn_dialog, DialogConfig};
 use crate::ui::inventory::spawn_inventory_ui;
 use crate::ui::widgets::{HudPosition, player_hud_widget};
@@ -40,8 +39,7 @@ pub(super) fn plugin(app: &mut App) {
     // .add_plugins(PhysicsDebugPlugin::default())
     .add_plugins(CharacterControllerPlugin)
     .add_plugins(GltfAnimationPlugin)
-    .add_plugins(CollectiblesPlugin)
-    .add_plugins(DialogPlugin);
+    .add_plugins(CollectiblesPlugin);
 }
 
 // ===== SYSTEMS =====
@@ -83,7 +81,7 @@ fn camera_follow_player(
 }
 
 #[derive(Component, Default, Clone)]
-struct PlayingScene;
+pub struct PlayingScene;
 
 #[derive(Component)]
 struct EnvironmentMarker;
@@ -189,28 +187,7 @@ impl PlayingScene {
             .observe(setup_idle_animation);
 
         // Spawn collectibles using imported array
-        for config in COLLECTIBLES.iter() {
-            match config.collectible_type {
-                CollectibleType::MysteryBox => {
-                    spawn_collectible(&mut commands, &assets, config.clone(), PlayingScene);
-                    // Spawn dialog for MysteryBox
-                    let dialog_config = DialogConfig {
-                        text: "Press E to open".to_string(),
-                        width: 40.0,
-                        height: 14.0,
-                        position: BottomCenter { bottom_margin: 4.0 },
-                        background_color: Color::srgba(0.1, 0.1, 0.2, 0.6),
-                        border_color: Color::srgba(0.2, 0.2, 0.3, 0.8),
-                        border_width: 2.0,
-                        font_size_multiplier: 1.0,
-                    };
-                    spawn_dialog(&mut commands, &font_assets, windows, dialog_config, PlayingScene);
-                }
-                _ => {
-                    spawn_collectible(&mut commands, &assets, config.clone(), PlayingScene);
-                }
-            }
-        }
+        // (Leave a comment for where dynamic spawning will be handled.)
 
         // Add camera
         commands.spawn((

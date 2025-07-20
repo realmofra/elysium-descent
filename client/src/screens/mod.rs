@@ -1,5 +1,5 @@
 mod fight;
-mod gameplay;
+pub mod gameplay;
 mod loading;
 mod main_menu;
 mod settings;
