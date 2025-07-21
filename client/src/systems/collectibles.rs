@@ -7,6 +7,9 @@ use crate::systems::character_controller::CharacterController;
 use crate::systems::dojo::PickupItemEvent;
 use rand::prelude::*;
 use crate::screens::gameplay::PlayingScene;
+use rand::seq::SliceRandom;
+#[derive(Clone, Copy)]
+enum PackPattern { Line, Row, V }
 
 // ===== COMPONENTS & RESOURCES =====
 
@@ -340,30 +343,55 @@ pub fn collectible_spawner_system(
     info!("Player elevation (y): {}", player_pos.y);
     let min_distance = 5.0; // at least 5m ahead
     let num_to_spawn = spawn_types.len();
-    let arc_angle = std::f32::consts::FRAC_PI_2; // 90 degrees (π/2 radians)
     let base_distance = 15.0; // meters ahead of player
-    let forward = -player_transform.forward();
-    let right = Vec3::new(forward.z, 0.0, -forward.x); // Perpendicular to forward
-    for (i, collectible_type) in spawn_types.into_iter().enumerate() {
-        let t = if num_to_spawn == 1 {
-            0.5
-        } else {
-            i as f32 / (num_to_spawn - 1) as f32
-        };
-        let angle = -arc_angle / 2.0 + t * arc_angle;
-        let dir = (forward * angle.cos() + right * angle.sin()).normalize();
-        let mut pos = player_pos + dir * base_distance;
-        // Elevation rules for collectible y
-        if player_y <= -1.5 {
-            pos.y = (player_y + 3.0).max(1.0);
-        } else if (8.4..=8.6).contains(&player_y) {
-            pos.y = (player_y + 3.0).max(11.0);
-        } else if (17.3..=17.5).contains(&player_y) {
-            pos.y = (player_y + 3.0).max(20.0);
-        } else {
-            pos.y = player_y + 3.0;
+    let patterns = [PackPattern::Line, PackPattern::Row, PackPattern::V];
+    let pattern = *patterns.choose(&mut rng).unwrap();
+    let spacing = 1.2;
+    let base_forward = -player_transform.forward();
+    let base_right = Vec3::new(base_forward.z, 0.0, -base_forward.x);
+    let base_pos = player_pos + base_forward * base_distance;
+    // Elevation rules for base_pos.y
+    let mut base_y = player_y + 3.0;
+    if player_y <= -1.5 {
+        base_y = base_y.max(1.0);
+    } else if (8.4..=8.6).contains(&player_y) {
+        base_y = base_y.max(11.0);
+    } else if (17.3..=17.5).contains(&player_y) {
+        base_y = base_y.max(20.0);
+    }
+    // Generate positions for the pack
+    let mut pack_positions = Vec::new();
+    match pattern {
+        PackPattern::Line => {
+            for i in 0..3 {
+                let offset = (i as f32 - 1.0) * spacing;
+                let mut pos = base_pos + base_forward * offset;
+                pos.y = base_y;
+                pack_positions.push(pos);
+            }
         }
-        // Check for spacing from other collectibles
+        PackPattern::Row => {
+            for i in 0..3 {
+                let offset = (i as f32 - 1.0) * spacing;
+                let mut pos = base_pos + base_right * offset;
+                pos.y = base_y;
+                pack_positions.push(pos);
+            }
+        }
+        PackPattern::V => {
+            let mut pos0 = base_pos;
+            pos0.y = base_y;
+            let mut pos1 = base_pos + (base_forward * -spacing + base_right * spacing).normalize() * spacing;
+            pos1.y = base_y;
+            let mut pos2 = base_pos + (base_forward * -spacing - base_right * spacing).normalize() * spacing;
+            pos2.y = base_y;
+            pack_positions.push(pos0);
+            pack_positions.push(pos1);
+            pack_positions.push(pos2);
+        }
+    }
+    // Only spawn up to the number of available spawn_types
+    for (pos, collectible_type) in pack_positions.into_iter().zip(spawn_types.into_iter()) {
         let too_close = existing_collectibles.iter().any(|t| t.translation.distance(pos) < min_distance);
         if too_close {
             continue;
