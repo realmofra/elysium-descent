@@ -339,8 +339,6 @@ pub fn collectible_spawner_system(
     if player_y >= 9.5 && player_y <= 17.4 {
         return; // Do not spawn
     }
-    // Log the player's y position once every 2 seconds
-    info!("Player elevation (y): {}", player_pos.y);
     let min_distance = 5.0; // at least 5m ahead
     let num_to_spawn = spawn_types.len();
     let base_distance = 15.0; // meters ahead of player
