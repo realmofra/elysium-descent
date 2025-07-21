@@ -39,7 +39,8 @@ pub(super) fn plugin(app: &mut App) {
     // .add_plugins(PhysicsDebugPlugin::default())
     .add_plugins(CharacterControllerPlugin)
     .add_plugins(GltfAnimationPlugin)
-    .add_plugins(CollectiblesPlugin);
+    .add_plugins(CollectiblesPlugin)
+    .add_plugins(DialogPlugin);
 }
 
 // ===== SYSTEMS =====
@@ -203,5 +204,18 @@ impl PlayingScene {
 
         spawn_inventory_ui::<PlayingScene>(&mut commands);
         spawn_player_hud(&mut commands, &font_assets, &ui_assets);
+        // Spawn the 'Press E to Open' dialog for Mystery Boxes
+        use crate::ui::dialog::{spawn_dialog, DialogConfig, DialogPosition};
+        spawn_dialog(
+            &mut commands,
+            &font_assets,
+            windows,
+            DialogConfig {
+                text: "Press E to Open".to_string(),
+                position: DialogPosition::BottomCenter { bottom_margin: 4.0 },
+                ..Default::default()
+            },
+            PlayingScene,
+        );
     }
 }
