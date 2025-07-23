@@ -7,7 +7,6 @@ use crate::systems::character_controller::CharacterController;
 use crate::systems::dojo::PickupItemEvent;
 use rand::prelude::*;
 use crate::screens::gameplay::PlayingScene;
-use rand::seq::SliceRandom;
 #[derive(Clone, Copy)]
 enum PackPattern { Line, Row, V }
 
@@ -46,8 +45,6 @@ pub struct NextItemToAdd(pub CollectibleType);
 pub struct CollectibleSpawner {
     pub coins_spawned: usize,
     pub boxes_spawned: usize,
-    pub coins_collected: usize,
-    pub boxes_collected: usize,
     pub timer: Timer,
 }
 
@@ -56,8 +53,6 @@ impl Default for CollectibleSpawner {
         Self {
             coins_spawned: 0,
             boxes_spawned: 0,
-            coins_collected: 0,
-            boxes_collected: 0,
             timer: Timer::from_seconds(2.0, TimerMode::Repeating),
         }
     }
@@ -271,7 +266,7 @@ fn track_player_movement(
     player_query: Query<&Transform, With<CharacterController>>,
     mut tracker: ResMut<PlayerMovementTracker>,
 ) {
-    let Ok(player_transform) = player_query.get_single() else { return; };
+    let Ok(player_transform) = player_query.single() else { return; };
     let pos = player_transform.translation;
     let moved = if let Some(last) = tracker.last_position {
         pos.distance(last) > 0.05 // movement threshold
@@ -297,7 +292,7 @@ pub fn collectible_spawner_system(
     player_query: Query<&Transform, With<CharacterController>>,
     assets: Res<ModelAssets>,
     existing_collectibles: Query<&Transform, With<Collectible>>,
-    mut tracker: ResMut<PlayerMovementTracker>,
+    tracker: ResMut<PlayerMovementTracker>,
 ) {
     if tracker.paused {
         return;
@@ -306,10 +301,10 @@ pub fn collectible_spawner_system(
     if !spawner.timer.finished() {
         return;
     }
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let max_coins: usize = 100;
     let max_boxes: usize = 10;
-    let mut to_spawn = 3;
+    let to_spawn = 3;
     let mut spawn_types = Vec::new();
     let coins_left = max_coins.saturating_sub(spawner.coins_spawned);
     let boxes_left = max_boxes.saturating_sub(spawner.boxes_spawned);
@@ -317,7 +312,7 @@ pub fn collectible_spawner_system(
         if coins_left + boxes_left == 0 {
             break;
         }
-        let roll = rng.gen_range(0..(coins_left + boxes_left));
+        let roll = rng.random_range(0..(coins_left + boxes_left));
         if roll < coins_left {
             spawn_types.push(CollectibleType::Coin);
             spawner.coins_spawned += 1;
@@ -329,7 +324,7 @@ pub fn collectible_spawner_system(
     if spawn_types.is_empty() {
         return;
     }
-    let Ok(player_transform) = player_query.get_single() else { return; };
+    let Ok(player_transform) = player_query.single() else { return; };
     let player_pos = player_transform.translation;
     let player_y = player_pos.y;
     // Elevation-based spawning rules
@@ -340,7 +335,6 @@ pub fn collectible_spawner_system(
         return; // Do not spawn
     }
     let min_distance = 5.0; // at least 5m ahead
-    let num_to_spawn = spawn_types.len();
     let base_distance = 15.0; // meters ahead of player
     let patterns = [PackPattern::Line, PackPattern::Row, PackPattern::V];
     let pattern = *patterns.choose(&mut rng).unwrap();
@@ -400,8 +394,8 @@ pub fn collectible_spawner_system(
             scale: if collectible_type == CollectibleType::Coin { 0.7 } else { 1.0 },
             rotation: Some(CollectibleRotation {
                 enabled: true,
-                clockwise: rng.gen_bool(0.5),
-                speed: rng.gen_range(1.0..3.0),
+                clockwise: rng.random_bool(0.5),
+                speed: rng.random_range(1.0..3.0),
             }),
         };
         spawn_collectible(&mut commands, &assets, config, PlayingScene);

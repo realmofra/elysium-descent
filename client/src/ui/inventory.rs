@@ -38,21 +38,26 @@ impl Default for InventoryVisibilityState {
 }
 
 pub fn spawn_inventory_ui<T: Component + Default>(commands: &mut Commands) {
+    use crate::ui::styles::ElysiumDescentColorPalette;
     commands
         .spawn((
             Node {
-                width: Val::Percent(50.0),
-                height: Val::Percent(15.0),
+                width: Val::Px(1250.0),
+                height: Val::Px(250.0),
+                // Remove height so it fits children
                 position_type: PositionType::Absolute,
-                bottom: Val::Percent(2.0),
-                left: Val::Percent(25.0),
+                bottom: Val::Px(32.0),
+                left: Val::Percent(50.0),
+                margin: UiRect::left(Val::Px(-625.0)), // Center horizontally
+                flex_direction: FlexDirection::Row,
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
-                border: UiRect::all(Val::Percent(0.3)),
+                border: UiRect::all(Val::Px(2.0)),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.7, 0.2, 0.7)),
-            BorderColor(Color::BLACK.into()),
+            BackgroundColor(Color::srgba(0.12, 0.14, 0.18, 0.85)), // glassy dark
+            BorderColor(Color::ELYSIUM_DESCENT_BLUE),
+            BorderRadius::all(Val::Px(32.0)),
             InventoryUI,
             Visibility::Hidden,
             T::default(),
@@ -61,21 +66,34 @@ pub fn spawn_inventory_ui<T: Component + Default>(commands: &mut Commands) {
             for i in 0..6 {
                 parent.spawn((
                     Node {
-                        width: Val::Percent(15.0),
-                        height: Val::Percent(80.0),
+                        width: Val::Px(180.0),
+                        height: Val::Px(200.0),
+                        margin: UiRect::all(Val::Px(12.0)),
+                        padding: UiRect::horizontal(Val::Px(48.0)),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        border: UiRect::all(Val::Px(2.0)),
                         ..default()
                     },
-                    BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.7)),
-                    BorderColor(Color::BLACK.into()),
+                    BackgroundColor(Color::srgba(0.18, 0.20, 0.26, 0.65)),
+                    BorderColor(Color::ELYSIUM_DESCENT_RED),
+                    BorderRadius::all(Val::Px(18.0)),
                     InventorySlot { index: i },
-                ));
-
-                if i < 5 {
-                    parent.spawn((Node {
-                        margin: UiRect::all(Val::Percent(0.5)),
-                        ..default()
-                    },));
-                }
+                ))
+                .with_children(|slot| {
+                    // Always add a filler node to ensure consistent sizing
+                    slot.spawn((
+                        Node {
+                            width: Val::Px(140.0),
+                            height: Val::Px(160.0),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                        BackgroundColor(Color::NONE),
+                        ZIndex(-2),
+                    ));
+                });
             }
         });
 }
@@ -169,7 +187,8 @@ pub fn add_item_to_inventory(
                         Node {
                             width: Val::Percent(100.0),
                             height: Val::Percent(100.0),
-                            align_items: AlignItems::Start,
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
                             ..default()
                         },
                         ZIndex(-1),
@@ -179,17 +198,13 @@ pub fn add_item_to_inventory(
                         },
                     ))
                     .with_children(|item_parent| {
-                        // spawn the image
+                        // spawn the image (large, centered)
                         item_parent.spawn((
                             Node {
-                                width: Val::Percent(120.0),
-                                height: Val::Percent(120.0),
-                                position_type: PositionType::Absolute,
-                                align_content: AlignContent::Center,
+                                width: Val::Px(140.0),
+                                height: Val::Px(160.0),
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
-                                top: Val::Percent(-10.0),
-                                left: Val::Percent(-10.0),
                                 ..default()
                             },
                             ImageNode {
@@ -202,27 +217,27 @@ pub fn add_item_to_inventory(
                             ZIndex(1),
                         ));
 
-                        // Spawn count text
+                        // Spawn count text (large, pill, bottom right)
                         item_parent
                             .spawn((
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    width: Val::Percent(25.0),
-                                    height: Val::Percent(25.0),
-                                    left: Val::Percent(7.5),
-                                    top: Val::Percent(10.0),
+                                    width: Val::Percent(38.0),
+                                    height: Val::Percent(48.0),
+                                    right: Val::Percent(2.0),
+                                    bottom: Val::Percent(2.0),
                                     align_items: AlignItems::Center,
                                     justify_content: JustifyContent::Center,
                                     ..default()
                                 },
                                 BorderRadius::MAX,
-                                BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.9)),
+                                BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.92)),
                                 ZIndex(2),
                             ))
                             .with_children(|text_parent| {
                                 text_parent.spawn((
                                     TextFont {
-                                        font_size: 20.0,
+                                        font_size: 34.0,
                                         font: font_assets.rajdhani_extra_bold.clone(),
                                         ..default()
                                     },

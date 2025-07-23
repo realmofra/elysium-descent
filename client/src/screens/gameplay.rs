@@ -8,13 +8,10 @@ use crate::keybinding;
 use crate::systems::character_controller::{
     CharacterController, CharacterControllerBundle, CharacterControllerPlugin, setup_idle_animation,
 };
-use crate::systems::collectibles::{
-    CollectibleType, CollectiblesPlugin, collectible_spawner_system,
-};
-use crate::ui::dialog::{DialogPlugin, spawn_dialog, DialogConfig};
+use crate::systems::collectibles::CollectiblesPlugin;
+use crate::ui::dialog::DialogPlugin;
 use crate::ui::inventory::spawn_inventory_ui;
 use crate::ui::widgets::{HudPosition, player_hud_widget};
-use crate::ui::dialog::DialogPosition::BottomCenter;
 use bevy_enhanced_input::prelude::*;
 
 // ===== PLUGIN SETUP =====
