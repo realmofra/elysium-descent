@@ -1,14 +1,9 @@
-use crate::assets::ModelAssets;
-use avian3d::prelude::*;
 use bevy::prelude::*;
-use rand::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fs;
 
 use crate::screens::Screen;
 use crate::systems::character_controller::CharacterController;
 use crate::systems::dojo::PickupItemEvent;
-use crate::screens::gameplay::PlayingScene;
 
 // ===== COMPONENTS & RESOURCES =====
 
@@ -66,8 +61,9 @@ pub struct Interactable {
 #[derive(Event, Debug)]
 pub struct InteractionEvent;
 
-// Configuration for spawning collectibles
+// Configuration for spawning collectibles - keeping for potential future use
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct CollectibleConfig {
     pub position: Vec3,
     pub collectible_type: CollectibleType,
@@ -90,144 +86,9 @@ pub struct PlayerMovementTracker {
 
 
 
-// System to load navigation data from nav.json file
-fn load_navigation_data_system(
-    mut nav_spawner: ResMut<NavigationBasedSpawner>,
-) {
-    if nav_spawner.loaded {
-        return;
-    }
-
-    match fs::read_to_string("nav.json") {
-        Ok(contents) => {
-            match serde_json::from_str::<NavigationData>(&contents) {
-                Ok(nav_data) => {
-                    nav_spawner.nav_positions = nav_data.positions
-                        .iter()
-                        .map(|point| Vec3::new(point.position[0], point.position[1], point.position[2]))
-                        .collect();
-                    
-                    nav_spawner.loaded = true;
-                    info!("✅ Loaded {} navigation positions from nav.json", nav_spawner.nav_positions.len());
-                }
-                Err(e) => {
-                    error!("Failed to parse nav.json: {}", e);
-                }
-            }
-        }
-        Err(e) => {
-            warn!("Could not load nav.json (file may not exist yet): {}", e);
-        }
-    }
-}
-
-
-
-// System to spawn collectibles around navigation positions
-fn spawn_navigation_based_collectibles_system(
-    mut commands: Commands,
-    assets: Res<ModelAssets>,
-    nav_spawner: Res<NavigationBasedSpawner>,
-    mut collectible_spawner: ResMut<CollectibleSpawner>,
-    spatial_query: SpatialQuery,
-) {
-    if !nav_spawner.loaded || collectible_spawner.coins_spawned > 0 {
-        return;
-    }
-
-    let mut rng = rand::rng();
-    let mut spawned_positions = Vec::new();
-    let mut coins_spawned = 0;
-    const MAX_COINS: usize = 10000; // Limit total coins for sparse placement
-
-    info!("🪙 Starting navigation-based coin spawning...");
-
-    for nav_pos in &nav_spawner.nav_positions {
-        // Random chance to spawn near this navigation position
-        if rng.random::<f32>() > nav_spawner.spawn_probability {
-            continue;
-        }
-
-        // Generate random position within spawn radius
-        let angle = rng.random::<f32>() * std::f32::consts::TAU;
-        let distance = rng.random::<f32>() * nav_spawner.spawn_radius;
-        let offset = Vec3::new(
-            angle.cos() * distance,
-            0.0,
-            angle.sin() * distance,
-        );
-        let potential_pos = *nav_pos + offset;
-
-        // Check minimum distance from other coins
-        let too_close = spawned_positions.iter().any(|&other_pos: &Vec3| {
-            potential_pos.distance(other_pos) < nav_spawner.min_distance_between_coins
-        });
-
-        if too_close {
-            continue;
-        }
-
-        // Validate position with collision detection - add 2.5 units elevation, but ensure minimum height
-        let coin_y = if potential_pos.y + 2.5 <= -1.5 {
-            1.0  // Reset to -1.5 + 2.5 = 1.0 if too low
-        } else {
-            potential_pos.y + 2.5
-        };
-        let coin_pos = Vec3::new(potential_pos.x, coin_y, potential_pos.z);
-        if is_valid_coin_position(coin_pos, &spatial_query) {
-            spawn_collectible(
-                &mut commands,
-                &assets,
-                CollectibleConfig {
-                    position: coin_pos,
-                    collectible_type: CollectibleType::Coin,
-                    scale: 0.75,
-                    rotation: Some(CollectibleRotation {
-                        enabled: true,
-                        clockwise: true,
-                        speed: 1.0,
-                    }),
-                },
-                PlayingScene,
-            );
-
-            spawned_positions.push(coin_pos);
-            coins_spawned += 1;
-
-            if coins_spawned >= MAX_COINS {
-                break;
-            }
-        }
-    }
-
-    collectible_spawner.coins_spawned = coins_spawned;
-    info!("✅ Spawned {} coins around navigation positions!", coins_spawned);
-}
-
-
-
-/// Validates a coin position using collision detection
-fn is_valid_coin_position(
-    position: Vec3,
-    spatial_query: &SpatialQuery,
-) -> bool {
-    // Very permissive validation - just ensure we're not intersecting with too many things
-    let coin_radius = 0.2; // Very small collision check
-    let check_radius = coin_radius + 0.05; // Minimal buffer
-    
-    let intersection_filter = SpatialQueryFilter::default()
-        .with_mask(LayerMask::ALL);
-    
-    let intersections = spatial_query.shape_intersections(
-        &Collider::sphere(check_radius),
-        position,
-        Quat::IDENTITY,
-        &intersection_filter,
-    );
-    
-    // Very permissive - allow up to 5 intersections
-    intersections.len() <= 5
-}
+// Removed unused functions (now handled in pregame_loading module):
+// - spawn_navigation_based_collectibles_system
+// - is_valid_coin_position
 
 
 
@@ -251,8 +112,9 @@ impl Plugin for CollectiblesPlugin {
                     crate::ui::inventory::add_item_to_inventory,
                     crate::ui::inventory::toggle_inventory_visibility,
                     crate::ui::inventory::adjust_inventory_for_dialogs,
-                    load_navigation_data_system,
-                    spawn_navigation_based_collectibles_system,
+                    // Removed dynamic spawning systems since we now pre-load everything:
+                    // load_navigation_data_system,
+                    // spawn_navigation_based_collectibles_system,
                     track_player_movement,
                     // track_player_navigation,
                 )
@@ -263,45 +125,7 @@ impl Plugin for CollectiblesPlugin {
 
 // ===== SYSTEMS =====
 
-pub fn spawn_collectible(
-    commands: &mut Commands,
-    assets: &Res<ModelAssets>,
-    config: CollectibleConfig,
-    scene_marker: impl Component + Clone,
-) {
-    let model_handle = assets.coin.clone();
-
-    let mut entity = commands.spawn((
-        Name::new(format!("{:?}", config.collectible_type)),
-        SceneRoot(model_handle),
-        Transform {
-            translation: config.position,
-            scale: Vec3::splat(config.scale),
-            ..default()
-        },
-        Collider::sphere(0.5),
-        RigidBody::Kinematic,
-        Visibility::Visible,
-        InheritedVisibility::default(),
-        ViewVisibility::default(),
-        Collectible,
-        config.collectible_type,
-        FloatingItem {
-            base_height: config.position.y,
-            hover_amplitude: 0.2,
-            hover_speed: 2.0,
-        },
-        Sensor,
-        scene_marker.clone(),
-        Interactable {
-            interaction_radius: 4.0,
-        },
-    ));
-
-    if let Some(rotation) = config.rotation {
-        entity.insert(rotation);
-    }
-}
+// Removed spawn_collectible function (now handled in pregame_loading module)
 
 /// System to automatically collect any collectible when the player is within the Interactable's radius
 fn auto_collect_nearby_interactables(

@@ -177,8 +177,8 @@ fn spawn(mut commands: Commands, ui_assets: Res<UiAssets>, font_assets: Res<Font
                                 },
                                 "Continue" => {
                                     button_entity.observe(|_: Trigger<Pointer<Click>>, mut next: ResMut<NextState<Screen>>| {
-                                        // Change the state to settings
-                                        next.set(Screen::GamePlay);
+                                        // Change the state to PreGameLoading
+                                        next.set(Screen::PreGameLoading);
                                     });
                                 },
                                 "Quit Game" => {

@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
 
 use super::{Screen, despawn_scene};
+use super::pregame_loading::{EnvironmentPreload, CollectiblePreload};
 use crate::assets::{FontAssets, ModelAssets, UiAssets};
 use crate::keybinding;
 use crate::systems::character_controller::{
@@ -20,7 +21,9 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         OnEnter(Screen::GamePlay),
         (
-            PlayingScene::spawn_environment,
+            reveal_preloaded_environment,
+            reveal_preloaded_collectibles,
+            PlayingScene::spawn_player_and_camera,
             set_gameplay_clear_color,
         ),
     )
@@ -115,42 +118,20 @@ fn despawn_gameplay_hud(mut commands: Commands, query: Query<Entity, With<Gamepl
 // ===== PLAYING SCENE IMPLEMENTATION =====
 
 impl PlayingScene {
-    fn spawn_environment(
+    fn spawn_player_and_camera(
         mut commands: Commands,
         assets: Res<ModelAssets>,
         font_assets: Res<FontAssets>,
         ui_assets: Res<UiAssets>,
         windows: Query<&Window>,
     ) {
-        // Set up ambient light
-        commands.insert_resource(AmbientLight {
-            color: Color::srgb_u8(68, 71, 88),
-            brightness: 120.0,
-            ..default()
-        });
+        info!("👤 Spawning player and camera...");
 
-        // Environment (see the `collider_constructors` example for creating colliders from scenes)
-        let scene_handle = assets.environment.clone();
-        commands.spawn((
-            Name::new("Environment"),
-            EnvironmentMarker,
-            PlayingScene, // Add scene marker to ensure cleanup
-            SceneRoot(scene_handle),
-            Transform {
-                translation: Vec3::new(0.0, -1.5, 0.0),
-                rotation: Quat::from_rotation_y(-core::f32::consts::PI * 0.5),
-                scale: Vec3::splat(0.05), // Scale environment down
-            },
-            ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
-            RigidBody::Static,
-            //DebugRender::default(),
-        ));
-
-        // Add directional light
+        // Add directional light (if not already added by preload)
         commands.spawn((
             Name::new("Directional Light"),
             DirectionalLight {
-                illuminance: 80_000.0, // bright midday sun
+                illuminance: 80_000.0,
                 shadows_enabled: true,
                 ..default()
             },
@@ -160,7 +141,7 @@ impl PlayingScene {
                 std::f32::consts::FRAC_PI_4,
                 0.0,
             )),
-            PlayingScene, // Add scene marker to ensure cleanup
+            PlayingScene,
         ));
 
         // Add player
@@ -177,15 +158,10 @@ impl PlayingScene {
                 Friction::new(0.5),
                 Restitution::new(0.0),
                 GravityScale(1.0),
-                // Add enhanced input actions for this player
                 Actions::<keybinding::Player>::default(),
-                PlayingScene, // Add scene marker to ensure cleanup
-                              // DebugRender::default(),
+                PlayingScene,
             ))
             .observe(setup_idle_animation);
-
-        // Spawn collectibles using imported array
-        // (Leave a comment for where dynamic spawning will be handled.)
 
         // Add camera
         commands.spawn((
@@ -196,11 +172,12 @@ impl PlayingScene {
                 ..default()
             },
             Transform::from_xyz(0.0, 4.0, -12.0).looking_at(Vec3::new(0.0, 2.0, 0.0), Vec3::Y),
-            PlayingScene, // Add scene marker to ensure cleanup
+            PlayingScene,
         ));
 
         spawn_inventory_ui::<PlayingScene>(&mut commands);
         spawn_player_hud(&mut commands, &font_assets, &ui_assets);
+        
         // Spawn the 'Press E to Open' dialog for Mystery Boxes
         use crate::ui::dialog::{spawn_dialog, DialogConfig, DialogPosition};
         spawn_dialog(
@@ -214,5 +191,35 @@ impl PlayingScene {
             },
             PlayingScene,
         );
+
+        info!("✅ Player and camera spawned");
     }
+}
+
+fn reveal_preloaded_environment(
+    mut commands: Commands,
+    environment_query: Query<Entity, With<EnvironmentPreload>>,
+) {
+    info!("🌍 Revealing preloaded environment...");
+    for entity in environment_query.iter() {
+        commands.entity(entity)
+            .insert(Visibility::Visible)
+            .insert(PlayingScene);
+        info!("✅ Environment revealed and marked with PlayingScene");
+    }
+}
+
+fn reveal_preloaded_collectibles(
+    mut commands: Commands,
+    collectible_query: Query<Entity, With<CollectiblePreload>>,
+) {
+    info!("🪙 Revealing preloaded collectibles...");
+    let mut count = 0;
+    for entity in collectible_query.iter() {
+        commands.entity(entity)
+            .insert(Visibility::Visible)
+            .insert(PlayingScene);
+        count += 1;
+    }
+    info!("✅ Revealed {} preloaded collectibles", count);
 }
