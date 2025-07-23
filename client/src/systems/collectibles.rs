@@ -121,6 +121,8 @@ fn load_navigation_data_system(
     }
 }
 
+
+
 // System to spawn collectibles around navigation positions
 fn spawn_navigation_based_collectibles_system(
     mut commands: Commands,
@@ -136,7 +138,7 @@ fn spawn_navigation_based_collectibles_system(
     let mut rng = rand::rng();
     let mut spawned_positions = Vec::new();
     let mut coins_spawned = 0;
-    const MAX_COINS: usize = 50; // Limit total coins for sparse placement
+    const MAX_COINS: usize = 10000; // Limit total coins for sparse placement
 
     info!("🪙 Starting navigation-based coin spawning...");
 
@@ -165,8 +167,13 @@ fn spawn_navigation_based_collectibles_system(
             continue;
         }
 
-        // Validate position with collision detection - add 2.05 units elevation + 0.45 for coin height
-        let coin_pos = Vec3::new(potential_pos.x, potential_pos.y + 2.5, potential_pos.z);
+        // Validate position with collision detection - add 2.5 units elevation, but ensure minimum height
+        let coin_y = if potential_pos.y + 2.5 <= -1.5 {
+            1.0  // Reset to -1.5 + 2.5 = 1.0 if too low
+        } else {
+            potential_pos.y + 2.5
+        };
+        let coin_pos = Vec3::new(potential_pos.x, coin_y, potential_pos.z);
         if is_valid_coin_position(coin_pos, &spatial_query) {
             spawn_collectible(
                 &mut commands,
