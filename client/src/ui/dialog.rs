@@ -100,11 +100,11 @@ pub fn animate_dialog(time: Res<Time>, mut query: Query<&mut BackgroundColor, Wi
 }
 
 pub fn check_dialog_proximity(
-    player_query: Query<
+    _player_query: Query<
         &Transform,
         With<crate::systems::character_controller::CharacterController>,
     >,
-    target_query: Query<
+    _target_query: Query<
         (
             Entity,
             &Transform,
@@ -115,33 +115,9 @@ pub fn check_dialog_proximity(
     >,
     mut dialog_query: Query<&mut Visibility, With<Dialog>>,
 ) {
-    let Ok(player_transform) = player_query.single() else {
-        return;
-    };
-
-    let mut near_target = false;
-    let hide_distance = 5.0; // Reduced distance for mystery box proximity
-
-    // Check if player is near any MysteryBox
-    for (_, target_transform, _interactable, collectible_type) in target_query.iter() {
-        if *collectible_type == crate::systems::collectibles::CollectibleType::MysteryBox {
-            let distance = player_transform
-                .translation
-                .distance(target_transform.translation);
-            if distance <= hide_distance {
-                near_target = true;
-                break;
-            }
-        }
-    }
-
-    // Show/hide dialog based on proximity
+    // Since MysteryBox has been removed, hide all dialogs
     if let Ok(mut visibility) = dialog_query.single_mut() {
-        if near_target {
-            *visibility = Visibility::Visible;
-        } else {
-            *visibility = Visibility::Hidden;
-        }
+        *visibility = Visibility::Hidden;
     }
 }
 

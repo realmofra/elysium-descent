@@ -83,9 +83,6 @@ pub struct ModelAssets {
     #[asset(path = "models/coin.glb#Scene0")]
     pub coin: Handle<Scene>,
 
-    #[asset(path = "models/mystery_box.glb#Scene0")]
-    pub mystery_box: Handle<Scene>,
-
     #[asset(path = "models/player.glb")]
     pub player: Handle<Gltf>,
 
