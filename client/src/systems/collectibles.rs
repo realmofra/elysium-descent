@@ -1,6 +1,8 @@
 use crate::assets::ModelAssets;
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
+use std::fs;
 
 use crate::screens::Screen;
 use crate::systems::character_controller::CharacterController;
@@ -41,14 +43,12 @@ pub struct NextItemToAdd(pub CollectibleType);
 #[derive(Resource)]
 pub struct CollectibleSpawner {
     pub coins_spawned: usize,
-    pub timer: Timer,
 }
 
 impl Default for CollectibleSpawner {
     fn default() -> Self {
         Self {
             coins_spawned: 0,
-            timer: Timer::from_seconds(3.0, TimerMode::Repeating), // Faster initial spawn
         }
     }
 }
@@ -104,7 +104,6 @@ impl Default for EnvironmentMap {
 #[derive(Resource)]
 pub struct ScanConfig {
     pub scan_bounds: (Vec3, Vec3), // (min, max) bounds for scanning
-    pub grid_spacing: f32,          // Distance between scan points
     pub min_surface_size: f32,      // Minimum size of flat surface required
     pub surface_tolerance: f32,     // Height tolerance for "flat" surface
     pub player_height: f32,         // Total player height for coin placement
@@ -115,7 +114,6 @@ impl Default for ScanConfig {
     fn default() -> Self {
         Self {
             scan_bounds: (Vec3::new(-100.0, -10.0, -100.0), Vec3::new(100.0, 30.0, 100.0)),
-            grid_spacing: 2.0,            // Increased spacing for faster scanning
             min_surface_size: 6.0,        // Increased search radius for flat areas
             surface_tolerance: 0.5,       // More lenient height tolerance
             player_height: 0.9,           // Player capsule total height (0.5 + 2*0.2)
@@ -129,7 +127,6 @@ pub struct FlatSurface {
     pub center: Vec3,
     pub size: f32,
     pub height: f32,
-    pub normal: Vec3,
 }
 
 /// Scans the environment to find flat surfaces suitable for coin placement
@@ -370,7 +367,6 @@ fn identify_flat_surfaces_for_coins(points: &[Vec3], config: &ScanConfig) -> Vec
                 center: surface_center,
                 size,
                 height: avg_height,
-                normal: Vec3::Y, // Assume flat surfaces are horizontal
             });
             
             // Mark points as used
@@ -528,19 +524,7 @@ fn is_valid_coin_position(
     intersections.len() <= 5
 }
 
-/// Adjusts coin position to be above ground level (legacy function, kept for compatibility)
-fn adjust_coin_height(
-    position: Vec3,
-    spatial_query: &SpatialQuery,
-) -> Option<Vec3> {
-    if let Some(ground_pos) = find_ground_position(position, spatial_query) {
-        let adjusted_pos = Vec3::new(ground_pos.x, ground_pos.y + 1.5, ground_pos.z);
-        if is_valid_coin_position(adjusted_pos, spatial_query) {
-            return Some(adjusted_pos);
-        }
-    }
-    None
-}
+
 
 // ===== PLUGIN =====
 
@@ -554,6 +538,7 @@ impl Plugin for CollectiblesPlugin {
             .init_resource::<PlayerMovementTracker>()
             .init_resource::<EnvironmentMap>()
             .init_resource::<ScanConfig>()
+            .init_resource::<NavigationTracker>()
             .add_systems(
                 Update,
                 (
@@ -566,6 +551,7 @@ impl Plugin for CollectiblesPlugin {
                     environment_scanner_system,
                     pre_spawn_collectibles_system,
                     track_player_movement,
+                    // track_player_navigation,
                 )
                     .run_if(in_state(Screen::GamePlay)),
             );
@@ -693,6 +679,151 @@ fn track_player_movement(
         tracker.time_stationary += time.delta_secs();
         if tracker.time_stationary >= 4.0 {
             tracker.paused = true;
+        }
+    }
+}
+
+// Navigation tracking system - logs player position every 5 seconds
+fn track_player_navigation(
+    time: Res<Time>,
+    mut nav_tracker: ResMut<NavigationTracker>,
+    player_query: Query<&Transform, With<CharacterController>>,
+) {
+    let Ok(player_transform) = player_query.single() else { return; };
+    
+    nav_tracker.timer.tick(time.delta());
+    
+    if nav_tracker.timer.just_finished() {
+        let position = player_transform.translation;
+        let session_time = time.elapsed_secs();
+        
+        // Create navigation point
+        let nav_point = NavigationPoint {
+            timestamp: time.elapsed_secs_f64(),
+            position: [position.x, position.y, position.z],
+            session_time,
+        };
+        
+        // Add to navigation data
+        nav_tracker.nav_data.positions.push(nav_point);
+        
+        // Update statistics
+        update_navigation_statistics(&mut nav_tracker.nav_data, position, session_time);
+        
+        // Save to file
+        save_navigation_data(&nav_tracker.nav_data);
+        
+        // Log the position
+        info!("🗺️ Navigation Point #{}: [{:.2}, {:.2}, {:.2}] at {:.1}s", 
+            nav_tracker.nav_data.positions.len(),
+            position.x, position.y, position.z,
+            session_time
+        );
+    }
+}
+
+// Update navigation statistics
+fn update_navigation_statistics(nav_data: &mut NavigationData, position: Vec3, session_time: f32) {
+    nav_data.statistics.total_points = nav_data.positions.len();
+    nav_data.statistics.session_duration = session_time;
+    
+    // Update bounds
+    nav_data.statistics.min_bounds[0] = nav_data.statistics.min_bounds[0].min(position.x);
+    nav_data.statistics.min_bounds[1] = nav_data.statistics.min_bounds[1].min(position.y);
+    nav_data.statistics.min_bounds[2] = nav_data.statistics.min_bounds[2].min(position.z);
+    
+    nav_data.statistics.max_bounds[0] = nav_data.statistics.max_bounds[0].max(position.x);
+    nav_data.statistics.max_bounds[1] = nav_data.statistics.max_bounds[1].max(position.y);
+    nav_data.statistics.max_bounds[2] = nav_data.statistics.max_bounds[2].max(position.z);
+    
+    // Calculate average position
+    if !nav_data.positions.is_empty() {
+        let mut sum = [0.0; 3];
+        for point in &nav_data.positions {
+            sum[0] += point.position[0];
+            sum[1] += point.position[1];
+            sum[2] += point.position[2];
+        }
+        let count = nav_data.positions.len() as f32;
+        nav_data.statistics.average_position = [
+            sum[0] / count,
+            sum[1] / count,
+            sum[2] / count,
+        ];
+    }
+}
+
+// Save navigation data to nav.json file
+fn save_navigation_data(nav_data: &NavigationData) {
+    match serde_json::to_string_pretty(nav_data) {
+        Ok(json_string) => {
+            if let Err(e) = fs::write("nav.json", json_string) {
+                error!("Failed to write nav.json: {}", e);
+            }
+        }
+        Err(e) => {
+            error!("Failed to serialize navigation data: {}", e);
+        }
+    }
+}
+
+// Navigation tracking system
+#[derive(Resource)]
+pub struct NavigationTracker {
+    pub timer: Timer,
+    pub nav_data: NavigationData,
+}
+
+impl Default for NavigationTracker {
+    fn default() -> Self {
+        Self {
+            timer: Timer::from_seconds(5.0, TimerMode::Repeating), // Log every 5 seconds
+            nav_data: NavigationData::default(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct NavigationData {
+    pub session_start: String,
+    pub positions: Vec<NavigationPoint>,
+    pub statistics: NavigationStats,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct NavigationPoint {
+    pub timestamp: f64,
+    pub position: [f32; 3],
+    pub session_time: f32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct NavigationStats {
+    pub total_points: usize,
+    pub session_duration: f32,
+    pub min_bounds: [f32; 3],
+    pub max_bounds: [f32; 3],
+    pub average_position: [f32; 3],
+}
+
+impl Default for NavigationData {
+    fn default() -> Self {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        
+        Self {
+            session_start: format!("{}", timestamp),
+            positions: Vec::new(),
+            statistics: NavigationStats {
+                total_points: 0,
+                session_duration: 0.0,
+                min_bounds: [f32::INFINITY; 3],
+                max_bounds: [f32::NEG_INFINITY; 3],
+                average_position: [0.0; 3],
+            },
         }
     }
 }

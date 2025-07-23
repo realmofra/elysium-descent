@@ -2294,6 +2294,8 @@ dependencies = [
  "log",
  "once_cell",
  "rand 0.9.1",
+ "serde",
+ "serde_json",
  "starknet 0.16.0",
  "tokio",
  "tracing",
