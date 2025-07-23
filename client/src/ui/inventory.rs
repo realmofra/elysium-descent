@@ -26,6 +26,7 @@ pub struct CountText;
 pub struct InventoryVisibilityState {
     pub visible: bool,
     pub timer: Timer,
+    pub shifted_up: bool, // Track if inventory is shifted up due to dialog
 }
 
 impl Default for InventoryVisibilityState {
@@ -33,6 +34,30 @@ impl Default for InventoryVisibilityState {
         Self {
             visible: false,
             timer: Timer::from_seconds(2.0, TimerMode::Once),
+            shifted_up: false,
+        }
+    }
+}
+
+/// System to adjust inventory position when dialogs are visible to prevent overlap
+pub fn adjust_inventory_for_dialogs(
+    dialog_query: Query<&Visibility, With<crate::ui::dialog::Dialog>>,
+    mut inventory_query: Query<&mut Node, With<InventoryUI>>,
+    mut visibility_state: ResMut<InventoryVisibilityState>,
+) {
+    let dialog_visible = dialog_query
+        .iter()
+        .any(|visibility| *visibility == Visibility::Visible);
+
+    if let Ok(mut node) = inventory_query.single_mut() {
+        if dialog_visible && !visibility_state.shifted_up {
+            // Shift inventory up to avoid dialog overlap
+            node.bottom = Val::Px(150.0); // Move up from 32px to 150px
+            visibility_state.shifted_up = true;
+        } else if !dialog_visible && visibility_state.shifted_up {
+            // Restore original position when dialog is hidden
+            node.bottom = Val::Px(32.0); // Back to original position
+            visibility_state.shifted_up = false;
         }
     }
 }

@@ -106,6 +106,7 @@ impl Plugin for CollectiblesPlugin {
                     rotate_collectibles,
                     crate::ui::inventory::add_item_to_inventory,
                     crate::ui::inventory::toggle_inventory_visibility,
+                    crate::ui::inventory::adjust_inventory_for_dialogs,
                     collectible_spawner_system,
                     track_player_movement,
                 )
