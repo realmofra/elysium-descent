@@ -1,6 +1,7 @@
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
+use rand::prelude::*;
 
 use super::{Screen, despawn_scene};
 use super::pregame_loading::{EnvironmentPreload, CollectiblePreload};
@@ -9,7 +10,7 @@ use crate::keybinding;
 use crate::systems::character_controller::{
     CharacterController, CharacterControllerBundle, CharacterControllerPlugin, setup_idle_animation,
 };
-use crate::systems::collectibles::CollectiblesPlugin;
+use crate::systems::collectibles::{CollectiblesPlugin, NavigationBasedSpawner, CollectibleSpawner};
 use crate::ui::dialog::DialogPlugin;
 use crate::ui::inventory::spawn_inventory_ui;
 use crate::ui::widgets::{HudPosition, player_hud_widget};
@@ -29,7 +30,12 @@ pub(super) fn plugin(app: &mut App) {
     )
     .add_systems(
         Update,
-        camera_follow_player.run_if(in_state(Screen::GamePlay)),
+        (
+            camera_follow_player,
+            // Fallback systems that run if preloaded entities weren't found
+            fallback_spawn_environment,
+            fallback_spawn_collectibles,
+        ).run_if(in_state(Screen::GamePlay)),
     )
     .add_systems(
         OnExit(Screen::GamePlay),
@@ -201,11 +207,21 @@ fn reveal_preloaded_environment(
     environment_query: Query<Entity, With<EnvironmentPreload>>,
 ) {
     info!("🌍 Revealing preloaded environment...");
+    info!("🔍 Found {} environment entities with EnvironmentPreload marker", environment_query.iter().count());
+    
+    let mut revealed_count = 0;
     for entity in environment_query.iter() {
         commands.entity(entity)
             .insert(Visibility::Visible)
             .insert(PlayingScene);
-        info!("✅ Environment revealed and marked with PlayingScene");
+        revealed_count += 1;
+        info!("✅ Environment entity {:?} revealed and marked with PlayingScene", entity);
+    }
+    
+    if revealed_count == 0 {
+        warn!("⚠️ No preloaded environment entities found! Environment may not have been created during loading.");
+    } else {
+        info!("✅ Revealed {} environment entities", revealed_count);
     }
 }
 
@@ -214,6 +230,8 @@ fn reveal_preloaded_collectibles(
     collectible_query: Query<Entity, With<CollectiblePreload>>,
 ) {
     info!("🪙 Revealing preloaded collectibles...");
+    info!("🔍 Found {} collectible entities with CollectiblePreload marker", collectible_query.iter().count());
+    
     let mut count = 0;
     for entity in collectible_query.iter() {
         commands.entity(entity)
@@ -221,5 +239,171 @@ fn reveal_preloaded_collectibles(
             .insert(PlayingScene);
         count += 1;
     }
-    info!("✅ Revealed {} preloaded collectibles", count);
+    
+    if count == 0 {
+        warn!("⚠️ No preloaded collectible entities found! Collectibles may not have been created during loading.");
+    } else {
+        info!("✅ Revealed {} preloaded collectibles", count);
+    }
+}
+
+#[derive(Resource, Default)]
+struct FallbackSpawned {
+    environment: bool,
+    collectibles: bool,
+}
+
+fn fallback_spawn_environment(
+    mut commands: Commands,
+    assets: Option<Res<ModelAssets>>,
+    environment_query: Query<Entity, With<PlayingScene>>,
+    environment_preload_query: Query<Entity, With<EnvironmentPreload>>,
+    mut fallback_spawned: Local<bool>,
+) {
+    // Only run once, and only if no environment entities exist (neither preloaded nor PlayingScene)
+    if *fallback_spawned || !environment_query.is_empty() || !environment_preload_query.is_empty() {
+        return;
+    }
+
+    if let Some(assets) = assets {
+        warn!("🚨 Fallback: Spawning environment directly (preload failed)");
+        
+        // Set up ambient light
+        commands.insert_resource(AmbientLight {
+            color: Color::srgb_u8(68, 71, 88),
+            brightness: 120.0,
+            ..default()
+        });
+
+        // Environment
+        commands.spawn((
+            Name::new("Fallback Environment"),
+            SceneRoot(assets.environment.clone()),
+            Transform {
+                translation: Vec3::new(0.0, -1.5, 0.0),
+                rotation: Quat::from_rotation_y(-core::f32::consts::PI * 0.5),
+                scale: Vec3::splat(0.05),
+            },
+            ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+            RigidBody::Static,
+            PlayingScene,
+        ));
+
+        *fallback_spawned = true;
+        info!("✅ Fallback environment spawned");
+    }
+}
+
+fn fallback_spawn_collectibles(
+    mut commands: Commands,
+    assets: Option<Res<ModelAssets>>,
+    nav_spawner: Option<Res<NavigationBasedSpawner>>,
+    mut collectible_spawner: ResMut<CollectibleSpawner>,
+    collectible_query: Query<Entity, With<crate::systems::collectibles::Collectible>>,
+    spatial_query: SpatialQuery,
+    mut fallback_spawned: Local<bool>,
+) {
+    // Only run once, and only if no collectible entities exist
+    if *fallback_spawned || !collectible_query.is_empty() || collectible_spawner.coins_spawned > 0 {
+        return;
+    }
+
+    if let (Some(assets), Some(nav_spawner)) = (assets, nav_spawner) {
+        if nav_spawner.loaded {
+            warn!("🚨 Fallback: Spawning collectibles directly (preload failed)");
+            
+            let mut rng = rand::rng();
+            let mut spawned_positions = Vec::new();
+            let mut coins_spawned = 0;
+            const MAX_COINS: usize = 50;
+
+            for nav_pos in &nav_spawner.nav_positions {
+                if rng.random::<f32>() > nav_spawner.spawn_probability {
+                    continue;
+                }
+
+                let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                let distance = rng.random::<f32>() * nav_spawner.spawn_radius;
+                let offset = Vec3::new(
+                    angle.cos() * distance,
+                    0.0,
+                    angle.sin() * distance,
+                );
+                let potential_pos = *nav_pos + offset;
+
+                let too_close = spawned_positions.iter().any(|&other_pos: &Vec3| {
+                    potential_pos.distance(other_pos) < nav_spawner.min_distance_between_coins
+                });
+
+                if too_close {
+                    continue;
+                }
+
+                let coin_y = if potential_pos.y + 2.5 <= -1.5 {
+                    1.0
+                } else {
+                    potential_pos.y + 2.5
+                };
+                let coin_pos = Vec3::new(potential_pos.x, coin_y, potential_pos.z);
+                
+                spawn_fallback_collectible(
+                    &mut commands,
+                    &assets,
+                    coin_pos,
+                );
+
+                spawned_positions.push(coin_pos);
+                coins_spawned += 1;
+
+                if coins_spawned >= MAX_COINS {
+                    break;
+                }
+            }
+
+            collectible_spawner.coins_spawned = coins_spawned;
+            *fallback_spawned = true;
+            info!("✅ Fallback spawned {} collectibles", coins_spawned);
+        }
+    }
+}
+
+fn spawn_fallback_collectible(
+    commands: &mut Commands,
+    assets: &Res<ModelAssets>,
+    position: Vec3,
+) {
+    use crate::systems::collectibles::{
+        Collectible, CollectibleType, FloatingItem, CollectibleRotation, 
+        Sensor, Interactable
+    };
+
+    commands.spawn((
+        Name::new("Fallback Coin"),
+        SceneRoot(assets.coin.clone()),
+        Transform {
+            translation: position,
+            scale: Vec3::splat(0.75),
+            ..default()
+        },
+        Collider::sphere(0.5),
+        RigidBody::Kinematic,
+        Visibility::Visible,
+        Collectible,
+        CollectibleType::Coin,
+        FloatingItem {
+            base_height: position.y,
+            hover_amplitude: 0.2,
+            hover_speed: 2.0,
+        },
+        CollectibleRotation {
+            enabled: true,
+            clockwise: true,
+            speed: 1.0,
+        },
+        Sensor,
+        Interactable {
+            interaction_radius: 4.0,
+        },
+        PlayingScene,
+    ));
 }

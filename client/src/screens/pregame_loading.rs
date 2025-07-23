@@ -101,7 +101,7 @@ pub fn plugin(app: &mut App) {
                 update_loading_ui,
             ).run_if(in_state(Screen::PreGameLoading))
         )
-        .add_systems(OnExit(Screen::PreGameLoading), super::despawn_scene::<PreGameLoadingScreen>);
+        .add_systems(OnExit(Screen::PreGameLoading), cleanup_pregame_loading_only);
 }
 
 fn setup_pregame_loading_screen(
@@ -515,6 +515,17 @@ fn check_loading_complete(
             info!("✅ Loading ready, waiting {:.1}s more for minimum display time", remaining);
         }
     }
+}
+
+fn cleanup_pregame_loading_only(
+    mut commands: Commands,
+    loading_ui_query: Query<Entity, With<PreGameLoadingScreen>>,
+) {
+    // Only clean up the loading UI, NOT the preloaded game entities
+    for entity in loading_ui_query.iter() {
+        commands.entity(entity).despawn();
+    }
+    info!("🧹 Cleaned up loading UI while preserving preloaded game entities");
 }
 
 fn update_loading_ui(
