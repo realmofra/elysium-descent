@@ -202,11 +202,11 @@ pub fn add_item_to_inventory(
                         },
                     ))
                     .with_children(|item_parent| {
-                        // spawn the image (large, centered)
+                        // spawn the image (larger, centered)
                         item_parent.spawn((
                             Node {
-                                width: Val::Px(140.0),
-                                height: Val::Px(160.0),
+                                width: Val::Px(200.0),
+                                height: Val::Px(200.0),
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
                                 ..default()
@@ -221,33 +221,34 @@ pub fn add_item_to_inventory(
                             ZIndex(1),
                         ));
 
-                        // Spawn count text (large, pill, bottom right)
+                        // Spawn count text (perfect circle badge, bottom right of image)
                         item_parent
                             .spawn((
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    width: Val::Percent(38.0),
-                                    height: Val::Percent(48.0),
-                                    right: Val::Percent(2.0),
-                                    bottom: Val::Percent(2.0),
+                                    width: Val::Px(50.0),  // Slightly smaller for better proportion
+                                    height: Val::Px(50.0), // Same as width for circle
+                                    right: Val::Px(-30.0),  // Positioned relative to image edge
+                                    bottom: Val::Px(20.0), // Positioned relative to image edge
                                     align_items: AlignItems::Center,
                                     justify_content: JustifyContent::Center,
+                                    border: UiRect::all(Val::Px(2.0)), // Add border for definition
                                     ..default()
                                 },
-                                BorderRadius::MAX,
-                                BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.92)),
+                                BorderRadius::all(Val::Px(25.0)), // Half of width/height for perfect circle
+                                BorderColor(Color::srgba(0.0, 0.0, 0.0, 0.4)), // Slightly darker border
+                                BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.98)), // More opaque
                                 ZIndex(2),
                             ))
                             .with_children(|text_parent| {
                                 text_parent.spawn((
                                     TextFont {
-                                        font_size: 34.0,
+                                        font_size: 28.0, // Adjusted for smaller badge
                                         font: font_assets.rajdhani_extra_bold.clone(),
                                         ..default()
                                     },
                                     Text::new("1"),
-                                    TextColor(Color::BLACK),
-                                    CountText,
+                                    TextColor(Color::srgb(0.1, 0.1, 0.1)), // Dark gray instead of pure black
                                 ));
                             });
                     });
