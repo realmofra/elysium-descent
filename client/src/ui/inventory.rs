@@ -177,10 +177,14 @@ pub fn add_item_to_inventory(
     let mut sorted_slots: Vec<(Entity, &InventorySlot)> = slot_query.iter_mut().collect();
     sorted_slots.sort_by_key(|(_, slot)| slot.index);
     for (slot_entity, _) in sorted_slots {
-        let is_empty = children_query
+        // Check if slot has any InventoryItem children (not just if it has any children)
+        let has_item = children_query
             .get(slot_entity)
-            .map_or(true, |c| c.is_empty());
-        if is_empty {
+            .map_or(false, |children| {
+                children.iter().any(|child| item_query.get(child).is_ok())
+            });
+        
+        if !has_item {
             commands.entity(slot_entity).with_children(|parent| {
                 parent
                     .spawn((
