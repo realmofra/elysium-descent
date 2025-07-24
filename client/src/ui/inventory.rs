@@ -81,7 +81,7 @@ pub fn spawn_inventory_ui<T: Component + Default>(commands: &mut Commands) {
                 ..default()
             },
             BackgroundColor(Color::srgba(0.12, 0.14, 0.18, 0.85)), // glassy dark
-            BorderColor(Color::ELYSIUM_DESCENT_BLUE),
+            BorderColor(Color::ELYSIUM_GOLD),
             BorderRadius::all(Val::Px(32.0)),
             InventoryUI,
             Visibility::Hidden,
@@ -101,7 +101,7 @@ pub fn spawn_inventory_ui<T: Component + Default>(commands: &mut Commands) {
                         ..default()
                     },
                     BackgroundColor(Color::srgba(0.18, 0.20, 0.26, 0.65)),
-                    BorderColor(Color::ELYSIUM_DESCENT_RED),
+                    BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.7)),
                     BorderRadius::all(Val::Px(18.0)),
                     InventorySlot { index: i },
                 ))
