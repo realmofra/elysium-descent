@@ -1,11 +1,11 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
-use rand::prelude::*;
+use rand::Rng;
 use std::fs;
 
 use super::Screen;
 use crate::assets::{FontAssets, ModelAssets, UiAssets};
-use crate::systems::collectibles::{CollectibleSpawner, NavigationBasedSpawner, NavigationData};
+use crate::systems::collectibles::{CollectibleSpawner, NavigationBasedSpawner, NavigationData, CoinStreamingManager};
 
 #[derive(Component)]
 struct PreGameLoadingScreen;
@@ -88,6 +88,7 @@ impl LoadingProgress {
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<LoadingProgress>()
+        .init_resource::<CoinStreamingManager>()  // Initialize here so it persists between screens
         .add_systems(OnEnter(Screen::PreGameLoading), setup_pregame_loading_screen)
         .add_systems(
             Update,
@@ -331,10 +332,9 @@ fn load_navigation_system(
 }
 
 fn spawn_collectibles_system(
-    mut commands: Commands,
-    assets: Option<Res<ModelAssets>>,
     nav_spawner: Res<NavigationBasedSpawner>,
     mut collectible_spawner: ResMut<CollectibleSpawner>,
+    mut streaming_manager: ResMut<CoinStreamingManager>,
     mut loading_progress: ResMut<LoadingProgress>,
     spatial_query: SpatialQuery,
     time: Res<Time>,
@@ -342,115 +342,91 @@ fn spawn_collectibles_system(
     if loading_progress.navigation_loaded 
         && !loading_progress.collectibles_spawned 
         && loading_progress.should_load_stage(3, time.elapsed_secs()) {
-        if let Some(assets) = assets {
-            if nav_spawner.loaded && collectible_spawner.coins_spawned == 0 {
-                // Pre-spawn collectibles
-                info!("🪙 Pre-spawning collectibles...");
+        if nav_spawner.loaded && collectible_spawner.coins_spawned == 0 {
+            // Calculate collectible positions (don't spawn entities yet)
+            info!("🪙 Calculating collectible positions...");
+            
+            let mut rng = rand::rng();
+            let mut spawned_positions = Vec::new();
+            let mut coins_calculated = 0;
+            const MAX_COINS: usize = 1000;
+
+            // Keep trying to calculate positions until we reach MAX_COINS
+            let mut attempts = 0;
+            const MAX_ATTEMPTS: usize = MAX_COINS * 10; // Prevent infinite loops
+
+            while coins_calculated < MAX_COINS && attempts < MAX_ATTEMPTS {
+                attempts += 1;
+
+                // Pick a random navigation position as a base
+                if nav_spawner.nav_positions.is_empty() {
+                    warn!("No navigation positions available for coin spawning");
+                    break;
+                }
                 
-                let mut rng = rand::rng();
-                let mut spawned_positions = Vec::new();
-                let mut coins_spawned = 0;
-                const MAX_COINS: usize = 50;
+                let nav_pos = nav_spawner.nav_positions[rng.random_range(0..nav_spawner.nav_positions.len())];
 
-                for nav_pos in &nav_spawner.nav_positions {
-                    if rng.random::<f32>() > nav_spawner.spawn_probability {
-                        continue;
-                    }
+                // Generate random offset around the navigation position
+                let angle = rng.random::<f32>() * std::f32::consts::TAU;
+                let distance = rng.random::<f32>() * nav_spawner.spawn_radius;
+                let offset = Vec3::new(
+                    angle.cos() * distance,
+                    0.0,
+                    angle.sin() * distance,
+                );
+                let potential_pos = nav_pos + offset;
 
-                    let angle = rng.random::<f32>() * std::f32::consts::TAU;
-                    let distance = rng.random::<f32>() * nav_spawner.spawn_radius;
-                    let offset = Vec3::new(
-                        angle.cos() * distance,
-                        0.0,
-                        angle.sin() * distance,
-                    );
-                    let potential_pos = *nav_pos + offset;
+                // Check minimum distance from other coins
+                let too_close = spawned_positions.iter().any(|&other_pos: &Vec3| {
+                    potential_pos.distance(other_pos) < nav_spawner.min_distance_between_coins
+                });
 
-                    let too_close = spawned_positions.iter().any(|&other_pos: &Vec3| {
-                        potential_pos.distance(other_pos) < nav_spawner.min_distance_between_coins
-                    });
-
-                    if too_close {
-                        continue;
-                    }
-
-                    let coin_y = if potential_pos.y + 2.5 <= -1.5 {
-                        1.0
-                    } else {
-                        potential_pos.y + 2.5
-                    };
-                    let coin_pos = Vec3::new(potential_pos.x, coin_y, potential_pos.z);
-                    
-                    if is_valid_coin_position_preload(coin_pos, &spatial_query) {
-                        spawn_collectible_preload(
-                            &mut commands,
-                            &assets,
-                            coin_pos,
-                        );
-
-                        spawned_positions.push(coin_pos);
-                        coins_spawned += 1;
-
-                        if coins_spawned >= MAX_COINS {
-                            break;
-                        }
-                    }
+                if too_close {
+                    continue;
                 }
 
-                collectible_spawner.coins_spawned = coins_spawned;
-                loading_progress.collectibles_spawned = true;
-                info!("✅ Pre-spawned {} collectibles", coins_spawned);
-            } else {
-                // No navigation data, still mark as complete
-                loading_progress.collectibles_spawned = true;
+                // Determine coin height
+                let coin_y = if potential_pos.y + 2.5 <= -1.5 {
+                    1.0
+                } else {
+                    potential_pos.y + 2.5
+                };
+                let coin_pos = Vec3::new(potential_pos.x, coin_y, potential_pos.z);
+                
+                // Validate position
+                if is_valid_coin_position_preload(coin_pos, &spatial_query) {
+                    // Store position in streaming manager instead of spawning entity
+                    streaming_manager.add_position(coin_pos);
+                    spawned_positions.push(coin_pos);
+                    coins_calculated += 1;
+
+                    // Log progress every 100 coins
+                    if coins_calculated % 100 == 0 {
+                        info!("Calculated {} / {} coin positions (total stored: {})", 
+                              coins_calculated, MAX_COINS, streaming_manager.positions.len());
+                    }
+                }
             }
+
+            collectible_spawner.coins_spawned = coins_calculated;
+            loading_progress.collectibles_spawned = true;
+            
+            if coins_calculated < MAX_COINS {
+                warn!("⚠️ Only calculated {} / {} coin positions after {} attempts", coins_calculated, MAX_COINS, attempts);
+            } else {
+                info!("✅ Successfully calculated {} collectible positions", coins_calculated);
+                info!("🎮 Streaming system ready - coins will spawn dynamically based on player position");
+            }
+            
+            info!("🔍 Debug: Streaming manager final state - {} positions stored", streaming_manager.positions.len());
+        } else {
+            // No navigation data, still mark as complete
+            loading_progress.collectibles_spawned = true;
         }
     }
 }
 
-#[derive(Component)]
-pub struct CollectiblePreload;
-
-fn spawn_collectible_preload(
-    commands: &mut Commands,
-    assets: &Res<ModelAssets>,
-    position: Vec3,
-) {
-    use crate::systems::collectibles::{
-        Collectible, CollectibleType, FloatingItem, CollectibleRotation, 
-        Sensor, Interactable
-    };
-
-    commands.spawn((
-        Name::new("PreLoaded Coin"),
-        SceneRoot(assets.coin.clone()),
-        Transform {
-            translation: position,
-            scale: Vec3::splat(0.75),
-            ..default()
-        },
-        Collider::sphere(0.5),
-        RigidBody::Kinematic,
-        Visibility::Hidden, // Hide until gameplay starts
-        Collectible,
-        CollectibleType::Coin,
-        FloatingItem {
-            base_height: position.y,
-            hover_amplitude: 0.2,
-            hover_speed: 2.0,
-        },
-        CollectibleRotation {
-            enabled: true,
-            clockwise: true,
-            speed: 1.0,
-        },
-        Sensor,
-        Interactable {
-            interaction_radius: 4.0,
-        },
-        CollectiblePreload,
-    ));
-}
+// Removed: No longer pre-spawning collectible entities
 
 fn is_valid_coin_position_preload(
     position: Vec3,

@@ -4,13 +4,13 @@ use bevy_gltf_animation::prelude::*;
 use rand::prelude::*;
 
 use super::{Screen, despawn_scene};
-use super::pregame_loading::{EnvironmentPreload, CollectiblePreload};
+use super::pregame_loading::EnvironmentPreload;
 use crate::assets::{FontAssets, ModelAssets, UiAssets};
 use crate::keybinding;
 use crate::systems::character_controller::{
     CharacterController, CharacterControllerBundle, CharacterControllerPlugin, setup_idle_animation,
 };
-use crate::systems::collectibles::{CollectiblesPlugin, NavigationBasedSpawner, CollectibleSpawner};
+use crate::systems::collectibles::{CollectiblesPlugin, NavigationBasedSpawner, CollectibleSpawner, CoinStreamingManager};
 use crate::ui::dialog::DialogPlugin;
 use crate::ui::inventory::spawn_inventory_ui;
 use crate::ui::widgets::{HudPosition, player_hud_widget};
@@ -23,7 +23,7 @@ pub(super) fn plugin(app: &mut App) {
         OnEnter(Screen::GamePlay),
         (
             reveal_preloaded_environment,
-            reveal_preloaded_collectibles,
+            debug_streaming_manager_state,
             PlayingScene::spawn_player_and_camera,
             set_gameplay_clear_color,
         ),
@@ -53,6 +53,25 @@ pub(super) fn plugin(app: &mut App) {
 
 fn set_gameplay_clear_color(mut commands: Commands) {
     commands.insert_resource(ClearColor(Color::srgb(0.529, 0.808, 0.922))); // Sky blue color
+}
+
+fn debug_streaming_manager_state(streaming_manager: Res<CoinStreamingManager>) {
+    info!("🔍 GamePlay Debug: CoinStreamingManager has {} stored positions when entering GamePlay", 
+          streaming_manager.positions.len());
+    if streaming_manager.positions.is_empty() {
+        warn!("⚠️ No coin positions found when entering GamePlay! Loading may have failed.");
+    } else {
+        info!("✅ Coin positions successfully preserved from PreGameLoading");
+        
+        // Show first few positions for debugging
+        let sample_count = 5.min(streaming_manager.positions.len());
+        for i in 0..sample_count {
+            info!("  Sample coin {}: {:?}", i, streaming_manager.positions[i]);
+        }
+        
+        // Also show player spawn position for comparison
+        info!("  Player spawns at: (0.0, 2.0, 0.0)");
+    }
 }
 
 fn camera_follow_player(
@@ -225,27 +244,7 @@ fn reveal_preloaded_environment(
     }
 }
 
-fn reveal_preloaded_collectibles(
-    mut commands: Commands,
-    collectible_query: Query<Entity, With<CollectiblePreload>>,
-) {
-    info!("🪙 Revealing preloaded collectibles...");
-    info!("🔍 Found {} collectible entities with CollectiblePreload marker", collectible_query.iter().count());
-    
-    let mut count = 0;
-    for entity in collectible_query.iter() {
-        commands.entity(entity)
-            .insert(Visibility::Visible)
-            .insert(PlayingScene);
-        count += 1;
-    }
-    
-    if count == 0 {
-        warn!("⚠️ No preloaded collectible entities found! Collectibles may not have been created during loading.");
-    } else {
-        info!("✅ Revealed {} preloaded collectibles", count);
-    }
-}
+// Removed: No longer using preloaded collectibles - using streaming system instead
 
 #[derive(Resource, Default)]
 struct FallbackSpawned {

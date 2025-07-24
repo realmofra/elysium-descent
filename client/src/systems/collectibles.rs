@@ -1,9 +1,12 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
+use avian3d::prelude::*;
+use std::collections::HashMap;
 
 use crate::screens::Screen;
 use crate::systems::character_controller::CharacterController;
 use crate::systems::dojo::PickupItemEvent;
+use crate::assets::ModelAssets;
 
 // ===== COMPONENTS & RESOURCES =====
 
@@ -61,6 +64,59 @@ pub struct Interactable {
 #[derive(Event, Debug)]
 pub struct InteractionEvent;
 
+/// Component to mark streaming collectibles with their original position ID
+#[derive(Component)]
+pub struct StreamingCoin {
+    pub position_id: usize,
+}
+
+/// Resource containing all coin positions and their spawned state
+#[derive(Resource)]
+pub struct CoinStreamingManager {
+    pub positions: Vec<Vec3>,
+    pub spawned_coins: HashMap<usize, Entity>,
+    pub last_update_time: f32,
+    pub update_interval: f32,
+    pub spawn_radius: f32,
+}
+
+impl Default for CoinStreamingManager {
+    fn default() -> Self {
+        Self {
+            positions: Vec::new(),
+            spawned_coins: HashMap::new(),
+            last_update_time: 0.0,
+            update_interval: 1.0,  // Update every 1 second for debugging
+            spawn_radius: 100.0,   // Increased radius to 100 units for debugging
+        }
+    }
+}
+
+impl CoinStreamingManager {
+    pub fn new() -> Self {
+        Self {
+            positions: Vec::new(),
+            spawned_coins: HashMap::new(),
+            last_update_time: 0.0,
+            update_interval: 2.5, // Update every 2.5 seconds
+            spawn_radius: 60.0,   // Spawn coins within 60 units
+        }
+    }
+
+    pub fn add_position(&mut self, position: Vec3) {
+        self.positions.push(position);
+    }
+
+    pub fn should_update(&self, current_time: f32) -> bool {
+        // Always update on first run (when last_update_time is 0.0)
+        self.last_update_time == 0.0 || current_time - self.last_update_time >= self.update_interval
+    }
+
+    pub fn mark_updated(&mut self, current_time: f32) {
+        self.last_update_time = current_time;
+    }
+}
+
 // Configuration for spawning collectibles - keeping for potential future use
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -78,20 +134,6 @@ pub struct PlayerMovementTracker {
     pub paused: bool,
 }
 
-
-
-
-
-
-
-
-
-// Removed unused functions (now handled in pregame_loading module):
-// - spawn_navigation_based_collectibles_system
-// - is_valid_coin_position
-
-
-
 // ===== PLUGIN =====
 
 pub struct CollectiblesPlugin;
@@ -103,20 +145,18 @@ impl Plugin for CollectiblesPlugin {
             .init_resource::<CollectibleSpawner>()
             .init_resource::<PlayerMovementTracker>()
             .init_resource::<NavigationBasedSpawner>()
+            // CoinStreamingManager now initialized in pregame_loading to persist between screens
             .add_systems(
                 Update,
                 (
+                    update_coin_streaming,            // Stream coins every 2-3 seconds
                     auto_collect_nearby_interactables,
                     update_floating_items,
                     rotate_collectibles,
                     crate::ui::inventory::add_item_to_inventory,
                     crate::ui::inventory::toggle_inventory_visibility,
                     crate::ui::inventory::adjust_inventory_for_dialogs,
-                    // Removed dynamic spawning systems since we now pre-load everything:
-                    // load_navigation_data_system,
-                    // spawn_navigation_based_collectibles_system,
                     track_player_movement,
-                    // track_player_navigation,
                 )
                     .run_if(in_state(Screen::GamePlay)),
             );
@@ -125,26 +165,160 @@ impl Plugin for CollectiblesPlugin {
 
 // ===== SYSTEMS =====
 
-// Removed spawn_collectible function (now handled in pregame_loading module)
+/// Streaming system that spawns/despawns coins based on player proximity every 2-3 seconds
+fn update_coin_streaming(
+    mut commands: Commands,
+    mut streaming_manager: ResMut<CoinStreamingManager>,
+    player_query: Query<&Transform, With<CharacterController>>,
+    model_assets: Option<Res<ModelAssets>>,
+    time: Res<Time>,
+    existing_coins: Query<(Entity, &StreamingCoin)>,
+) {
+    let Ok(player_transform) = player_query.single() else {
+        warn!("🔍 Streaming: No player found");
+        return;
+    };
+
+    let Some(assets) = model_assets else {
+        warn!("🔍 Streaming: No model assets found");
+        return;
+    };
+
+    let current_time = time.elapsed_secs();
+    
+    // Debug: Log every few seconds even if not updating
+    if (current_time as u32) % 3 == 0 && current_time - current_time.floor() < 0.1 {
+        info!("🔍 Streaming Debug: {} total positions, {} spawned, player at {:?}", 
+              streaming_manager.positions.len(), 
+              streaming_manager.spawned_coins.len(),
+              player_transform.translation);
+    }
+    
+    // Only update every 2-3 seconds
+    if !streaming_manager.should_update(current_time) {
+        return;
+    }
+
+    info!("🪙 Streaming update triggered - checking positions...");
+    streaming_manager.mark_updated(current_time);
+
+    let player_pos = player_transform.translation;
+
+    // First, despawn coins that are too far away
+    let mut to_despawn = Vec::new();
+    for (entity, streaming_coin) in existing_coins.iter() {
+        let coin_pos = streaming_manager.positions[streaming_coin.position_id];
+        let distance = player_pos.distance(coin_pos);
+        
+        if distance > streaming_manager.spawn_radius * 1.2 { // Add hysteresis
+            to_despawn.push((entity, streaming_coin.position_id));
+        }
+    }
+
+    // Despawn distant coins
+    for (entity, position_id) in to_despawn {
+        commands.entity(entity).despawn();
+        streaming_manager.spawned_coins.remove(&position_id);
+    }
+
+    // Collect positions that need to be spawned
+    let mut positions_to_spawn = Vec::new();
+    let mut nearest_coin_distance = f32::INFINITY;
+    let mut total_in_range = 0;
+    
+    for (position_id, &position) in streaming_manager.positions.iter().enumerate() {
+        let distance = player_pos.distance(position);
+        
+        // Track nearest coin for debugging
+        if distance < nearest_coin_distance {
+            nearest_coin_distance = distance;
+        }
+        
+        if distance <= streaming_manager.spawn_radius {
+            total_in_range += 1;
+            if !streaming_manager.spawned_coins.contains_key(&position_id) {
+                positions_to_spawn.push((position_id, position));
+            }
+        }
+    }
+
+    info!("🔍 Streaming Debug: {} positions in range of {}m, {} need spawning, nearest coin: {:.1}m", 
+          total_in_range, streaming_manager.spawn_radius, positions_to_spawn.len(), nearest_coin_distance);
+
+    // Spawn the collected positions
+    for (position_id, position) in positions_to_spawn {
+        info!("🪙 Spawning coin {} at {:?} (distance: {:.1})", position_id, position, player_pos.distance(position));
+        let entity = spawn_streaming_coin(&mut commands, &assets, position, position_id);
+        streaming_manager.spawned_coins.insert(position_id, entity);
+    }
+
+    let active_coins = streaming_manager.spawned_coins.len();
+    info!("🪙 Streaming: {} active coins (from {} total positions)", active_coins, streaming_manager.positions.len());
+}
+
+/// Spawn a single streaming coin
+fn spawn_streaming_coin(
+    commands: &mut Commands,
+    assets: &ModelAssets,
+    position: Vec3,
+    position_id: usize,
+) -> Entity {
+    commands.spawn((
+        Name::new("Streaming Coin"),
+        SceneRoot(assets.coin.clone()),
+        Transform {
+            translation: position,
+            scale: Vec3::splat(0.75),
+            ..default()
+        },
+        Collider::sphere(0.5),
+        RigidBody::Kinematic,
+        Visibility::Visible,
+        Collectible,
+        CollectibleType::Coin,
+        FloatingItem {
+            base_height: position.y,
+            hover_amplitude: 0.2,
+            hover_speed: 2.0,
+        },
+        CollectibleRotation {
+            enabled: true,
+            clockwise: true,
+            speed: 1.0,
+        },
+        Sensor,
+        Interactable {
+            interaction_radius: 4.0,
+        },
+        StreamingCoin { position_id },
+    )).id()
+}
 
 /// System to automatically collect any collectible when the player is within the Interactable's radius
 fn auto_collect_nearby_interactables(
     mut commands: Commands,
     player_query: Query<&Transform, With<CharacterController>>,
     interactable_query: Query<
-        (Entity, &Transform, &Interactable, &CollectibleType),
+        (Entity, &Transform, &Interactable, &CollectibleType, Option<&StreamingCoin>),
         Without<Collected>,
     >,
     mut pickup_events: EventWriter<PickupItemEvent>,
+    mut streaming_manager: ResMut<CoinStreamingManager>,
 ) {
     let Ok(player_transform) = player_query.single() else {
         return;
     };
 
-    for (entity, transform, interactable, collectible_type) in interactable_query.iter() {
+    for (entity, transform, interactable, collectible_type, streaming_coin) in interactable_query.iter() {
         let distance = player_transform.translation.distance(transform.translation);
         if distance <= interactable.interaction_radius {
             if *collectible_type == CollectibleType::Coin {
+                // Remove from streaming manager if it's a streaming coin
+                if let Some(streaming) = streaming_coin {
+                    streaming_manager.spawned_coins.remove(&streaming.position_id);
+                    // Note: We don't remove from positions vector to preserve indices
+                }
+
                 // Mark as collected
                 commands.entity(entity).insert(Collected);
                 // Insert NextItemToAdd so inventory system will add it
@@ -161,7 +335,10 @@ fn auto_collect_nearby_interactables(
     }
 }
 
-fn update_floating_items(time: Res<Time>, mut query: Query<(&FloatingItem, &mut Transform)>) {
+fn update_floating_items(
+    time: Res<Time>, 
+    mut query: Query<(&FloatingItem, &mut Transform), With<Collectible>>
+) {
     for (floating, mut transform) in query.iter_mut() {
         let time = time.elapsed_secs();
         let hover_offset = (time * floating.hover_speed).sin() * floating.hover_amplitude;
@@ -170,7 +347,7 @@ fn update_floating_items(time: Res<Time>, mut query: Query<(&FloatingItem, &mut 
 }
 
 pub fn rotate_collectibles(
-    mut collectible_query: Query<(&mut Transform, &CollectibleRotation)>,
+    mut collectible_query: Query<(&mut Transform, &CollectibleRotation), With<Collectible>>,
     time: Res<Time>,
 ) {
     for (mut transform, rotation) in collectible_query.iter_mut() {
