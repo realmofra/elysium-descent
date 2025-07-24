@@ -39,7 +39,7 @@ pub(super) fn plugin(app: &mut App) {
     )
     .add_systems(
         OnExit(Screen::GamePlay),
-        (despawn_scene::<PlayingScene>, despawn_gameplay_hud),
+        (despawn_scene::<PlayingScene>, despawn_gameplay_hud, cleanup_preloaded_environment),
     )
     .add_plugins(PhysicsPlugins::default())
     // .add_plugins(PhysicsDebugPlugin::default())
@@ -138,6 +138,19 @@ fn spawn_player_hud(
 fn despawn_gameplay_hud(mut commands: Commands, query: Query<Entity, With<GameplayHud>>) {
     for entity in &query {
         commands.entity(entity).despawn();
+    }
+}
+
+fn cleanup_preloaded_environment(
+    mut commands: Commands, 
+    environment_query: Query<Entity, With<EnvironmentPreload>>
+) {
+    for entity in environment_query.iter() {
+        commands.entity(entity).despawn();
+    }
+    let count = environment_query.iter().count();
+    if count > 0 {
+        info!("🧹 Cleaned up {} preloaded environment entities", count);
     }
 }
 

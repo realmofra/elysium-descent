@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use avian3d::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::screens::Screen;
 use crate::systems::character_controller::CharacterController;
@@ -88,6 +88,7 @@ pub struct StreamingCoin {
 pub struct CoinStreamingManager {
     pub positions: Vec<Vec3>,
     pub spawned_coins: HashMap<usize, Entity>,
+    pub collected_positions: HashSet<usize>,  // Track collected positions to prevent respawning
     pub last_update_time: f32,
     pub update_interval: f32,
     pub spawn_radius: f32,
@@ -98,6 +99,7 @@ impl Default for CoinStreamingManager {
         Self {
             positions: Vec::new(),
             spawned_coins: HashMap::new(),
+            collected_positions: HashSet::new(),
             last_update_time: 0.0,
             update_interval: 1.0,  // Update every 1 second for debugging
             spawn_radius: 100.0,   // Increased radius to 100 units for debugging
@@ -110,6 +112,7 @@ impl CoinStreamingManager {
         Self {
             positions: Vec::new(),
             spawned_coins: HashMap::new(),
+            collected_positions: HashSet::new(),
             last_update_time: 0.0,
             update_interval: 2.5, // Update every 2.5 seconds
             spawn_radius: 60.0,   // Spawn coins within 60 units
@@ -251,7 +254,8 @@ fn update_coin_streaming(
         
         if distance <= streaming_manager.spawn_radius {
             total_in_range += 1;
-            if !streaming_manager.spawned_coins.contains_key(&position_id) {
+            if !streaming_manager.spawned_coins.contains_key(&position_id) 
+                && !streaming_manager.collected_positions.contains(&position_id) {
                 positions_to_spawn.push((position_id, position));
             }
         }
@@ -346,7 +350,8 @@ fn auto_collect_nearby_interactables(
                 // Remove from streaming manager if it's a streaming coin
                 if let Some(streaming) = streaming_coin {
                     streaming_manager.spawned_coins.remove(&streaming.position_id);
-                    // Note: We don't remove from positions vector to preserve indices
+                    streaming_manager.collected_positions.insert(streaming.position_id);
+                    info!("🪙 Coin {} collected and marked as permanently collected", streaming.position_id);
                 }
 
                 // Mark as collected

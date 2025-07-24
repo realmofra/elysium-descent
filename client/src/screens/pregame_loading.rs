@@ -110,13 +110,25 @@ fn setup_pregame_loading_screen(
     font_assets: Res<FontAssets>,
     ui_assets: Res<UiAssets>,
     mut loading_progress: ResMut<LoadingProgress>,
+    mut streaming_manager: ResMut<CoinStreamingManager>,
+    mut collectible_spawner: ResMut<CollectibleSpawner>,
+    mut nav_spawner: ResMut<NavigationBasedSpawner>,
     time: Res<Time>,
 ) {
-    // Reset loading progress and start timer
+    // Reset all loading-related resources to prevent hanging on re-entry
     *loading_progress = LoadingProgress::new();
     loading_progress.loading_start_time = Some(time.elapsed_secs());
+    
+    // Reset streaming manager to clear old coin positions and spawned state
+    *streaming_manager = CoinStreamingManager::default();
+    
+    // Reset collectible spawner
+    collectible_spawner.coins_spawned = 0;
+    
+    // Reset navigation spawner loaded state to force reload
+    nav_spawner.loaded = false;
 
-    info!("🔄 Starting loading sequence with 5-second minimum display time");
+    info!("🔄 Starting fresh loading sequence - all resources reset");
 
     commands
         .spawn((
