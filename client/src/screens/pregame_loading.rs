@@ -5,6 +5,7 @@ use std::fs;
 
 use super::Screen;
 use crate::assets::{FontAssets, ModelAssets, UiAssets};
+use crate::constants::collectibles::{MAX_COINS, MAX_COIN_PLACEMENT_ATTEMPTS, MIN_DISTANCE_BETWEEN_COINS};
 use crate::systems::collectibles::{CollectibleSpawner, NavigationBasedSpawner, NavigationData, CoinStreamingManager};
 
 #[derive(Component)]
@@ -366,11 +367,9 @@ fn spawn_collectibles_system(
             let mut rng = rand::rng();
             let mut spawned_positions = Vec::new();
             let mut coins_calculated = 0;
-            const MAX_COINS: usize = 500;  // Reasonable number for performance
             let mut attempts = 0;
-            const MAX_ATTEMPTS: usize = 10000;
 
-            while coins_calculated < MAX_COINS && attempts < MAX_ATTEMPTS {
+            while coins_calculated < MAX_COINS && attempts < MAX_COIN_PLACEMENT_ATTEMPTS {
                 attempts += 1;
 
                 // Use navigation positions if available, otherwise generate fallback positions
@@ -397,7 +396,7 @@ fn spawn_collectibles_system(
 
                 // Check minimum distance from other coins
                 let too_close = spawned_positions.iter().any(|&other_pos: &Vec3| {
-                    coin_pos.distance(other_pos) < 4.0 // Minimum distance between coins
+                    coin_pos.distance(other_pos) < MIN_DISTANCE_BETWEEN_COINS
                 });
 
                 if !too_close && is_valid_coin_position_preload(coin_pos, &spatial_query) {

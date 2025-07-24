@@ -6,6 +6,7 @@ use rand::prelude::*;
 use super::{Screen, despawn_scene};
 use super::pregame_loading::EnvironmentPreload;
 use crate::assets::{FontAssets, ModelAssets, UiAssets};
+use crate::constants::collectibles::{MAX_COINS, MIN_DISTANCE_BETWEEN_COINS};
 use crate::keybinding;
 use crate::systems::character_controller::{
     CharacterController, CharacterControllerBundle, CharacterControllerPlugin, setup_idle_animation,
@@ -260,11 +261,7 @@ fn reveal_preloaded_environment(
 
 // Removed: No longer using preloaded collectibles - using streaming system instead
 
-#[derive(Resource, Default)]
-struct FallbackSpawned {
-    environment: bool,
-    collectibles: bool,
-}
+
 
 fn fallback_spawn_environment(
     mut commands: Commands,
@@ -313,7 +310,7 @@ fn fallback_spawn_collectibles(
     nav_spawner: Option<Res<NavigationBasedSpawner>>,
     mut collectible_spawner: ResMut<CollectibleSpawner>,
     collectible_query: Query<Entity, With<crate::systems::collectibles::Collectible>>,
-    spatial_query: SpatialQuery,
+    _spatial_query: SpatialQuery,
     mut fallback_spawned: Local<bool>,
 ) {
     // Only run once, and only if no collectible entities exist
@@ -328,7 +325,6 @@ fn fallback_spawn_collectibles(
             let mut rng = rand::rng();
             let mut spawned_positions = Vec::new();
             let mut coins_spawned = 0;
-            const MAX_COINS: usize = 50;
 
             for nav_pos in &nav_spawner.nav_positions {
                 if rng.random::<f32>() > nav_spawner.spawn_probability {
@@ -345,7 +341,7 @@ fn fallback_spawn_collectibles(
                 let potential_pos = *nav_pos + offset;
 
                 let too_close = spawned_positions.iter().any(|&other_pos: &Vec3| {
-                    potential_pos.distance(other_pos) < 4.0 // Use reasonable default min distance
+                    potential_pos.distance(other_pos) < MIN_DISTANCE_BETWEEN_COINS
                 });
 
                 if too_close {

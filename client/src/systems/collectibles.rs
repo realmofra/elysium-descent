@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use avian3d::prelude::*;
 use std::collections::{HashMap, HashSet};
 
+use crate::constants::collectibles::COIN_STREAMING_RADIUS;
 use crate::screens::Screen;
 use crate::systems::character_controller::CharacterController;
 use crate::systems::dojo::PickupItemEvent;
@@ -102,22 +103,12 @@ impl Default for CoinStreamingManager {
             collected_positions: HashSet::new(),
             last_update_time: 0.0,
             update_interval: 1.0,  // Update every 1 second for debugging
-            spawn_radius: 100.0,   // Increased radius to 100 units for debugging
+            spawn_radius: COIN_STREAMING_RADIUS,   // Use centralized constant
         }
     }
 }
 
 impl CoinStreamingManager {
-    pub fn new() -> Self {
-        Self {
-            positions: Vec::new(),
-            spawned_coins: HashMap::new(),
-            collected_positions: HashSet::new(),
-            last_update_time: 0.0,
-            update_interval: 2.5, // Update every 2.5 seconds
-            spawn_radius: 60.0,   // Spawn coins within 60 units
-        }
-    }
 
     pub fn add_position(&mut self, position: Vec3) {
         self.positions.push(position);
@@ -487,9 +478,7 @@ fn log_player_position(
 #[derive(Resource)]
 pub struct NavigationBasedSpawner {
     pub nav_positions: Vec<Vec3>,
-    pub spawn_radius: f32,
     pub spawn_probability: f32,
-    pub min_distance_between_coins: f32,
     pub loaded: bool,
 }
 
@@ -497,9 +486,7 @@ impl Default for NavigationBasedSpawner {
     fn default() -> Self {
         Self {
             nav_positions: Vec::new(),
-            spawn_radius: 8.0,           // Spawn coins within 8 units of nav positions
             spawn_probability: 0.15,     // 15% chance per nav position
-            min_distance_between_coins: 4.0, // Minimum 4 units between coins
             loaded: false,
         }
     }
