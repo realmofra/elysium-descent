@@ -39,6 +39,19 @@ pub enum CollectibleType {
 pub struct NextItemToAdd(pub CollectibleType);
 
 #[derive(Resource)]
+pub struct PlayerPositionLogTimer {
+    pub timer: Timer,
+}
+
+impl Default for PlayerPositionLogTimer {
+    fn default() -> Self {
+        Self {
+            timer: Timer::from_seconds(3.0, TimerMode::Repeating),
+        }
+    }
+}
+
+#[derive(Resource)]
 pub struct CollectibleSpawner {
     pub coins_spawned: usize,
 }
@@ -145,6 +158,7 @@ impl Plugin for CollectiblesPlugin {
             .init_resource::<CollectibleSpawner>()
             .init_resource::<PlayerMovementTracker>()
             .init_resource::<NavigationBasedSpawner>()
+            .init_resource::<PlayerPositionLogTimer>()
             // CoinStreamingManager now initialized in pregame_loading to persist between screens
             .add_systems(
                 Update,
@@ -153,6 +167,7 @@ impl Plugin for CollectiblesPlugin {
                     auto_collect_nearby_interactables,
                     update_floating_items,
                     rotate_collectibles,
+                    log_player_position,              // Log player position every 3 seconds
                     crate::ui::inventory::add_item_to_inventory,
                     crate::ui::inventory::toggle_inventory_visibility,
                     crate::ui::inventory::adjust_inventory_for_dialogs,
@@ -263,11 +278,26 @@ fn spawn_streaming_coin(
     position: Vec3,
     position_id: usize,
 ) -> Entity {
+    // Adjust Y position based on current value
+    let adjusted_position = Vec3::new(
+        position.x,
+        if position.y == -1.5 {
+            position.y // No change for -1.5
+        } else if position.y >= 10.0 {
+            position.y + 2.5 // Add 2.5 if at least 10
+        } else if position.y >= 5.0 {
+            position.y + 2.0 // Add 2.0 if at least 5
+        } else {
+            position.y // No change for other values
+        },
+        position.z,
+    );
+    
     commands.spawn((
         Name::new("Streaming Coin"),
         SceneRoot(assets.coin.clone()),
         Transform {
-            translation: position,
+            translation: adjusted_position,
             scale: Vec3::splat(0.75),
             ..default()
         },
@@ -277,7 +307,7 @@ fn spawn_streaming_coin(
         Collectible,
         CollectibleType::Coin,
         FloatingItem {
-            base_height: position.y,
+            base_height: adjusted_position.y, // Use adjusted position for floating base height
             hover_amplitude: 0.2,
             hover_speed: 2.0,
         },
@@ -430,6 +460,20 @@ impl Default for NavigationData {
                 max_bounds: [f32::NEG_INFINITY; 3],
                 average_position: [0.0; 3],
             },
+        }
+    }
+}
+
+/// Log player position every 3 seconds for debugging
+fn log_player_position(
+    time: Res<Time>,
+    mut timer: ResMut<PlayerPositionLogTimer>,
+    player_query: Query<&Transform, With<CharacterController>>,
+) {
+    if timer.timer.tick(time.delta()).just_finished() {
+        if let Ok(player_transform) = player_query.single() {
+            let pos = player_transform.translation;
+            info!("Player Position - x: {:.2}, y: {:.2}, z: {:.2}", pos.x, pos.y, pos.z);
         }
     }
 }
