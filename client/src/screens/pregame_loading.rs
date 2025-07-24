@@ -301,7 +301,7 @@ fn load_navigation_system(
         if !nav_spawner.loaded {
             match fs::read_to_string("nav.json") {
                 Ok(contents) => {
-                    match serde_json::from_str::<NavigationData>(&contents) {
+                                            match serde_json::from_str::<NavigationData>(&contents) {
                         Ok(nav_data) => {
                             nav_spawner.nav_positions = nav_data.positions
                                 .iter()
@@ -339,89 +339,78 @@ fn spawn_collectibles_system(
     spatial_query: SpatialQuery,
     time: Res<Time>,
 ) {
-    if loading_progress.navigation_loaded 
-        && !loading_progress.collectibles_spawned 
+    if !loading_progress.collectibles_spawned 
         && loading_progress.should_load_stage(3, time.elapsed_secs()) {
-        if nav_spawner.loaded && collectible_spawner.coins_spawned == 0 {
-            // Calculate collectible positions (don't spawn entities yet)
-            info!("🪙 Calculating collectible positions...");
+        if collectible_spawner.coins_spawned == 0 {
+            // Pre-calculate coin positions using navigation data
+            info!("🪙 Pre-calculating coin positions using navigation data...");
+            
+            if nav_spawner.loaded && !nav_spawner.nav_positions.is_empty() {
+                info!("✅ Using navigation data with {} positions", nav_spawner.nav_positions.len());
+            } else {
+                info!("⚠️ No navigation data available - using fallback positions around spawn");
+            }
             
             let mut rng = rand::rng();
             let mut spawned_positions = Vec::new();
             let mut coins_calculated = 0;
-            const MAX_COINS: usize = 1000;
-
-            // Keep trying to calculate positions until we reach MAX_COINS
+            const MAX_COINS: usize = 500;  // Reasonable number for performance
             let mut attempts = 0;
-            const MAX_ATTEMPTS: usize = MAX_COINS * 10; // Prevent infinite loops
+            const MAX_ATTEMPTS: usize = 10000;
 
             while coins_calculated < MAX_COINS && attempts < MAX_ATTEMPTS {
                 attempts += 1;
 
-                // Pick a random navigation position as a base
-                if nav_spawner.nav_positions.is_empty() {
-                    warn!("No navigation positions available for coin spawning");
-                    break;
-                }
+                // Use navigation positions if available, otherwise generate fallback positions
+                let base_pos = if nav_spawner.loaded && !nav_spawner.nav_positions.is_empty() {
+                    // Use actual navigation data
+                    nav_spawner.nav_positions[rng.random_range(0..nav_spawner.nav_positions.len())]
+                } else {
+                    // Generate fallback positions closer to spawn
+                    Vec3::new(
+                        rng.random_range(-60.0..60.0), // Reasonable range around spawn
+                        2.0, // Above ground for visibility
+                        rng.random_range(-60.0..60.0), // Reasonable range around spawn
+                    )
+                };
                 
-                let nav_pos = nav_spawner.nav_positions[rng.random_range(0..nav_spawner.nav_positions.len())];
-
-                // Generate random offset around the navigation position
-                let angle = rng.random::<f32>() * std::f32::consts::TAU;
-                let distance = rng.random::<f32>() * nav_spawner.spawn_radius;
-                let offset = Vec3::new(
-                    angle.cos() * distance,
-                    0.0,
-                    angle.sin() * distance,
+                // Add some randomness around the navigation position
+                let offset_x = rng.random_range(-5.0..5.0);
+                let offset_z = rng.random_range(-5.0..5.0);
+                let coin_pos = Vec3::new(
+                    base_pos.x + offset_x,
+                    base_pos.y.max(1.5), // Ensure above ground
+                    base_pos.z + offset_z,
                 );
-                let potential_pos = nav_pos + offset;
 
                 // Check minimum distance from other coins
                 let too_close = spawned_positions.iter().any(|&other_pos: &Vec3| {
-                    potential_pos.distance(other_pos) < nav_spawner.min_distance_between_coins
+                    coin_pos.distance(other_pos) < 4.0 // Minimum distance between coins
                 });
 
-                if too_close {
-                    continue;
-                }
-
-                // Determine coin height
-                let coin_y = if potential_pos.y + 2.5 <= -1.5 {
-                    1.0
-                } else {
-                    potential_pos.y + 2.5
-                };
-                let coin_pos = Vec3::new(potential_pos.x, coin_y, potential_pos.z);
-                
-                // Validate position
-                if is_valid_coin_position_preload(coin_pos, &spatial_query) {
-                    // Store position in streaming manager instead of spawning entity
+                if !too_close && is_valid_coin_position_preload(coin_pos, &spatial_query) {
                     streaming_manager.add_position(coin_pos);
                     spawned_positions.push(coin_pos);
                     coins_calculated += 1;
 
                     // Log progress every 100 coins
                     if coins_calculated % 100 == 0 {
-                        info!("Calculated {} / {} coin positions (total stored: {})", 
-                              coins_calculated, MAX_COINS, streaming_manager.positions.len());
+                        info!("Calculated {} / {} coin positions using nav data", coins_calculated, MAX_COINS);
                     }
                 }
             }
 
             collectible_spawner.coins_spawned = coins_calculated;
             loading_progress.collectibles_spawned = true;
-            
+
             if coins_calculated < MAX_COINS {
                 warn!("⚠️ Only calculated {} / {} coin positions after {} attempts", coins_calculated, MAX_COINS, attempts);
             } else {
-                info!("✅ Successfully calculated {} collectible positions", coins_calculated);
-                info!("🎮 Streaming system ready - coins will spawn dynamically based on player position");
+                info!("✅ Successfully calculated {} coin positions", coins_calculated);
             }
             
-            info!("🔍 Debug: Streaming manager final state - {} positions stored", streaming_manager.positions.len());
-        } else {
-            // No navigation data, still mark as complete
-            loading_progress.collectibles_spawned = true;
+            info!("🎮 Streaming system ready - {} coins will spawn dynamically based on nav data", 
+                  streaming_manager.positions.len());
         }
     }
 }

@@ -69,8 +69,9 @@ fn debug_streaming_manager_state(streaming_manager: Res<CoinStreamingManager>) {
             info!("  Sample coin {}: {:?}", i, streaming_manager.positions[i]);
         }
         
-        // Also show player spawn position for comparison
+        info!("  Total coin positions: {}", streaming_manager.positions.len());
         info!("  Player spawns at: (0.0, 2.0, 0.0)");
+        info!("  Using ACTUAL navigation data from nav.json");
     }
 }
 
@@ -322,7 +323,7 @@ fn fallback_spawn_collectibles(
                 }
 
                 let angle = rng.random::<f32>() * std::f32::consts::TAU;
-                let distance = rng.random::<f32>() * nav_spawner.spawn_radius;
+                let distance = rng.random::<f32>() * 8.0; // Use reasonable default radius
                 let offset = Vec3::new(
                     angle.cos() * distance,
                     0.0,
@@ -331,7 +332,7 @@ fn fallback_spawn_collectibles(
                 let potential_pos = *nav_pos + offset;
 
                 let too_close = spawned_positions.iter().any(|&other_pos: &Vec3| {
-                    potential_pos.distance(other_pos) < nav_spawner.min_distance_between_coins
+                    potential_pos.distance(other_pos) < 4.0 // Use reasonable default min distance
                 });
 
                 if too_close {

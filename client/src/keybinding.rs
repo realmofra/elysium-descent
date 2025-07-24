@@ -231,11 +231,12 @@ fn handle_create_game(
 
 fn handle_interact(
     trigger: Trigger<Started<Interact>>,
-    mut interaction_events: EventWriter<crate::systems::collectibles::InteractionEvent>,
+    mut _interaction_events: EventWriter<crate::systems::collectibles::InteractionEvent>,
 ) {
     if trigger.value {
-        info!("Interact key pressed - triggering interaction");
-        interaction_events.write(crate::systems::collectibles::InteractionEvent);
+        info!("Interact key pressed - collectibles are auto-collected by proximity");
+        // Note: Collectibles are now automatically collected by proximity
+        // Manual interaction is no longer needed for collectibles
     }
 }
 
