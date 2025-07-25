@@ -1328,8 +1328,8 @@
   },
   "contracts": [
     {
-      "address": "0x29081381a736798bf1fd59116a390d0359f9cf957fd8623e0593edd61a931e2",
-      "class_hash": "0x6464da517dd5dcbb90f15a2a19ad053aa9b09797e976b563f105549923a43af",
+      "address": "0x1c535319e9a2ca69b1f9265358103e7466f083f1eb2d8152767634004487c8a",
+      "class_hash": "0x54e9de3e04640f656b10193c439b91510269fc531ab74f0fa18c17dfd256034",
       "abi": [
         {
           "type": "impl",
@@ -1406,27 +1406,11 @@
             },
             {
               "type": "function",
-              "name": "health",
-              "inputs": [
-                {
-                  "name": "game_id",
-                  "type": "core::integer::u64"
-                }
-              ],
-              "outputs": [
-                {
-                  "type": "core::integer::u8"
-                }
-              ],
-              "state_mutability": "view"
-            },
-            {
-              "type": "function",
               "name": "level",
               "inputs": [
                 {
                   "name": "game_id",
-                  "type": "core::integer::u64"
+                  "type": "core::integer::u128"
                 }
               ],
               "outputs": [
@@ -1438,23 +1422,7 @@
             },
             {
               "type": "function",
-              "name": "xp",
-              "inputs": [
-                {
-                  "name": "game_id",
-                  "type": "core::integer::u64"
-                }
-              ],
-              "outputs": [
-                {
-                  "type": "core::integer::u16"
-                }
-              ],
-              "state_mutability": "view"
-            },
-            {
-              "type": "function",
-              "name": "game_count",
+              "name": "total_games",
               "inputs": [],
               "outputs": [
                 {
@@ -1597,13 +1565,7 @@
   "models": [
     {
       "members": [],
-      "class_hash": "0x2c491aa9ebfd8df21a8110105fd1534b8f163b34bd285327d50ac9ff18f0b0b",
-      "tag": "elysium_001-EGame",
-      "selector": "0x1c16f45b4c2c32b7229a1e252789c2121cef0e2c94c74a9c842d30c9bfb0090"
-    },
-    {
-      "members": [],
-      "class_hash": "0x2f829147dc06dcdd24c86e1fe4b597ac4de419d6681b8d81b14788d68036bc8",
+      "class_hash": "0x4ed2701c394dab01cefa9f350a133977315f7bdb3d51d54d42b9356d9bf1392",
       "tag": "elysium_001-Game",
       "selector": "0xa987b32e111bf403d49258d1d30dfa5b57a06bc29533a0d202663fac1751a7"
     },

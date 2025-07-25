@@ -6,6 +6,8 @@ use dojo::model::ModelStorage;
 
 // Models imports
 use elysium_descent::models::game_counter::GameCounter;
+use elysium_descent::models::game::Game;
+
 
 // Structs
 #[derive(Copy, Drop)]
@@ -27,6 +29,16 @@ pub impl StoreImpl of StoreTrait {
 
     #[inline]
     fn get_game_counter(self: Store, id: u32) -> GameCounter {
+        self.world.read_model(id)
+    }
+
+    #[inline]
+    fn set_game(ref self: Store, game: Game) {
+        self.world.write_model(@game);
+    }
+
+    #[inline]
+    fn get_game(self: Store, id: u128) -> Game {
         self.world.read_model(id)
     }
 }

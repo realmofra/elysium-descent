@@ -21,17 +21,17 @@ impl GameStatusIntoFelt252 of Into<GameStatus, felt252> {
     }
 }
 
-#[derive(Copy, Drop, Serde)]
-#[dojo::model]
-pub struct Game {
-    #[key]
-    pub game_id: u32,
-    pub player: ContractAddress,
-    pub status: GameStatus,
-    pub current_level: u32,
-    pub created_at: u64,
-    pub score: u32,
-}
+//#[derive(Copy, Drop, Serde)]
+//#[dojo::model]
+//pub struct Game {
+//    #[key]
+//    pub game_id: u32,
+//    pub player: ContractAddress,
+//    pub status: GameStatus,
+//    pub current_level: u32,
+//    pub created_at: u64,
+//    pub score: u32,
+//}
 
 #[derive(Copy, Drop, Serde)]
 #[dojo::model]
@@ -120,16 +120,16 @@ pub struct WorldItem {
 // Player stats
 #[derive(Copy, Drop, Serde)]
 #[dojo::model]
-pub struct EGame {
+pub struct Game {
     #[key]
     pub game_id: u128,
     pub player: ContractAddress,
-    pub adventurer: Adventurer,
+    pub packed_adventurer: felt252,
 }
+//#[dojo::model]
+//#[derive(Copy, Drop, Serde)]
+//pub struct Loot {
+//    #[key]
+//    pub loot_id: u128,
+//}
 
-#[dojo::model]
-#[derive(Copy, Drop, Serde)]
-pub struct Loot {
-    #[key]
-    pub loot_id: u128,
-}
