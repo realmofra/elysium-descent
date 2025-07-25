@@ -31,9 +31,12 @@ pub struct FloatingItem {
     pub hover_speed: f32,
 }
 
-#[derive(Component, Clone, Copy, Debug, PartialEq)]
+#[derive(Component, Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum CollectibleType {
     Coin,
+    HealthPotion,
+    SurvivalKit,
+    Book,
 }
 
 #[derive(Resource)]

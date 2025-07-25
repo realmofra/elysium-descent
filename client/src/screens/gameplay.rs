@@ -12,8 +12,10 @@ use crate::systems::character_controller::{
     CharacterController, CharacterControllerBundle, CharacterControllerPlugin, setup_idle_animation,
 };
 use crate::systems::collectibles::{CollectiblesPlugin, NavigationBasedSpawner, CollectibleSpawner, CoinStreamingManager};
+use crate::systems::objectives::ObjectivesPlugin;
 use crate::ui::dialog::DialogPlugin;
 use crate::ui::inventory::spawn_inventory_ui;
+use crate::ui::styles::ElysiumDescentColorPalette;
 use crate::ui::widgets::{HudPosition, player_hud_widget};
 use bevy_enhanced_input::prelude::*;
 
@@ -47,6 +49,7 @@ pub(super) fn plugin(app: &mut App) {
     .add_plugins(CharacterControllerPlugin)
     .add_plugins(GltfAnimationPlugin)
     .add_plugins(CollectiblesPlugin)
+    .add_plugins(ObjectivesPlugin)
     .add_plugins(DialogPlugin);
 }
 
@@ -136,6 +139,68 @@ fn spawn_player_hud(
     ));
 }
 
+fn spawn_objectives_ui(
+    commands: &mut Commands,
+    font_assets: &Res<FontAssets>,
+    _ui_assets: &Res<UiAssets>,
+) {
+
+    
+    // This will be populated by the ObjectiveManager, but for now we'll create a simple UI structure
+    let font = font_assets.rajdhani_bold.clone();
+    
+    commands.spawn((
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(32.0),
+            right: Val::Px(32.0),
+            width: Val::Px(320.0),
+            height: Val::Px(300.0), // Will be dynamic based on objectives
+            flex_direction: FlexDirection::Column,
+            padding: UiRect::all(Val::Px(16.0)),
+            border: UiRect::all(Val::Px(2.0)),
+            ..default()
+        },
+        BackgroundColor(Color::DARK_GLASS),
+        BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.6)),
+        BorderRadius::all(Val::Px(16.0)),
+        Name::new("Objectives UI"),
+        crate::systems::objectives::ObjectiveUI,
+        GameplayHud,
+        children![
+            // Title
+            (
+                Node {
+                    width: Val::Percent(100.0),
+                    height: Val::Px(32.0),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    margin: UiRect::bottom(Val::Px(12.0)),
+                    ..default()
+                },
+                children![(
+                    Text::new("OBJECTIVES"),
+                    TextFont {
+                        font: font.clone(),
+                        font_size: 18.0,
+                        ..default()
+                    },
+                    TextColor(Color::ELYSIUM_GOLD),
+                )]
+            ),
+            // Objectives List Container - will be populated dynamically
+            (
+                Node {
+                    width: Val::Percent(100.0),
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
+                Name::new("ObjectivesList"),
+            )
+        ],
+    ));
+}
+
 fn despawn_gameplay_hud(mut commands: Commands, query: Query<Entity, With<GameplayHud>>) {
     for entity in &query {
         commands.entity(entity).despawn();
@@ -217,6 +282,7 @@ impl PlayingScene {
 
         spawn_inventory_ui::<PlayingScene>(&mut commands);
         spawn_player_hud(&mut commands, &font_assets, &ui_assets);
+        spawn_objectives_ui(&mut commands, &font_assets, &ui_assets);
         
         // Spawn the 'Press E to Open' dialog for Mystery Boxes
         use crate::ui::dialog::{spawn_dialog, DialogConfig, DialogPosition};
