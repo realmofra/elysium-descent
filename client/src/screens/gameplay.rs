@@ -155,7 +155,7 @@ fn spawn_objectives_ui(
             top: Val::Px(32.0),
             right: Val::Px(32.0),
             width: Val::Px(320.0),
-            height: Val::Px(300.0), // Will be dynamic based on objectives
+            height: Val::Auto, // Auto-size based on content
             flex_direction: FlexDirection::Column,
             padding: UiRect::all(Val::Px(16.0)),
             border: UiRect::all(Val::Px(2.0)),
