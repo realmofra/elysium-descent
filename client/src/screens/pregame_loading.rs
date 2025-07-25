@@ -129,7 +129,7 @@ fn setup_pregame_loading_screen(
     // Reset navigation spawner loaded state to force reload
     nav_spawner.loaded = false;
 
-    info!("🔄 Starting fresh loading sequence - all resources reset");
+
 
     commands
         .spawn((
@@ -254,7 +254,7 @@ fn check_assets_loaded(
     if !loading_progress.assets_loaded && loading_progress.should_load_stage(0, time.elapsed_secs()) {
         if model_assets.is_some() && font_assets.is_some() && ui_assets.is_some() {
             loading_progress.assets_loaded = true;
-            info!("✅ Assets loaded");
+
         }
     }
 }
@@ -270,7 +270,7 @@ fn spawn_environment_system(
         && loading_progress.should_load_stage(1, time.elapsed_secs()) {
         if let Some(assets) = assets {
             // Pre-spawn environment in background (hidden)
-            info!("🌍 Pre-spawning environment...");
+
 
             // Set up ambient light
             commands.insert_resource(AmbientLight {
@@ -295,7 +295,7 @@ fn spawn_environment_system(
             ));
 
             loading_progress.environment_spawned = true;
-            info!("✅ Environment pre-spawned");
+
         }
     }
 }
@@ -323,7 +323,7 @@ fn load_navigation_system(
                             
                             nav_spawner.loaded = true;
                             loading_progress.navigation_loaded = true;
-                            info!("✅ Navigation data loaded: {} positions", nav_spawner.nav_positions.len());
+
                         }
                         Err(e) => {
                             error!("Failed to parse nav.json: {}", e);
@@ -356,12 +356,12 @@ fn spawn_collectibles_system(
         && loading_progress.should_load_stage(3, time.elapsed_secs()) {
         if collectible_spawner.coins_spawned == 0 {
             // Pre-calculate coin positions using navigation data
-            info!("🪙 Pre-calculating coin positions using navigation data...");
+
             
             if nav_spawner.loaded && !nav_spawner.nav_positions.is_empty() {
-                info!("✅ Using navigation data with {} positions", nav_spawner.nav_positions.len());
+
             } else {
-                info!("⚠️ No navigation data available - using fallback positions around spawn");
+
             }
             
             let mut rng = rand::rng();
@@ -405,9 +405,7 @@ fn spawn_collectibles_system(
                     coins_calculated += 1;
 
                     // Log progress every 100 coins
-                    if coins_calculated % 100 == 0 {
-                        info!("Calculated {} / {} coin positions using nav data", coins_calculated, MAX_COINS);
-                    }
+
                 }
             }
 
@@ -415,13 +413,12 @@ fn spawn_collectibles_system(
             loading_progress.collectibles_spawned = true;
 
             if coins_calculated < MAX_COINS {
-                warn!("⚠️ Only calculated {} / {} coin positions after {} attempts", coins_calculated, MAX_COINS, attempts);
+
             } else {
-                info!("✅ Successfully calculated {} coin positions", coins_calculated);
+
             }
             
-            info!("🎮 Streaming system ready - {} coins will spawn dynamically based on nav data", 
-                  streaming_manager.positions.len());
+
         }
     }
 }
@@ -456,12 +453,12 @@ fn initialize_game_system(
         && !loading_progress.game_initialized 
         && loading_progress.should_load_stage(4, time.elapsed_secs()) {
         // Perform any final game initialization
-        info!("🎮 Initializing game systems...");
+
         
         // Add any additional initialization logic here
         
         loading_progress.game_initialized = true;
-        info!("✅ Game systems initialized");
+
     }
 }
 
@@ -476,8 +473,8 @@ fn check_loading_complete(
         loading_progress.loading_complete = true;
         
         if let Some(start_time) = loading_progress.loading_start_time {
-            let elapsed = current_time - start_time;
-            info!("🚀 Loading complete after {:.1}s! Transitioning to gameplay...", elapsed);
+            let _elapsed = current_time - start_time;
+            // Removed logging statement
         }
         
         next_state.set(Screen::GamePlay);
@@ -488,7 +485,7 @@ fn check_loading_complete(
         
         if remaining > 0.0 && !loading_progress.loading_complete {
             // Show "Ready!" but still waiting for minimum time
-            info!("✅ Loading ready, waiting {:.1}s more for minimum display time", remaining);
+
         }
     }
 }
@@ -501,7 +498,7 @@ fn cleanup_pregame_loading_only(
     for entity in loading_ui_query.iter() {
         commands.entity(entity).despawn();
     }
-    info!("🧹 Cleaned up loading UI while preserving preloaded game entities");
+
 }
 
 fn update_loading_ui(

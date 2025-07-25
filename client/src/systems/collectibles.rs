@@ -187,31 +187,24 @@ fn update_coin_streaming(
     existing_coins: Query<(Entity, &StreamingCoin)>,
 ) {
     let Ok(player_transform) = player_query.single() else {
-        warn!("🔍 Streaming: No player found");
         return;
     };
 
     let Some(assets) = model_assets else {
-        warn!("🔍 Streaming: No model assets found");
         return;
     };
 
     let current_time = time.elapsed_secs();
     
     // Debug: Log every few seconds even if not updating
-    if (current_time as u32) % 3 == 0 && current_time - current_time.floor() < 0.1 {
-        info!("🔍 Streaming Debug: {} total positions, {} spawned, player at {:?}", 
-              streaming_manager.positions.len(), 
-              streaming_manager.spawned_coins.len(),
-              player_transform.translation);
-    }
+
     
     // Only update every 2-3 seconds
     if !streaming_manager.should_update(current_time) {
         return;
     }
 
-    info!("🪙 Streaming update triggered - checking positions...");
+
     streaming_manager.mark_updated(current_time);
 
     let player_pos = player_transform.translation;
@@ -236,7 +229,7 @@ fn update_coin_streaming(
     // Collect positions that need to be spawned
     let mut positions_to_spawn = Vec::new();
     let mut nearest_coin_distance = f32::INFINITY;
-    let mut total_in_range = 0;
+    let mut _total_in_range = 0;
     
     for (position_id, &position) in streaming_manager.positions.iter().enumerate() {
         let distance = player_pos.distance(position);
@@ -247,7 +240,7 @@ fn update_coin_streaming(
         }
         
         if distance <= streaming_manager.spawn_radius {
-            total_in_range += 1;
+            _total_in_range += 1;
             if !streaming_manager.spawned_coins.contains_key(&position_id) 
                 && !streaming_manager.collected_positions.contains(&position_id) {
                 positions_to_spawn.push((position_id, position));
@@ -255,18 +248,17 @@ fn update_coin_streaming(
         }
     }
 
-    info!("🔍 Streaming Debug: {} positions in range of {}m, {} need spawning, nearest coin: {:.1}m", 
-          total_in_range, streaming_manager.spawn_radius, positions_to_spawn.len(), nearest_coin_distance);
+
 
     // Spawn the collected positions
     for (position_id, position) in positions_to_spawn {
-        info!("🪙 Spawning coin {} at {:?} (distance: {:.1})", position_id, position, player_pos.distance(position));
+        
         let entity = spawn_streaming_coin(&mut commands, &assets, position, position_id);
         streaming_manager.spawned_coins.insert(position_id, entity);
     }
 
-    let active_coins = streaming_manager.spawned_coins.len();
-    info!("🪙 Streaming: {} active coins (from {} total positions)", active_coins, streaming_manager.positions.len());
+    let _active_coins = streaming_manager.spawned_coins.len();
+
 }
 
 /// Spawn a single streaming coin
@@ -345,7 +337,7 @@ fn auto_collect_nearby_interactables(
                 if let Some(streaming) = streaming_coin {
                     streaming_manager.spawned_coins.remove(&streaming.position_id);
                     streaming_manager.collected_positions.insert(streaming.position_id);
-                    info!("🪙 Coin {} collected and marked as permanently collected", streaming.position_id);
+        
                 }
 
                 // Mark as collected
@@ -471,8 +463,8 @@ fn log_player_position(
 ) {
     if timer.timer.tick(time.delta()).just_finished() {
         if let Ok(player_transform) = player_query.single() {
-            let pos = player_transform.translation;
-            info!("Player Position - x: {:.2}, y: {:.2}, z: {:.2}", pos.x, pos.y, pos.z);
+            let _pos = player_transform.translation;
+    
         }
     }
 }

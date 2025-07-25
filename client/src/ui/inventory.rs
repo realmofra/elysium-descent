@@ -32,7 +32,7 @@ pub struct InventoryVisibilityState {
 impl Default for InventoryVisibilityState {
     fn default() -> Self {
         Self {
-            visible: false,
+            visible: true,  // Always visible by default
             timer: Timer::from_seconds(2.0, TimerMode::Once),
             shifted_up: false,
         }
@@ -84,7 +84,7 @@ pub fn spawn_inventory_ui<T: Component + Default>(commands: &mut Commands) {
             BorderColor(Color::ELYSIUM_GOLD),
             BorderRadius::all(Val::Px(32.0)),
             InventoryUI,
-            Visibility::Hidden,
+            Visibility::Visible,  // Start visible
             T::default(),
         ))
         .with_children(|parent| {
@@ -124,27 +124,16 @@ pub fn spawn_inventory_ui<T: Component + Default>(commands: &mut Commands) {
 }
 
 pub fn toggle_inventory_visibility(
-    keyboard: Res<ButtonInput<KeyCode>>,
+    _keyboard: Res<ButtonInput<KeyCode>>,
     mut state: ResMut<InventoryVisibilityState>,
     mut query: Query<&mut Visibility, With<InventoryUI>>,
-    time: Res<Time>,
+    _time: Res<Time>,
 ) {
-    state.timer.tick(time.delta());
-
-    if keyboard.just_pressed(KeyCode::KeyI) {
-        for mut visibility in &mut query {
-            *visibility = Visibility::Visible;
-        }
-        state.visible = true;
-        state.timer.reset();
+    // Keep inventory always visible - no toggling or hiding
+    for mut visibility in &mut query {
+        *visibility = Visibility::Visible;
     }
-
-    if state.visible && state.timer.finished() {
-        for mut visibility in &mut query {
-            *visibility = Visibility::Hidden;
-        }
-        state.visible = false;
-    }
+    state.visible = true;
 }
 
 pub fn add_item_to_inventory(

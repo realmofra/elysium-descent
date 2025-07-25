@@ -12,7 +12,7 @@ pub struct ObjectiveUI;
 
 #[derive(Component)]
 pub struct ObjectiveSlot {
-    pub objective_id: usize,
+    // Removed unused objective_id field
 }
 
 #[derive(Component)]
@@ -21,35 +21,28 @@ pub struct ObjectiveCheckmark;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Objective {
     pub id: usize,
+    pub title: String,
+    pub description: String,
     pub item_type: CollectibleType,
     pub required_count: u32,
     pub current_count: u32,
     pub completed: bool,
-    pub title: String,
 }
 
 impl Objective {
-    pub fn new(id: usize, item_type: CollectibleType, required_count: u32, title: String) -> Self {
+    pub fn new(id: usize, title: String, description: String, item_type: CollectibleType, required_count: u32) -> Self {
         Self {
             id,
+            title,
+            description,
             item_type,
             required_count,
             current_count: 0,
             completed: false,
-            title,
         }
     }
 
-    pub fn is_completed(&self) -> bool {
-        self.current_count >= self.required_count
-    }
-
-    pub fn add_progress(&mut self, amount: u32) {
-        if !self.completed {
-            self.current_count = (self.current_count + amount).min(self.required_count);
-            self.completed = self.is_completed();
-        }
-    }
+    // Removed unused is_completed and add_progress methods
 }
 
 #[derive(Resource, Default)]
@@ -59,31 +52,12 @@ pub struct ObjectiveManager {
 }
 
 impl ObjectiveManager {
-    pub fn add_objective(&mut self, item_type: CollectibleType, required_count: u32, title: String) {
-        let objective = Objective::new(self.next_id, item_type, required_count, title);
+    pub fn add_objective(&mut self, objective: Objective) {
         self.objectives.push(objective);
         self.next_id += 1;
     }
 
-    pub fn update_progress(&mut self, item_type: CollectibleType, amount: u32) {
-        for objective in &mut self.objectives {
-            if objective.item_type == item_type && !objective.completed {
-                objective.add_progress(amount);
-                if objective.completed {
-                    info!("🎯 Objective completed: {}", objective.title);
-                }
-                break; // Only update one objective per item type
-            }
-        }
-    }
-
-    pub fn get_objective(&self, id: usize) -> Option<&Objective> {
-        self.objectives.iter().find(|obj| obj.id == id)
-    }
-
-    pub fn are_all_completed(&self) -> bool {
-        !self.objectives.is_empty() && self.objectives.iter().all(|obj| obj.completed)
-    }
+    // Removed unused update_progress, get_objective, and are_all_completed methods
 }
 
 // ===== PLUGIN =====
@@ -109,23 +83,20 @@ fn setup_initial_objectives(mut objective_manager: ResMut<ObjectiveManager>) {
     objective_manager.next_id = 0;
 
     // Add some example objectives
+    let health_id = objective_manager.next_id;
     objective_manager.add_objective(
-        CollectibleType::HealthPotion,
-        5,
-        "Collect Health Potions".to_string(),
+        Objective::new(health_id, "Collect Health Potions".to_string(), "Collect 5 Health Potions".to_string(), CollectibleType::HealthPotion, 5),
     );
+    let survival_id = objective_manager.next_id;
     objective_manager.add_objective(
-        CollectibleType::SurvivalKit,
-        3,
-        "Find Survival Kits".to_string(),
+        Objective::new(survival_id, "Find Survival Kits".to_string(), "Find 3 Survival Kits".to_string(), CollectibleType::SurvivalKit, 3),
     );
+    let book_id = objective_manager.next_id;
     objective_manager.add_objective(
-        CollectibleType::Book,
-        2,
-        "Gather Ancient Books".to_string(),
+        Objective::new(book_id, "Gather Ancient Books".to_string(), "Gather 2 Ancient Books".to_string(), CollectibleType::Book, 2),
     );
 
-    info!("🎯 Objectives initialized: {} objectives", objective_manager.objectives.len());
+
 }
 
 fn update_objective_ui(
@@ -207,7 +178,7 @@ fn create_objective_slot(
         }),
         BorderRadius::all(Val::Px(12.0)),
         ObjectiveSlot {
-            objective_id: objective.id,
+            // Removed unused objective_id field
         },
         children![
             // Item Icon Container
@@ -298,6 +269,20 @@ fn create_objective_slot(
                         } else {
                             Color::WHITE
                         }),
+                        Node {
+                            margin: UiRect::bottom(Val::Px(4.0)),
+                            ..default()
+                        },
+                    ),
+                    // Objective Description
+                    (
+                        Text::new(&objective.description),
+                        TextFont {
+                            font: font.clone(),
+                            font_size: 12.0,
+                            ..default()
+                        },
+                        TextColor(Color::WHITE),
                         Node {
                             margin: UiRect::bottom(Val::Px(4.0)),
                             ..default()

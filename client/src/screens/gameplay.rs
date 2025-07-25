@@ -60,22 +60,14 @@ fn set_gameplay_clear_color(mut commands: Commands) {
 }
 
 fn debug_streaming_manager_state(streaming_manager: Res<CoinStreamingManager>) {
-    info!("🔍 GamePlay Debug: CoinStreamingManager has {} stored positions when entering GamePlay", 
-          streaming_manager.positions.len());
+    
     if streaming_manager.positions.is_empty() {
-        warn!("⚠️ No coin positions found when entering GamePlay! Loading may have failed.");
+
     } else {
-        info!("✅ Coin positions successfully preserved from PreGameLoading");
+
         
         // Show first few positions for debugging
-        let sample_count = 5.min(streaming_manager.positions.len());
-        for i in 0..sample_count {
-            info!("  Sample coin {}: {:?}", i, streaming_manager.positions[i]);
-        }
-        
-        info!("  Total coin positions: {}", streaming_manager.positions.len());
-        info!("  Player spawns at: (0.0, 2.0, 0.0)");
-        info!("  Using ACTUAL navigation data from nav.json");
+
     }
 }
 
@@ -216,7 +208,7 @@ fn cleanup_preloaded_environment(
     }
     let count = environment_query.iter().count();
     if count > 0 {
-        info!("🧹 Cleaned up {} preloaded environment entities", count);
+
     }
 }
 
@@ -230,7 +222,7 @@ impl PlayingScene {
         ui_assets: Res<UiAssets>,
         windows: Query<&Window>,
     ) {
-        info!("👤 Spawning player and camera...");
+    
 
         // Add directional light (if not already added by preload)
         commands.spawn((
@@ -298,7 +290,7 @@ impl PlayingScene {
             PlayingScene,
         );
 
-        info!("✅ Player and camera spawned");
+    
     }
 }
 
@@ -306,8 +298,7 @@ fn reveal_preloaded_environment(
     mut commands: Commands,
     environment_query: Query<Entity, With<EnvironmentPreload>>,
 ) {
-    info!("🌍 Revealing preloaded environment...");
-    info!("🔍 Found {} environment entities with EnvironmentPreload marker", environment_query.iter().count());
+
     
     let mut revealed_count = 0;
     for entity in environment_query.iter() {
@@ -315,13 +306,13 @@ fn reveal_preloaded_environment(
             .insert(Visibility::Visible)
             .insert(PlayingScene);
         revealed_count += 1;
-        info!("✅ Environment entity {:?} revealed and marked with PlayingScene", entity);
+        
     }
     
     if revealed_count == 0 {
-        warn!("⚠️ No preloaded environment entities found! Environment may not have been created during loading.");
+
     } else {
-        info!("✅ Revealed {} environment entities", revealed_count);
+    
     }
 }
 
@@ -342,7 +333,7 @@ fn fallback_spawn_environment(
     }
 
     if let Some(assets) = assets {
-        warn!("🚨 Fallback: Spawning environment directly (preload failed)");
+
         
         // Set up ambient light
         commands.insert_resource(AmbientLight {
@@ -366,7 +357,7 @@ fn fallback_spawn_environment(
         ));
 
         *fallback_spawned = true;
-        info!("✅ Fallback environment spawned");
+
     }
 }
 
@@ -386,7 +377,7 @@ fn fallback_spawn_collectibles(
 
     if let (Some(assets), Some(nav_spawner)) = (assets, nav_spawner) {
         if nav_spawner.loaded {
-            warn!("🚨 Fallback: Spawning collectibles directly (preload failed)");
+    
             
             let mut rng = rand::rng();
             let mut spawned_positions = Vec::new();
@@ -437,7 +428,7 @@ fn fallback_spawn_collectibles(
 
             collectible_spawner.coins_spawned = coins_spawned;
             *fallback_spawned = true;
-            info!("✅ Fallback spawned {} collectibles", coins_spawned);
+    
         }
     }
 }
