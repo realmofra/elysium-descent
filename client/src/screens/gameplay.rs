@@ -255,6 +255,7 @@ impl PlayingScene {
                 Friction::new(0.5),
                 Restitution::new(0.0),
                 GravityScale(1.0),
+                CollisionEventsEnabled, // Enable collision events for coin collection
                 Actions::<keybinding::Player>::default(),
                 PlayingScene,
             ))
@@ -440,7 +441,7 @@ fn spawn_fallback_collectible(
 ) {
     use crate::systems::collectibles::{
         Collectible, CollectibleType, FloatingItem, CollectibleRotation, 
-        Sensor, Interactable
+        Sensor
     };
 
     commands.spawn((
@@ -467,9 +468,7 @@ fn spawn_fallback_collectible(
             speed: 1.0,
         },
         Sensor,
-        Interactable {
-            interaction_radius: 4.0,
-        },
+        CollisionEventsEnabled, // Enable collision events for this coin
         PlayingScene,
     ));
 }

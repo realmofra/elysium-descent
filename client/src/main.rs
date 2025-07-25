@@ -18,7 +18,7 @@ use systems::dojo;
 pub use resources::assets;
 pub use resources::audio;
 
-pub use resources::audio::GameAudioPlugin;
+pub use resources::audio::{GameAudioPlugin, SfxPlugin};
 
 fn main() -> AppExit {
     App::new()
@@ -44,6 +44,7 @@ fn main() -> AppExit {
         .add_plugins(DojoPlugin)
         .add_plugins(assets::AssetsPlugin)
         .add_plugins(GameAudioPlugin)
+        .add_plugins(SfxPlugin)
         .add_plugins((screens::plugin, keybinding::plugin, dojo::plugin))
         .run()
 }

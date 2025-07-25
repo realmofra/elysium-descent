@@ -231,12 +231,10 @@ fn handle_create_game(
 
 fn handle_interact(
     trigger: Trigger<Started<Interact>>,
-    mut _interaction_events: EventWriter<crate::systems::collectibles::InteractionEvent>,
 ) {
     if trigger.value {
-        info!("Interact key pressed - collectibles are auto-collected by proximity");
-        // Note: Collectibles are now automatically collected by proximity
-        // Manual interaction is no longer needed for collectibles
+        info!("Interact key pressed - coins are now collected by touching them!");
+        // Note: Coins are now automatically collected by physical contact/collision
     }
 }
 

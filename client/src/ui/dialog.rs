@@ -104,18 +104,9 @@ pub fn check_dialog_proximity(
         &Transform,
         With<crate::systems::character_controller::CharacterController>,
     >,
-    _target_query: Query<
-        (
-            Entity,
-            &Transform,
-            &crate::systems::collectibles::Interactable,
-            &crate::systems::collectibles::CollectibleType,
-        ),
-        (Without<crate::systems::character_controller::CharacterController>,),
-    >,
     mut dialog_query: Query<&mut Visibility, With<Dialog>>,
 ) {
-    // Since MysteryBox has been removed, hide all dialogs
+    // Since we now use collision-based coin collection and MysteryBox has been removed, hide all dialogs
     if let Ok(mut visibility) = dialog_query.single_mut() {
         *visibility = Visibility::Hidden;
     }

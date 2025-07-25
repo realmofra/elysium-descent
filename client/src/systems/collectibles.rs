@@ -8,6 +8,7 @@ use crate::screens::Screen;
 use crate::systems::character_controller::CharacterController;
 use crate::systems::dojo::PickupItemEvent;
 use crate::assets::ModelAssets;
+use crate::resources::audio::{PlaySfxEvent, SfxType};
 
 // ===== COMPONENTS & RESOURCES =====
 
@@ -70,16 +71,6 @@ impl Default for CollectibleSpawner {
 
 #[derive(Component)]
 pub struct Sensor;
-
-/// Component marking objects that can be interacted with
-#[derive(Component, Clone, Copy)]
-pub struct Interactable {
-    pub interaction_radius: f32,
-}
-
-/// Event triggered when player presses interaction key
-#[derive(Event, Debug)]
-pub struct InteractionEvent;
 
 /// Component to mark streaming collectibles with their original position ID
 #[derive(Component)]
@@ -150,8 +141,7 @@ pub struct CollectiblesPlugin;
 
 impl Plugin for CollectiblesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<InteractionEvent>()
-            .insert_resource(crate::ui::inventory::InventoryVisibilityState::default())
+        app.insert_resource(crate::ui::inventory::InventoryVisibilityState::default())
             .init_resource::<CollectibleSpawner>()
             .init_resource::<PlayerMovementTracker>()
             .init_resource::<NavigationBasedSpawner>()
@@ -161,7 +151,7 @@ impl Plugin for CollectiblesPlugin {
                 Update,
                 (
                     update_coin_streaming,            // Stream coins every 2-3 seconds
-                    auto_collect_nearby_interactables,
+                    handle_coin_collisions,           // Handle collision-based coin collection
                     update_floating_items,
                     rotate_collectibles,
                     log_player_position,              // Log player position every 3 seconds
@@ -306,39 +296,51 @@ fn spawn_streaming_coin(
             clockwise: true,
             speed: 1.0,
         },
-        Sensor,
-        Interactable {
-            interaction_radius: 4.0,
-        },
+        Sensor, // This makes the coin non-solid but still detects collisions
+        CollisionEventsEnabled, // Enable collision events for this coin
         StreamingCoin { position_id },
     )).id()
 }
 
-/// System to automatically collect any collectible when the player is within the Interactable's radius
-fn auto_collect_nearby_interactables(
+/// System that handles coin collection through collision events
+fn handle_coin_collisions(
     mut commands: Commands,
-    player_query: Query<&Transform, With<CharacterController>>,
-    interactable_query: Query<
-        (Entity, &Transform, &Interactable, &CollectibleType, Option<&StreamingCoin>),
-        Without<Collected>,
-    >,
+    mut collision_events: EventReader<CollisionStarted>,
+    player_query: Query<Entity, With<CharacterController>>,
+    coin_query: Query<(Entity, &CollectibleType, Option<&StreamingCoin>), (With<Collectible>, Without<Collected>)>,
     mut pickup_events: EventWriter<PickupItemEvent>,
     mut streaming_manager: ResMut<CoinStreamingManager>,
+    mut sfx_events: EventWriter<PlaySfxEvent>,
 ) {
-    let Ok(player_transform) = player_query.single() else {
+    // Get the player entity
+    let Ok(player_entity) = player_query.single() else {
         return;
     };
 
-    for (entity, transform, interactable, collectible_type, streaming_coin) in interactable_query.iter() {
-        let distance = player_transform.translation.distance(transform.translation);
-        if distance <= interactable.interaction_radius {
+    // Process collision events
+    for CollisionStarted(collider1, collider2) in collision_events.read() {
+        // Determine which entity is the player and which is the collectible
+        let collectible_entity = if *collider1 == player_entity {
+            *collider2
+        } else if *collider2 == player_entity {
+            *collider1
+        } else {
+            continue; // Neither entity is the player
+        };
+
+        // Check if the collectible is a coin
+        if let Ok((entity, collectible_type, streaming_coin)) = coin_query.get(collectible_entity) {
             if *collectible_type == CollectibleType::Coin {
                 // Remove from streaming manager if it's a streaming coin
                 if let Some(streaming) = streaming_coin {
                     streaming_manager.spawned_coins.remove(&streaming.position_id);
                     streaming_manager.collected_positions.insert(streaming.position_id);
-        
                 }
+
+                // Play coin collection sound effect
+                sfx_events.write(PlaySfxEvent {
+                    sfx_type: SfxType::CoinCollect,
+                });
 
                 // Mark as collected
                 commands.entity(entity).insert(Collected);
@@ -351,6 +353,8 @@ fn auto_collect_nearby_interactables(
                     item_type: *collectible_type,
                     item_entity: entity,
                 });
+
+                info!("Player collected coin through collision!");
             }
         }
     }
