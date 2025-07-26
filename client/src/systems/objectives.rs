@@ -162,7 +162,7 @@ fn create_objective_slot(
     (
         Node {
             width: Val::Percent(100.0),
-            height: Val::Px(120.0),
+            height: Val::Px(136.0),
             flex_direction: FlexDirection::Row,
             align_items: AlignItems::Center,
             margin: UiRect::bottom(Val::Px(12.0)),

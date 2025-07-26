@@ -184,6 +184,7 @@ fn spawn_objectives_ui(
             (
                 Node {
                     width: Val::Percent(100.0),
+                    // height: Val::Px(220.0),
                     flex_direction: FlexDirection::Column,
                     ..default()
                 },

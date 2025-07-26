@@ -316,23 +316,23 @@ pub fn player_hud_widget(
                             (
                                 Node {
                                     width: Val::Px(420.0),
-                                    height: Val::Px(27.0),
+                                    height: Val::Px(21.0),
                                     border: UiRect::all(Val::Px(1.5)),
                                     ..default()
                                 },
                                 BackgroundColor(Color::DARKER_GLASS),
                                 BorderColor(Color::HEALTH_GREEN_DARK.with_alpha(0.6)),
-                                BorderRadius::all(Val::Px(13.5)),
+                                BorderRadius::all(Val::Px(10.5)),
                                 children![
                                     (
                                         Node {
                                             width: Val::Px(417.0 * health_percent),
-                                            height: Val::Px(24.0),
+                                            height: Val::Px(18.0),
                                             margin: UiRect::all(Val::Px(1.5)),
                                             ..default()
                                         },
                                         BackgroundColor(Color::HEALTH_GREEN),
-                                        BorderRadius::all(Val::Px(12.0)),
+                                        BorderRadius::all(Val::Px(9.0)),
                                     )
                                 ]
                             )
