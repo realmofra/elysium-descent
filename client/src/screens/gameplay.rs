@@ -165,9 +165,10 @@ fn spawn_objectives_ui(
                 Node {
                     width: Val::Percent(100.0),
                     height: Val::Px(48.0),
-                    justify_content: JustifyContent::Center,
+                    justify_content: JustifyContent::FlexStart,
                     align_items: AlignItems::Center,
                     margin: UiRect::bottom(Val::Px(18.0)),
+                    padding: UiRect::left(Val::Px(8.0)),
                     ..default()
                 },
                 children![(
@@ -177,7 +178,7 @@ fn spawn_objectives_ui(
                         font_size: 27.0,
                         ..default()
                     },
-                    TextColor(Color::ELYSIUM_GOLD),
+                    TextColor(Color::WHITE),
                 )]
             ),
             // Objectives List Container - will be populated dynamically

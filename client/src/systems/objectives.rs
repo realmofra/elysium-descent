@@ -51,6 +51,8 @@ pub struct ObjectiveManager {
     pub next_id: usize,
 }
 
+
+
 impl ObjectiveManager {
     pub fn add_objective(&mut self, objective: Objective) {
         self.objectives.push(objective);
@@ -94,6 +96,14 @@ fn setup_initial_objectives(mut objective_manager: ResMut<ObjectiveManager>) {
     let book_id = objective_manager.next_id;
     objective_manager.add_objective(
         Objective::new(book_id, "Gather Ancient Books".to_string(), "Gather 2 Ancient Books".to_string(), CollectibleType::Book, 2),
+    );
+    let coin_id = objective_manager.next_id;
+    objective_manager.add_objective(
+        Objective::new(coin_id, "Collect Golden Coins".to_string(), "Collect 10 Golden Coins".to_string(), CollectibleType::Coin, 10),
+    );
+    let exploration_id = objective_manager.next_id;
+    objective_manager.add_objective(
+        Objective::new(exploration_id, "Explore Ancient Ruins".to_string(), "Visit 3 Ancient Ruins".to_string(), CollectibleType::Book, 3),
     );
 
 
@@ -146,6 +156,10 @@ fn update_objective_ui(
         let slot_entity = commands.spawn(create_objective_slot(objective, font.clone(), coin_image.clone())).id();
         commands.entity(list_entity).add_child(slot_entity);
     }
+
+    // Add "View More" button after objectives
+    let view_more_entity = commands.spawn(create_view_more_button(font.clone())).id();
+    commands.entity(list_entity).add_child(view_more_entity);
 }
 
 fn create_objective_slot(
@@ -338,4 +352,29 @@ fn create_objective_slot(
             )
         ],
     )
-} 
+}
+
+fn create_view_more_button(font: Handle<Font>) -> impl Bundle {
+    (
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Px(32.0),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            margin: UiRect::top(Val::Px(12.0)),
+            ..default()
+        },
+        Name::new("View More Button"),
+        children![(
+            Text::new("VIEW MORE"),
+            TextFont {
+                font,
+                font_size: 20.0,
+                ..default()
+            },
+            TextColor(Color::ELYSIUM_GOLD),
+        )]
+    )
+}
+
+ 
