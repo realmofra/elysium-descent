@@ -84,29 +84,32 @@ fn setup_initial_objectives(mut objective_manager: ResMut<ObjectiveManager>) {
     objective_manager.objectives.clear();
     objective_manager.next_id = 0;
 
-    // Add some example objectives
+    // Add objectives with different completion states (1/5, 2/5, 3/5, 4/5, 5/5)
     let health_id = objective_manager.next_id;
-    objective_manager.add_objective(
-        Objective::new(health_id, "Collect Health Potions".to_string(), "Collect 5 Health Potions".to_string(), CollectibleType::HealthPotion, 5),
-    );
+    let mut health_objective = Objective::new(health_id, "Collect Health Potions".to_string(), "Collect 5 Health Potions".to_string(), CollectibleType::HealthPotion, 5);
+    health_objective.current_count = 1; // 1/5 completed
+    objective_manager.add_objective(health_objective);
+
     let survival_id = objective_manager.next_id;
-    objective_manager.add_objective(
-        Objective::new(survival_id, "Find Survival Kits".to_string(), "Find 3 Survival Kits".to_string(), CollectibleType::SurvivalKit, 3),
-    );
+    let mut survival_objective = Objective::new(survival_id, "Find Survival Kits".to_string(), "Find 3 Survival Kits".to_string(), CollectibleType::SurvivalKit, 3);
+    survival_objective.current_count = 2; // 2/3 completed (equivalent to 2/5)
+    objective_manager.add_objective(survival_objective);
+
     let book_id = objective_manager.next_id;
-    objective_manager.add_objective(
-        Objective::new(book_id, "Gather Ancient Books".to_string(), "Gather 2 Ancient Books".to_string(), CollectibleType::Book, 2),
-    );
+    let mut book_objective = Objective::new(book_id, "Gather Ancient Books".to_string(), "Gather 2 Ancient Books".to_string(), CollectibleType::Book, 2);
+    book_objective.current_count = 1; // 1/2 completed (equivalent to 3/5)
+    objective_manager.add_objective(book_objective);
+
     let coin_id = objective_manager.next_id;
-    objective_manager.add_objective(
-        Objective::new(coin_id, "Collect Golden Coins".to_string(), "Collect 10 Golden Coins".to_string(), CollectibleType::Coin, 10),
-    );
+    let mut coin_objective = Objective::new(coin_id, "Collect Golden Coins".to_string(), "Collect 10 Golden Coins".to_string(), CollectibleType::Coin, 10);
+    coin_objective.current_count = 8; // 8/10 completed (equivalent to 4/5)
+    objective_manager.add_objective(coin_objective);
+
     let exploration_id = objective_manager.next_id;
-    objective_manager.add_objective(
-        Objective::new(exploration_id, "Explore Ancient Ruins".to_string(), "Visit 3 Ancient Ruins".to_string(), CollectibleType::Book, 3),
-    );
-
-
+    let mut exploration_objective = Objective::new(exploration_id, "Explore Ancient Ruins".to_string(), "Visit 3 Ancient Ruins".to_string(), CollectibleType::Book, 3);
+    exploration_objective.current_count = 3; // 3/3 completed (equivalent to 5/5)
+    exploration_objective.completed = true; // Mark as completed
+    objective_manager.add_objective(exploration_objective);
 }
 
 fn update_objective_ui(
@@ -185,11 +188,6 @@ fn create_objective_slot(
             ..default()
         },
         BackgroundColor(Color::DARKER_GLASS),
-        BorderColor(if objective.completed {
-            Color::SUCCESS_GREEN.with_alpha(0.8)
-        } else {
-            Color::ELYSIUM_GOLD.with_alpha(0.4)
-        }),
         BorderRadius::all(Val::Px(18.0)),
         ObjectiveSlot {
             // Removed unused objective_id field
@@ -207,40 +205,15 @@ fn create_objective_slot(
                     ..default()
                 },
                 BackgroundColor(Color::LIGHT_GLASS),
-                BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.6)),
                 BorderRadius::all(Val::Px(12.0)),
                                 children![
-                    // Checkmark for completed objectives
+                    // Item icon (always visible)
                     (
                         Node {
                             width: Val::Px(72.0),
                             height: Val::Px(72.0),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
-                            display: if objective.completed { Display::Flex } else { Display::None },
-                            ..default()
-                        },
-                        BackgroundColor(Color::SUCCESS_GREEN),
-                        BorderRadius::all(Val::Px(36.0)),
-                        Name::new("Checkmark"),
-                        children![(
-                            Text::new("✓"),
-                            TextFont {
-                                font: font.clone(),
-                                font_size: 48.0,
-                                ..default()
-                            },
-                            TextColor::WHITE,
-                        )]
-                    ),
-                    // Item icon for incomplete objectives
-                    (
-                        Node {
-                            width: Val::Px(72.0),
-                            height: Val::Px(72.0),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            display: if objective.completed { Display::None } else { Display::Flex },
                             ..default()
                         },
                         BackgroundColor(Color::NONE),
@@ -256,6 +229,34 @@ fn create_objective_slot(
                                 height: Val::Px(72.0),
                                 ..default()
                             },
+                        )]
+                    ),
+                    // Small green checkmark at bottom right for completed objectives
+                    (
+                        Node {
+                            position_type: PositionType::Absolute,
+                            right: Val::Px(-8.0),
+                            bottom: Val::Px(-8.0),
+                            width: Val::Px(32.0),
+                            height: Val::Px(32.0),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            display: if objective.completed { Display::Flex } else { Display::None },
+                            border: UiRect::all(Val::Px(2.0)),
+                            ..default()
+                        },
+                        BackgroundColor(Color::SUCCESS_GREEN),
+                        BorderColor(Color::SUCCESS_GREEN),
+                        BorderRadius::MAX,
+                        Name::new("CompletionCheckmark"),
+                        children![(
+                            Text::new("✓"),
+                            TextFont {
+                                font: font.clone(),
+                                font_size: 20.0,
+                                ..default()
+                            },
+                            TextColor::WHITE,
                         )]
                     )
                 ]
@@ -278,11 +279,7 @@ fn create_objective_slot(
                             font_size: 21.0,
                             ..default()
                         },
-                        TextColor(if objective.completed {
-                            Color::SUCCESS_GREEN
-                        } else {
-                            Color::WHITE
-                        }),
+                        TextColor(Color::WHITE),
                         Node {
                             margin: UiRect::bottom(Val::Px(6.0)),
                             ..default()
@@ -310,11 +307,7 @@ fn create_objective_slot(
                             font_size: 18.0,
                             ..default()
                         },
-                        TextColor(if objective.completed {
-                            Color::SUCCESS_GREEN
-                        } else {
-                            Color::ELYSIUM_GOLD
-                        }),
+                        TextColor(Color::ELYSIUM_GOLD),
                         Node {
                             margin: UiRect::bottom(Val::Px(6.0)),
                             ..default()
@@ -339,11 +332,7 @@ fn create_objective_slot(
                                     margin: UiRect::all(Val::Px(1.5)),
                                     ..default()
                                 },
-                                BackgroundColor(if objective.completed {
-                                    Color::SUCCESS_GREEN
-                                } else {
-                                    Color::ELYSIUM_GOLD
-                                }),
+                                BackgroundColor(Color::ELYSIUM_GOLD),
                                 BorderRadius::all(Val::Px(4.5)),
                             )
                         ]

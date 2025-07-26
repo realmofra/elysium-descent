@@ -11,6 +11,7 @@ use crate::keybinding;
 use crate::systems::character_controller::{
     CharacterController, CharacterControllerBundle, CharacterControllerPlugin, setup_idle_animation,
 };
+use crate::systems::book_interaction::BookInteractionPlugin;
 use crate::systems::collectibles::{CollectiblesPlugin, NavigationBasedSpawner, CollectibleSpawner, CoinStreamingManager};
 use crate::systems::objectives::ObjectivesPlugin;
 use crate::ui::dialog::DialogPlugin;
@@ -50,7 +51,8 @@ pub(super) fn plugin(app: &mut App) {
     .add_plugins(GltfAnimationPlugin)
     .add_plugins(CollectiblesPlugin)
     .add_plugins(ObjectivesPlugin)
-    .add_plugins(DialogPlugin);
+    .add_plugins(DialogPlugin)
+    .add_plugins(BookInteractionPlugin);
 }
 
 // ===== SYSTEMS =====

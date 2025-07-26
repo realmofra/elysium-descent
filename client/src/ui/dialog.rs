@@ -7,6 +7,12 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct Dialog;
 
+#[derive(Component)]
+pub struct DialogProximity {
+    pub target_position: Vec3,
+    pub proximity_threshold: f32,
+}
+
 #[derive(Resource, Clone)]
 pub struct DialogConfig {
     pub text: String,
@@ -48,6 +54,17 @@ pub fn spawn_dialog(
     config: DialogConfig,
     scene_marker: impl Component + Clone,
 ) {
+    spawn_dialog_with_proximity(commands, font_assets, windows, config, scene_marker, None);
+}
+
+pub fn spawn_dialog_with_proximity(
+    commands: &mut Commands,
+    font_assets: &Res<FontAssets>,
+    windows: Query<&Window>,
+    config: DialogConfig,
+    scene_marker: impl Component + Clone,
+    proximity: Option<DialogProximity>,
+) {
     let window = windows.single().expect("No primary window");
     let window_height = window.height();
 
@@ -57,33 +74,38 @@ pub fn spawn_dialog(
         }
     };
 
-    commands
-        .spawn((
-            Node {
-                width: Val::Percent(config.width),
-                height: Val::Percent(config.height),
-                position_type: PositionType::Absolute,
-                bottom: Val::Percent(bottom),
-                left: Val::Percent(left),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                border: UiRect::all(Val::Px(config.border_width)),
-                ..default()
-            },
-            BackgroundColor(config.background_color),
-            BorderColor(config.border_color),
-            Dialog,
-            scene_marker.clone(),
-            Name::new(format!("Dialog: {}", config.text)),
-            Visibility::Hidden, // Start hidden
-        ))
-        .with_children(|parent| {
-            parent.spawn(label_widget(
-                window_height * config.font_size_multiplier,
-                font_assets.rajdhani_bold.clone(),
-                config.text.clone(),
-            ));
-        });
+    let mut entity_commands = commands.spawn((
+        Node {
+            width: Val::Percent(config.width),
+            height: Val::Percent(config.height),
+            position_type: PositionType::Absolute,
+            bottom: Val::Percent(bottom),
+            left: Val::Percent(left),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            border: UiRect::all(Val::Px(config.border_width)),
+            ..default()
+        },
+        BackgroundColor(config.background_color),
+        BorderColor(config.border_color),
+        Dialog,
+        scene_marker.clone(),
+        Name::new(format!("Dialog: {}", config.text)),
+        Visibility::Hidden, // Start hidden
+    ));
+
+    // Add proximity component if provided
+    if let Some(proximity) = proximity {
+        entity_commands.insert(proximity);
+    }
+
+    entity_commands.with_children(|parent| {
+        parent.spawn(label_widget(
+            window_height * config.font_size_multiplier,
+            font_assets.rajdhani_bold.clone(),
+            config.text.clone(),
+        ));
+    });
 }
 
 pub fn animate_dialog(time: Res<Time>, mut query: Query<&mut BackgroundColor, With<Dialog>>) {
@@ -100,15 +122,29 @@ pub fn animate_dialog(time: Res<Time>, mut query: Query<&mut BackgroundColor, Wi
 }
 
 pub fn check_dialog_proximity(
-    _player_query: Query<
+    player_query: Query<
         &Transform,
         With<crate::systems::character_controller::CharacterController>,
     >,
-    mut dialog_query: Query<&mut Visibility, With<Dialog>>,
+    mut dialog_query: Query<(&mut Visibility, Option<&DialogProximity>), With<Dialog>>,
 ) {
-    // Since we now use collision-based coin collection and MysteryBox has been removed, hide all dialogs
-    if let Ok(mut visibility) = dialog_query.single_mut() {
-        *visibility = Visibility::Hidden;
+    let Ok(player_transform) = player_query.single() else {
+        return;
+    };
+
+    for (mut visibility, proximity) in dialog_query.iter_mut() {
+        if let Some(proximity) = proximity {
+            // Check distance to target position
+            let distance = player_transform.translation.distance(proximity.target_position);
+            if distance <= proximity.proximity_threshold {
+                *visibility = Visibility::Visible;
+            } else {
+                *visibility = Visibility::Hidden;
+            }
+        } else {
+            // For dialogs without proximity, keep them hidden
+            *visibility = Visibility::Hidden;
+        }
     }
 }
 
