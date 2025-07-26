@@ -44,6 +44,9 @@ pub struct UiAssets {
     #[asset(path = "images/ui/components/chevron_right.png")]
     pub chevron_right: Handle<Image>,
 
+    #[asset(path = "images/ui/green-check-icon.png")]
+    pub green_check_icon: Handle<Image>,
+
     #[asset(path = "images/collectibles/coin.png")]
     pub coin: Handle<Image>,
 

@@ -156,7 +156,7 @@ fn update_objective_ui(
     let coin_image = ui_assets.coin.clone(); // Using coin as placeholder for all items
 
     for objective in &objective_manager.objectives {
-        let slot_entity = commands.spawn(create_objective_slot(objective, font.clone(), coin_image.clone())).id();
+        let slot_entity = commands.spawn(create_objective_slot(objective, font.clone(), coin_image.clone(), ui_assets.green_check_icon.clone())).id();
         commands.entity(list_entity).add_child(slot_entity);
     }
 
@@ -169,6 +169,7 @@ fn create_objective_slot(
     objective: &Objective,
     font: Handle<Font>,
     item_image: Handle<Image>,
+    check_icon: Handle<Image>,
 ) -> impl Bundle {
     let progress_percent = if objective.required_count > 0 {
         objective.current_count as f32 / objective.required_count as f32
@@ -250,13 +251,15 @@ fn create_objective_slot(
                         BorderRadius::MAX,
                         Name::new("CompletionCheckmark"),
                         children![(
-                            Text::new("✓"),
-                            TextFont {
-                                font: font.clone(),
-                                font_size: 20.0,
+                            ImageNode {
+                                image: check_icon,
+                                ..Default::default()
+                            },
+                            Node {
+                                width: Val::Px(20.0),
+                                height: Val::Px(20.0),
                                 ..default()
                             },
-                            TextColor::WHITE,
                         )]
                     )
                 ]
