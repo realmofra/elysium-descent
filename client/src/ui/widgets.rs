@@ -176,33 +176,33 @@ pub fn player_hud_widget(
             left,
             right,
             top: Val::Px(32.0),
-            width: Val::Px(420.0),
-            height: Val::Px(120.0),
+            width: Val::Px(630.0),
+            height: Val::Px(180.0),
             flex_direction,
             justify_content: JustifyContent::FlexStart,
             align_items: AlignItems::Center,
-            padding: UiRect::all(Val::Px(16.0)),
-            border: UiRect::all(Val::Px(2.0)),
+            padding: UiRect::all(Val::Px(24.0)),
+            border: UiRect::all(Val::Px(3.0)),
             ..default()
         },
         BackgroundColor(Color::DARK_GLASS),
         BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.6)),
-        BorderRadius::all(Val::Px(16.0)),
+        BorderRadius::all(Val::Px(24.0)),
         Name::new("Modern Player HUD"),
         children![
             // Avatar Container with Glow Effect
             (
                 Node {
-                    width: Val::Px(80.0),
-                    height: Val::Px(80.0),
-                    margin: UiRect::all(Val::Px(8.0)),
+                    width: Val::Px(120.0),
+                    height: Val::Px(120.0),
+                    margin: UiRect::all(Val::Px(12.0)),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
-                    border: UiRect::all(Val::Px(3.0)),
+                    border: UiRect::all(Val::Px(4.5)),
                     ..default()
                 },
                 BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.8)),
-                BorderRadius::all(Val::Px(42.0)),
+                BorderRadius::all(Val::Px(63.0)),
                 BackgroundColor(Color::DARKER_GLASS),
                 children![
                     // Avatar Image
@@ -212,23 +212,23 @@ pub fn player_hud_widget(
                             ..Default::default()
                         },
                         Node {
-                            width: Val::Px(70.0),
-                            height: Val::Px(70.0),
+                            width: Val::Px(105.0),
+                            height: Val::Px(105.0),
                             ..default()
                         },
-                        BorderRadius::all(Val::Px(35.0)),
+                        BorderRadius::all(Val::Px(52.5)),
                     ),
                     // Level Badge
                     (
                         Node {
                             position_type: PositionType::Absolute,
-                            right: Val::Px(-8.0),
-                            bottom: Val::Px(-8.0),
-                            width: Val::Px(36.0),
-                            height: Val::Px(36.0),
+                            right: Val::Px(-12.0),
+                            bottom: Val::Px(-12.0),
+                            width: Val::Px(54.0),
+                            height: Val::Px(54.0),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
-                            border: UiRect::all(Val::Px(2.0)),
+                            border: UiRect::all(Val::Px(3.0)),
                             ..default()
                         },
                         BackgroundColor(Color::ELYSIUM_GOLD),
@@ -238,7 +238,7 @@ pub fn player_hud_widget(
                             Text::new(level.to_string()),
                             TextFont {
                                 font: font.clone(),
-                                font_size: 16.0,
+                                font_size: 24.0,
                                 ..default()
                             },
                             TextColor(Color::srgb(0.1, 0.1, 0.1)),
@@ -249,11 +249,11 @@ pub fn player_hud_widget(
             // Stats Container
             (
                 Node {
-                    width: Val::Px(300.0),
-                    height: Val::Px(88.0),
+                    width: Val::Px(450.0),
+                    height: Val::Px(110.0),
                     flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::SpaceBetween,
-                    margin: UiRect::horizontal(Val::Px(12.0)),
+                    justify_content: JustifyContent::FlexStart,
+                    margin: UiRect::horizontal(Val::Px(18.0)),
                     ..default()
                 },
                 children![
@@ -262,22 +262,22 @@ pub fn player_hud_widget(
                         Text::new(name),
                         TextFont {
                             font: font.clone(),
-                            font_size: 22.0,
+                            font_size: 33.0,
                             ..default()
                         },
                         TextColor(Color::ELYSIUM_GOLD),
                         Node {
-                            margin: UiRect::bottom(Val::Px(8.0)),
+                            margin: UiRect::top(Val::Px(-14.0)),
                             ..default()
                         },
                     ),
                     // Health Bar Container
                     (
                         Node {
-                            width: Val::Px(280.0),
-                            height: Val::Px(26.0),
+                            width: Val::Px(420.0),
+                            height: Val::Px(39.0),
                             flex_direction: FlexDirection::Column,
-                            margin: UiRect::vertical(Val::Px(2.0)),
+                            margin: UiRect::bottom(Val::Px(6.0)),
                             ..default()
                         },
                         children![
@@ -288,7 +288,7 @@ pub fn player_hud_widget(
                                     flex_direction: FlexDirection::Row,
                                     justify_content: JustifyContent::SpaceBetween,
                                     align_items: AlignItems::Center,
-                                    margin: UiRect::bottom(Val::Px(2.0)),
+                                    margin: UiRect::bottom(Val::Px(3.0)),
                                     ..default()
                                 },
                                 children![
@@ -296,7 +296,7 @@ pub fn player_hud_widget(
                                         Text::new("HEALTH"),
                                         TextFont {
                                             font: font.clone(),
-                                            font_size: 11.0,
+                                            font_size: 16.5,
                                             ..default()
                                         },
                                         TextColor(Color::HEALTH_GREEN),
@@ -305,7 +305,7 @@ pub fn player_hud_widget(
                                         Text::new(format!("{}/{}", health.0, health.1)),
                                         TextFont {
                                             font: font.clone(),
-                                            font_size: 11.0,
+                                            font_size: 16.5,
                                             ..default()
                                         },
                                         TextColor::WHITE,
@@ -315,24 +315,24 @@ pub fn player_hud_widget(
                             // Health Bar
                             (
                                 Node {
-                                    width: Val::Px(280.0),
-                                    height: Val::Px(18.0),
-                                    border: UiRect::all(Val::Px(1.0)),
+                                    width: Val::Px(420.0),
+                                    height: Val::Px(27.0),
+                                    border: UiRect::all(Val::Px(1.5)),
                                     ..default()
                                 },
                                 BackgroundColor(Color::DARKER_GLASS),
                                 BorderColor(Color::HEALTH_GREEN_DARK.with_alpha(0.6)),
-                                BorderRadius::all(Val::Px(9.0)),
+                                BorderRadius::all(Val::Px(13.5)),
                                 children![
                                     (
                                         Node {
-                                            width: Val::Px(278.0 * health_percent),
-                                            height: Val::Px(16.0),
-                                            margin: UiRect::all(Val::Px(1.0)),
+                                            width: Val::Px(417.0 * health_percent),
+                                            height: Val::Px(24.0),
+                                            margin: UiRect::all(Val::Px(1.5)),
                                             ..default()
                                         },
                                         BackgroundColor(Color::HEALTH_GREEN),
-                                        BorderRadius::all(Val::Px(8.0)),
+                                        BorderRadius::all(Val::Px(12.0)),
                                     )
                                 ]
                             )
@@ -341,10 +341,10 @@ pub fn player_hud_widget(
                     // XP Bar Container
                     (
                         Node {
-                            width: Val::Px(280.0),
-                            height: Val::Px(22.0),
+                            width: Val::Px(420.0),
+                            height: Val::Px(33.0),
                             flex_direction: FlexDirection::Column,
-                            margin: UiRect::vertical(Val::Px(2.0)),
+                            margin: UiRect::bottom(Val::Px(0.0)),
                             ..default()
                         },
                         children![
@@ -355,7 +355,7 @@ pub fn player_hud_widget(
                                     flex_direction: FlexDirection::Row,
                                     justify_content: JustifyContent::SpaceBetween,
                                     align_items: AlignItems::Center,
-                                    margin: UiRect::bottom(Val::Px(2.0)),
+                                    margin: UiRect::top(Val::Px(14.0)),
                                     ..default()
                                 },
                                 children![
@@ -363,7 +363,7 @@ pub fn player_hud_widget(
                                         Text::new("EXPERIENCE"),
                                         TextFont {
                                             font: font.clone(),
-                                            font_size: 9.0,
+                                            font_size: 13.5,
                                             ..default()
                                         },
                                         TextColor(Color::XP_PURPLE),
@@ -372,7 +372,7 @@ pub fn player_hud_widget(
                                         Text::new(format!("{}/{}", xp.0, xp.1)),
                                         TextFont {
                                             font: font.clone(),
-                                            font_size: 9.0,
+                                            font_size: 13.5,
                                             ..default()
                                         },
                                         TextColor::WHITE,
@@ -382,24 +382,24 @@ pub fn player_hud_widget(
                             // XP Bar
                             (
                                 Node {
-                                    width: Val::Px(280.0),
-                                    height: Val::Px(14.0),
-                                    border: UiRect::all(Val::Px(1.0)),
+                                    width: Val::Px(420.0),
+                                    height: Val::Px(21.0),
+                                    border: UiRect::all(Val::Px(1.5)),
                                     ..default()
                                 },
                                 BackgroundColor(Color::DARKER_GLASS),
                                 BorderColor(Color::XP_PURPLE_DARK.with_alpha(0.6)),
-                                BorderRadius::all(Val::Px(7.0)),
+                                BorderRadius::all(Val::Px(10.5)),
                                 children![
                                     (
                                         Node {
-                                            width: Val::Px(278.0 * xp_percent),
-                                            height: Val::Px(12.0),
-                                            margin: UiRect::all(Val::Px(1.0)),
+                                            width: Val::Px(417.0 * xp_percent),
+                                            height: Val::Px(18.0),
+                                            margin: UiRect::all(Val::Px(1.5)),
                                             ..default()
                                         },
                                         BackgroundColor(Color::XP_PURPLE),
-                                        BorderRadius::all(Val::Px(6.0)),
+                                        BorderRadius::all(Val::Px(9.0)),
                                     )
                                 ]
                             )

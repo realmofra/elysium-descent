@@ -162,12 +162,12 @@ fn create_objective_slot(
     (
         Node {
             width: Val::Percent(100.0),
-            height: Val::Px(80.0),
+            height: Val::Px(120.0),
             flex_direction: FlexDirection::Row,
             align_items: AlignItems::Center,
-            margin: UiRect::bottom(Val::Px(8.0)),
-            padding: UiRect::all(Val::Px(8.0)),
-            border: UiRect::all(Val::Px(2.0)),
+            margin: UiRect::bottom(Val::Px(12.0)),
+            padding: UiRect::all(Val::Px(12.0)),
+            border: UiRect::all(Val::Px(3.0)),
             ..default()
         },
         BackgroundColor(Color::DARKER_GLASS),
@@ -176,7 +176,7 @@ fn create_objective_slot(
         } else {
             Color::ELYSIUM_GOLD.with_alpha(0.4)
         }),
-        BorderRadius::all(Val::Px(12.0)),
+        BorderRadius::all(Val::Px(18.0)),
         ObjectiveSlot {
             // Removed unused objective_id field
         },
@@ -184,36 +184,36 @@ fn create_objective_slot(
             // Item Icon Container
             (
                 Node {
-                    width: Val::Px(64.0),
-                    height: Val::Px(64.0),
+                    width: Val::Px(96.0),
+                    height: Val::Px(96.0),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
-                    margin: UiRect::right(Val::Px(12.0)),
-                    border: UiRect::all(Val::Px(2.0)),
+                    margin: UiRect::right(Val::Px(18.0)),
+                    border: UiRect::all(Val::Px(3.0)),
                     ..default()
                 },
                 BackgroundColor(Color::LIGHT_GLASS),
                 BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.6)),
-                BorderRadius::all(Val::Px(8.0)),
+                BorderRadius::all(Val::Px(12.0)),
                                 children![
                     // Checkmark for completed objectives
                     (
                         Node {
-                            width: Val::Px(48.0),
-                            height: Val::Px(48.0),
+                            width: Val::Px(72.0),
+                            height: Val::Px(72.0),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
                             display: if objective.completed { Display::Flex } else { Display::None },
                             ..default()
                         },
                         BackgroundColor(Color::SUCCESS_GREEN),
-                        BorderRadius::all(Val::Px(24.0)),
+                        BorderRadius::all(Val::Px(36.0)),
                         Name::new("Checkmark"),
                         children![(
                             Text::new("✓"),
                             TextFont {
                                 font: font.clone(),
-                                font_size: 32.0,
+                                font_size: 48.0,
                                 ..default()
                             },
                             TextColor::WHITE,
@@ -222,15 +222,15 @@ fn create_objective_slot(
                     // Item icon for incomplete objectives
                     (
                         Node {
-                            width: Val::Px(48.0),
-                            height: Val::Px(48.0),
+                            width: Val::Px(72.0),
+                            height: Val::Px(72.0),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
                             display: if objective.completed { Display::None } else { Display::Flex },
                             ..default()
                         },
                         BackgroundColor(Color::NONE),
-                        BorderRadius::all(Val::Px(6.0)),
+                        BorderRadius::all(Val::Px(9.0)),
                         Name::new("ItemIcon"),
                         children![(
                             ImageNode {
@@ -238,8 +238,8 @@ fn create_objective_slot(
                                 ..Default::default()
                             },
                             Node {
-                                width: Val::Px(48.0),
-                                height: Val::Px(48.0),
+                                width: Val::Px(72.0),
+                                height: Val::Px(72.0),
                                 ..default()
                             },
                         )]
@@ -251,8 +251,8 @@ fn create_objective_slot(
                 Node {
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::SpaceBetween,
-                    width: Val::Px(200.0),
-                    height: Val::Px(64.0),
+                    width: Val::Px(300.0),
+                    height: Val::Px(96.0),
                     ..default()
                 },
                 children![
@@ -261,7 +261,7 @@ fn create_objective_slot(
                         Text::new(&objective.title),
                         TextFont {
                             font: font.clone(),
-                            font_size: 14.0,
+                            font_size: 21.0,
                             ..default()
                         },
                         TextColor(if objective.completed {
@@ -270,7 +270,7 @@ fn create_objective_slot(
                             Color::WHITE
                         }),
                         Node {
-                            margin: UiRect::bottom(Val::Px(4.0)),
+                            margin: UiRect::bottom(Val::Px(6.0)),
                             ..default()
                         },
                     ),
@@ -279,12 +279,12 @@ fn create_objective_slot(
                         Text::new(&objective.description),
                         TextFont {
                             font: font.clone(),
-                            font_size: 12.0,
+                            font_size: 18.0,
                             ..default()
                         },
                         TextColor(Color::WHITE),
                         Node {
-                            margin: UiRect::bottom(Val::Px(4.0)),
+                            margin: UiRect::bottom(Val::Px(6.0)),
                             ..default()
                         },
                     ),
@@ -293,7 +293,7 @@ fn create_objective_slot(
                         Text::new(format!("{}/{}", objective.current_count, objective.required_count)),
                         TextFont {
                             font: font.clone(),
-                            font_size: 12.0,
+                            font_size: 18.0,
                             ..default()
                         },
                         TextColor(if objective.completed {
@@ -302,27 +302,27 @@ fn create_objective_slot(
                             Color::ELYSIUM_GOLD
                         }),
                         Node {
-                            margin: UiRect::bottom(Val::Px(4.0)),
+                            margin: UiRect::bottom(Val::Px(6.0)),
                             ..default()
                         },
                     ),
                     // Progress Bar
                     (
                         Node {
-                            width: Val::Px(180.0),
-                            height: Val::Px(8.0),
-                            border: UiRect::all(Val::Px(1.0)),
+                            width: Val::Px(270.0),
+                            height: Val::Px(12.0),
+                            border: UiRect::all(Val::Px(1.5)),
                             ..default()
                         },
                         BackgroundColor(Color::DARKER_GLASS),
                         BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.4)),
-                        BorderRadius::all(Val::Px(4.0)),
+                        BorderRadius::all(Val::Px(6.0)),
                         children![
                             (
                                 Node {
-                                    width: Val::Px(178.0 * progress_percent),
-                                    height: Val::Px(6.0),
-                                    margin: UiRect::all(Val::Px(1.0)),
+                                    width: Val::Px(267.0 * progress_percent),
+                                    height: Val::Px(9.0),
+                                    margin: UiRect::all(Val::Px(1.5)),
                                     ..default()
                                 },
                                 BackgroundColor(if objective.completed {
@@ -330,7 +330,7 @@ fn create_objective_slot(
                                 } else {
                                     Color::ELYSIUM_GOLD
                                 }),
-                                BorderRadius::all(Val::Px(3.0)),
+                                BorderRadius::all(Val::Px(4.5)),
                             )
                         ]
                     )

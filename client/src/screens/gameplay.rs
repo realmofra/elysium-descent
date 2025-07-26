@@ -146,16 +146,16 @@ fn spawn_objectives_ui(
             position_type: PositionType::Absolute,
             top: Val::Px(32.0),
             right: Val::Px(32.0),
-            width: Val::Px(320.0),
+            width: Val::Px(480.0),
             height: Val::Auto, // Auto-size based on content
             flex_direction: FlexDirection::Column,
-            padding: UiRect::all(Val::Px(16.0)),
-            border: UiRect::all(Val::Px(2.0)),
+            padding: UiRect::all(Val::Px(24.0)),
+            border: UiRect::all(Val::Px(3.0)),
             ..default()
         },
         BackgroundColor(Color::DARK_GLASS),
         BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.6)),
-        BorderRadius::all(Val::Px(16.0)),
+        BorderRadius::all(Val::Px(24.0)),
         Name::new("Objectives UI"),
         crate::systems::objectives::ObjectiveUI,
         GameplayHud,
@@ -164,17 +164,17 @@ fn spawn_objectives_ui(
             (
                 Node {
                     width: Val::Percent(100.0),
-                    height: Val::Px(32.0),
+                    height: Val::Px(48.0),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
-                    margin: UiRect::bottom(Val::Px(12.0)),
+                    margin: UiRect::bottom(Val::Px(18.0)),
                     ..default()
                 },
                 children![(
                     Text::new("OBJECTIVES"),
                     TextFont {
                         font: font.clone(),
-                        font_size: 18.0,
+                        font_size: 27.0,
                         ..default()
                     },
                     TextColor(Color::ELYSIUM_GOLD),

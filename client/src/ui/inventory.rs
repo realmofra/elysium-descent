@@ -67,22 +67,22 @@ pub fn spawn_inventory_ui<T: Component + Default>(commands: &mut Commands) {
     commands
         .spawn((
             Node {
-                width: Val::Px(1250.0),
-                height: Val::Px(250.0),
+                width: Val::Px(833.0),
+                height: Val::Px(167.0),
                 // Remove height so it fits children
                 position_type: PositionType::Absolute,
                 bottom: Val::Px(32.0),
                 left: Val::Percent(50.0),
-                margin: UiRect::left(Val::Px(-625.0)), // Center horizontally
+                margin: UiRect::left(Val::Px(-416.5)), // Center horizontally
                 flex_direction: FlexDirection::Row,
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
-                border: UiRect::all(Val::Px(2.0)),
+                border: UiRect::all(Val::Px(1.0)),
                 ..default()
             },
             BackgroundColor(Color::srgba(0.12, 0.14, 0.18, 0.85)), // glassy dark
             BorderColor(Color::ELYSIUM_GOLD),
-            BorderRadius::all(Val::Px(32.0)),
+            BorderRadius::all(Val::Px(21.0)),
             InventoryUI,
             Visibility::Visible,  // Start visible
             T::default(),
@@ -91,26 +91,26 @@ pub fn spawn_inventory_ui<T: Component + Default>(commands: &mut Commands) {
             for i in 0..6 {
                 parent.spawn((
                     Node {
-                        width: Val::Px(180.0),
-                        height: Val::Px(200.0),
-                        margin: UiRect::all(Val::Px(12.0)),
-                        padding: UiRect::horizontal(Val::Px(48.0)),
+                        width: Val::Px(120.0),
+                        height: Val::Px(133.0),
+                        margin: UiRect::all(Val::Px(8.0)),
+                        padding: UiRect::horizontal(Val::Px(32.0)),
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
-                        border: UiRect::all(Val::Px(2.0)),
+                        border: UiRect::all(Val::Px(1.0)),
                         ..default()
                     },
                     BackgroundColor(Color::srgba(0.18, 0.20, 0.26, 0.65)),
                     BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.7)),
-                    BorderRadius::all(Val::Px(18.0)),
+                    BorderRadius::all(Val::Px(12.0)),
                     InventorySlot { index: i },
                 ))
                 .with_children(|slot| {
                     // Always add a filler node to ensure consistent sizing
                     slot.spawn((
                         Node {
-                            width: Val::Px(140.0),
-                            height: Val::Px(160.0),
+                            width: Val::Px(93.0),
+                            height: Val::Px(107.0),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
                             ..default()
@@ -219,8 +219,8 @@ pub fn add_item_to_inventory(
                         // spawn the image (larger, centered)
                         item_parent.spawn((
                             Node {
-                                width: Val::Px(200.0),
-                                height: Val::Px(200.0),
+                                width: Val::Px(133.0),
+                                height: Val::Px(133.0),
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
                                 ..default()
@@ -237,16 +237,16 @@ pub fn add_item_to_inventory(
                             .spawn((
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    width: Val::Px(50.0),  // Slightly smaller for better proportion
-                                    height: Val::Px(50.0), // Same as width for circle
-                                    right: Val::Px(-30.0),  // Positioned relative to image edge
-                                    bottom: Val::Px(20.0), // Positioned relative to image edge
+                                    width: Val::Px(33.0),  // Slightly smaller for better proportion
+                                    height: Val::Px(33.0), // Same as width for circle
+                                    right: Val::Px(-20.0),  // Positioned relative to image edge
+                                    bottom: Val::Px(13.0), // Positioned relative to image edge
                                     align_items: AlignItems::Center,
                                     justify_content: JustifyContent::Center,
-                                    border: UiRect::all(Val::Px(2.0)), // Add border for definition
+                                    border: UiRect::all(Val::Px(1.0)), // Add border for definition
                                     ..default()
                                 },
-                                BorderRadius::all(Val::Px(25.0)), // Half of width/height for perfect circle
+                                BorderRadius::all(Val::Px(16.5)), // Half of width/height for perfect circle
                                 BorderColor(Color::srgba(0.0, 0.0, 0.0, 0.4)), // Slightly darker border
                                 BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.98)), // More opaque
                                 ZIndex(2),
@@ -254,7 +254,7 @@ pub fn add_item_to_inventory(
                             .with_children(|text_parent| {
                                 text_parent.spawn((
                                     TextFont {
-                                        font_size: 28.0, // Adjusted for smaller badge
+                                        font_size: 19.0, // Adjusted for smaller badge
                                         font: font_assets.rajdhani_extra_bold.clone(),
                                         ..default()
                                     },
