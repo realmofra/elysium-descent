@@ -231,9 +231,25 @@ fn handle_create_game(
 
 fn handle_interact(
     trigger: Trigger<Started<Interact>>,
+    player_query: Query<&Transform, With<crate::systems::character_controller::CharacterController>>,
+    book_query: Query<&Transform, With<crate::systems::book_interaction::Book>>,
+    mut next_state: ResMut<NextState<Screen>>,
 ) {
     if trigger.value {
-        info!("Interact key pressed - coins are now collected by touching them!");
+        info!("Interact key pressed - checking for book interaction");
+        
+        // Check if player is near the book
+        if let (Ok(player_transform), Ok(book_transform)) = (player_query.single(), book_query.single()) {
+            let distance = player_transform.translation.distance(book_transform.translation);
+            let proximity_threshold = 5.0;
+
+            if distance <= proximity_threshold {
+                info!("Player near book - transitioning to fight scene");
+                next_state.set(Screen::FightScene);
+                return;
+            }
+        }
+        
         // Note: Coins are now automatically collected by physical contact/collision
     }
 }
