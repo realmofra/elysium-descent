@@ -52,11 +52,11 @@ pub fn adjust_inventory_for_dialogs(
     if let Ok(mut node) = inventory_query.single_mut() {
         if dialog_visible && !visibility_state.shifted_up {
             // Shift inventory up to avoid dialog overlap
-            node.bottom = Val::Px(150.0); // Move up from 32px to 150px
+            node.bottom = Val::Percent(15.0); // Move up from 32px to 150px
             visibility_state.shifted_up = true;
         } else if !dialog_visible && visibility_state.shifted_up {
             // Restore original position when dialog is hidden
-            node.bottom = Val::Px(32.0); // Back to original position
+            node.bottom = Val::Percent(3.5); // Back to original position
             visibility_state.shifted_up = false;
         }
     }
