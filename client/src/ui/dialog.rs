@@ -34,13 +34,13 @@ impl Default for DialogConfig {
     fn default() -> Self {
         Self {
             text: "Press E to enter".to_string(),
-            width: 40.0,
-            height: 8.0,
+            width: 26.67, // Reduced from 40.0 by 1.5x (40.0 / 1.5)
+            height: 5.33, // Reduced from 8.0 by 1.5x (8.0 / 1.5)
             position: DialogPosition::BottomCenter { bottom_margin: 4.0 },
             background_color: Color::srgba(0.1, 0.1, 0.2, 0.6),
             border_color: Color::srgba(0.2, 0.2, 0.3, 0.8),
             border_width: 2.0,
-            font_size_multiplier: 0.6,
+            font_size_multiplier: 0.4, // Reduced from 0.6 by 1.5x (0.6 / 1.5)
         }
     }
 }
