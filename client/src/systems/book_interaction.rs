@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use avian3d::prelude::*;
 use crate::assets::ModelAssets;
 use crate::ui::dialog::{spawn_dialog_with_proximity, DialogConfig, DialogPosition, DialogProximity};
 
@@ -21,6 +22,8 @@ pub fn spawn_book(
             scale: Vec3::splat(1.0),
             ..default()
         },
+        Collider::cuboid(1.0, 1.0, 1.0), // Add collision box
+        RigidBody::Static, // Make it static so it doesn't move
         Book,
     ));
 }
