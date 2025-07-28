@@ -1,21 +1,19 @@
 #[starknet::interface]
 trait IGame<T> {
-    fn start_game(ref self: T);
+    fn start_game(ref self: T, starting_item: u8);
+    fn claim_gold(ref self: T, game_id: u128);
     fn level(self: @T, game_id: u128) -> u8;
     fn total_games(self: @T) -> u128;
 }
 
 #[dojo::contract]
 mod game {
-    use death_mountain::models::adventurer::adventurer::IAdventurer;
     use elysium_descent::components::countable::CountableComponent;
     use elysium_descent::constants::world::{DEFAULT_NS};
     use elysium_descent::utils::store::{Store, StoreTrait};
     use elysium_descent::models::game_counter::{GameCounter, GameCounterTrait};
     use elysium_descent::models::game::{Game, ImplGame};
-    use dojo::event::EventStorage;
-    use dojo::model::{Model, ModelStorage, ModelValueStorage};
-    use dojo::world::{WorldStorage, WorldStorageTrait};
+    use dojo::world::{WorldStorage};
     use death_mountain::models::adventurer::adventurer::{Adventurer, ImplAdventurer};
 
     component!(path: CountableComponent, storage: countable, event: CountableEvent);
@@ -40,17 +38,26 @@ mod game {
 
     #[abi(embed_v0)]
     impl GameImpl of super::IGame<ContractState> {
-        fn start_game(ref self: ContractState) {
+        fn start_game(ref self: ContractState, starting_item: u8) {
             let world = self.world_storage();
             let mut store: Store = StoreTrait::new(world);
             let mut game_id: GameCounter = store.get_game_counter(1);
 
-            //TODO: Make starting item dynamic
-            let game: Game = ImplGame::new(game_id.count, 0);
+            let game: Game = ImplGame::new(game_id.count, starting_item);
 
             store.set_game(game);
             game_id.increment();
             store.set_game_counter(game_id);
+        }
+
+        // TODO: Gold needs to be able to validate location of adventurer
+        fn claim_gold(ref self: ContractState, game_id: u128) {
+            let world = self.world_storage();
+            let mut store: Store = StoreTrait::new(world);
+            let mut game: Game = store.get_game(game_id);
+            game.increase_gold();
+
+            store.set_game(game);
         }
 
         //TODO: Change level system
