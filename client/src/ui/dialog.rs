@@ -22,7 +22,6 @@ pub struct DialogConfig {
     pub background_color: Color,
     pub border_color: Color,
     pub border_width: f32,
-    pub font_size_multiplier: f32,
 }
 
 #[derive(Clone, Copy)]
@@ -37,10 +36,9 @@ impl Default for DialogConfig {
             width: 26.67, // Reduced from 40.0 by 1.5x (40.0 / 1.5)
             height: 5.33, // Reduced from 8.0 by 1.5x (8.0 / 1.5)
             position: DialogPosition::BottomCenter { bottom_margin: 4.0 },
-            background_color: Color::srgba(0.1, 0.1, 0.2, 0.6),
+            background_color: Color::srgba(0.1, 0.1, 0.2, 0.9), // More opaque background for better text visibility
             border_color: Color::srgba(0.2, 0.2, 0.3, 0.8),
             border_width: 2.0,
-            font_size_multiplier: 0.4, // Reduced from 0.6 by 1.5x (0.6 / 1.5)
         }
     }
 }
@@ -67,23 +65,73 @@ pub fn spawn_dialog_with_proximity(
 ) {
     let window = windows.single().expect("No primary window");
     let window_height = window.height();
+    let window_width = window.width();
 
-    let (left, bottom) = match config.position {
+    let (_, bottom) = match config.position {
         DialogPosition::BottomCenter { bottom_margin } => {
             (50.0 - config.width / 2.0, bottom_margin)
         }
     };
 
+    // Calculate dynamic font size based on screen size for better readability
+    // Use screen height as the base for font size calculation
+    let base_font_size = window_height * 0.03; // 3% of screen height
+    let responsive_font_size = base_font_size.max(20.0).min(60.0); // Min 20px, max 60px
+    
+    // Debug output to help diagnose font size issues
+    println!("Dialog font size calculation:");
+    println!("  Window: {}x{}", window_width, window_height);
+    println!("  Dialog config: {}% x {}%", config.width, config.height);
+    println!("  Base font size: {}", base_font_size);
+    println!("  Final font size: {}", responsive_font_size);
+    
+    // Use exact same width as inventory (833px)
+    let dialog_width_px = 833.0;
+    
+    // Calculate dynamic dialog size based on text content and font size
+    // Estimate text width based on character count and font size
+    let text_length = config.text.len() as f32;
+    let estimated_text_width = text_length * responsive_font_size * 0.6; // Approximate character width
+    let estimated_text_height = responsive_font_size * 1.5; // Approximate line height
+    
+    // Calculate minimum dialog size with padding
+    let padding = responsive_font_size * 0.5; // Padding proportional to font size
+    let min_dialog_width = estimated_text_width + (padding * 2.0);
+    let min_dialog_height = estimated_text_height + (padding * 2.0);
+    
+    // Use inventory width (833px), but ensure minimum height for text
+    let dynamic_width_px = dialog_width_px;
+    let dynamic_height_px = min_dialog_height.max(100.0); // Minimum 100px height
+    
+    // Use exact same centering method as inventory
+    // Inventory uses: left: Val::Percent(50.0), margin: UiRect::left(Val::Px(-416.5))
+    // where -416.5 is half of 833px width
+    
+    // Debug output for dynamic sizing
+    println!("Dynamic dialog sizing:");
+    println!("  Inventory width: 833px");
+    println!("  Dialog width: {}px", dynamic_width_px);
+    println!("  Text length: {}", text_length);
+    println!("  Estimated text width: {}px", estimated_text_width);
+    println!("  Estimated text height: {}px", estimated_text_height);
+    println!("  Padding: {}px", padding);
+    println!("  Min dialog width: {}px", min_dialog_width);
+    println!("  Min dialog height: {}px", min_dialog_height);
+    println!("  Dynamic width: {}px", dynamic_width_px);
+    println!("  Dynamic height: {}px", dynamic_height_px);
+
     let mut entity_commands = commands.spawn((
         Node {
-            width: Val::Percent(config.width),
-            height: Val::Percent(config.height),
+            width: Val::Px(dynamic_width_px),
+            height: Val::Px(dynamic_height_px),
             position_type: PositionType::Absolute,
             bottom: Val::Percent(bottom),
-            left: Val::Percent(left),
+            left: Val::Percent(50.0), // Same as inventory
+            margin: UiRect::left(Val::Px(-416.5)), // Same as inventory (-833/2)
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
             border: UiRect::all(Val::Px(config.border_width)),
+            padding: UiRect::all(Val::Px(padding as f32)), // Add padding around text
             ..default()
         },
         BackgroundColor(config.background_color),
@@ -101,7 +149,7 @@ pub fn spawn_dialog_with_proximity(
 
     entity_commands.with_children(|parent| {
         parent.spawn(label_widget(
-            window_height * config.font_size_multiplier,
+            responsive_font_size,
             font_assets.rajdhani_bold.clone(),
             config.text.clone(),
         ));

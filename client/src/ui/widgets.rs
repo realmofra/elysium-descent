@@ -4,14 +4,14 @@ use bevy::ecs::system::IntoObserverSystem;
 use bevy::prelude::*;
 
 pub fn label_widget(
-    window_height: f32,
+    font_size: f32,
     font: Handle<Font>,
     text: impl Into<String> + Clone,
 ) -> impl Bundle {
     (
         Node {
             width: Val::Percent(100.0),
-            height: Val::Percent(20.0),
+            height: Val::Auto, // Auto height to fit content
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
             ..default()
@@ -21,11 +21,11 @@ pub fn label_widget(
         children![(
             Text::new(text.into()),
             TextFont {
-                font_size: window_height * 0.04,
+                font_size,
                 font,
                 ..default()
             },
-            TextColor::WHITE,
+            TextColor(Color::srgb(1.0, 1.0, 1.0)), // Bright white for maximum visibility
         )],
     )
 }
@@ -121,7 +121,7 @@ where
             Pickable::IGNORE,
         ))
         .with_children(|content| {
-            content.spawn(label_widget(window_height, font.clone(), text));
+            content.spawn(label_widget(window_height * 0.04, font.clone(), text));
 
             content
                 .spawn(button_widget(window_height, font.clone(), "-"))
