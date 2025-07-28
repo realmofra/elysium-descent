@@ -54,9 +54,6 @@ pub struct GameCounter {
     pub count: u128,
 }
 
-// Constants for special identifiers
-pub const GAME_COUNTER_ID: u32 = 999999999;
-
 // Inventory models
 #[derive(Serde, Copy, Drop, Introspect, PartialEq)]
 pub enum ItemType {
