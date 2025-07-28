@@ -42,21 +42,31 @@ impl Default for InventoryVisibilityState {
 /// System to adjust inventory position when dialogs are visible to prevent overlap
 pub fn adjust_inventory_for_dialogs(
     dialog_query: Query<&Visibility, With<crate::ui::dialog::Dialog>>,
-    mut inventory_query: Query<&mut Node, With<InventoryUI>>,
+    mut inventory_query: Query<&mut Node, (With<InventoryUI>, Without<crate::ui::dialog::Dialog>)>,
     mut visibility_state: ResMut<InventoryVisibilityState>,
+    windows: Query<&Window>,
 ) {
+    // Check if any dialog is visible
     let dialog_visible = dialog_query
         .iter()
         .any(|visibility| *visibility == Visibility::Visible);
 
     if let Ok(mut node) = inventory_query.single_mut() {
         if dialog_visible && !visibility_state.shifted_up {
-            // Shift inventory up to avoid dialog overlap
-            node.bottom = Val::Percent(15.0); // Move up from 32px to 150px
+            // Determine position based on screen height
+            let screen_height = windows.single().expect("No window found").height();
+            let inventory_padding = if screen_height > 1080.0 {
+                200.0 // Fullscreen mode - higher position
+            } else {
+                0.0 // Windowed mode - lower position
+            };
+            
+            let final_position = 200.0 + inventory_padding;
+            node.bottom = Val::Px(final_position);
             visibility_state.shifted_up = true;
         } else if !dialog_visible && visibility_state.shifted_up {
             // Restore original position when dialog is hidden
-            node.bottom = Val::Percent(3.5); // Back to original position
+            node.bottom = Val::Px(32.0); // Back to original position
             visibility_state.shifted_up = false;
         }
     }
