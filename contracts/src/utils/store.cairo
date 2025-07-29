@@ -8,7 +8,6 @@ use dojo::model::ModelStorage;
 use elysium_descent::models::game_counter::GameCounter;
 use elysium_descent::models::game::Game;
 
-
 // Structs
 #[derive(Copy, Drop)]
 pub struct Store {
