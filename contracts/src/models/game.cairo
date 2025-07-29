@@ -9,6 +9,7 @@ use death_mountain::models::adventurer::item::{ImplItem};
 use death_mountain::models::adventurer::stats::{IStat, ImplStats};
 pub use elysium_descent::models::index::Game;
 
+const MAX_GOLD: u16 = 65535;
 const TWO_POW_10: u256 = 0x400;
 const TWO_POW_25: u256 = 0x2000000;
 const TWO_POW_34: u256 = 0x400000000;
@@ -32,14 +33,24 @@ pub impl ImplGame of GameTrait {
     #[inline]
     fn increase_gold(ref self: Game) {
         let mut adventurer: Adventurer = ImplAdventurer::unpack(self.packed_adventurer);
-        adventurer.gold += 1;
+        let new_amount = adventurer.gold + 1;
+        if (new_amount > MAX_GOLD) {
+            adventurer.gold = MAX_GOLD;
+        } else {
+            adventurer.gold = new_amount;
+        }
         self.packed_adventurer = self.pack(adventurer);
     }
 
     #[inline]
     fn dynamic_gold_increase(ref self: Game, amount: u16) {
         let mut adventurer: Adventurer = ImplAdventurer::unpack(self.packed_adventurer);
-        adventurer.gold += amount;
+        let new_amount = adventurer.gold + amount;
+        if (new_amount > MAX_GOLD) {
+            adventurer.gold = MAX_GOLD;
+        } else {
+            adventurer.gold = new_amount;
+        }
         self.packed_adventurer = self.pack(adventurer);
     }
 
@@ -47,6 +58,7 @@ pub impl ImplGame of GameTrait {
     fn pack(self: Game, adventurer: Adventurer) -> felt252 {
         assert(adventurer.health <= MAX_ADVENTURER_HEALTH, 'health overflow');
         assert(adventurer.xp <= MAX_ADVENTURER_XP, 'xp overflow');
+        assert(adventurer.gold <= MAX_GOLD, 'gold overflow');
         assert(adventurer.beast_health <= MAX_PACKABLE_BEAST_HEALTH, 'beast health overflow');
         assert(
             adventurer.stat_upgrades_available <= MAX_STAT_UPGRADES_AVAILABLE,
