@@ -50,7 +50,7 @@ mod game {
             store.set_game_counter(game_id);
         }
 
-        // TODO: Gold needs to be able to validate location of adventurer
+        // TODO: We needs to be able to validate location of adventurer
         fn claim_gold(ref self: ContractState, game_id: u128) {
             let world = self.world_storage();
             let mut store: Store = StoreTrait::new(world);

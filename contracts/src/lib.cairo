@@ -1,11 +1,11 @@
 pub mod systems {
-    //pub mod actions;
-    pub mod elysium_descent;
+    pub mod game {
+        pub mod contracts;
+    }
 }
 
 pub mod models {
     pub mod index;
-    //pub mod loot;
     pub mod game;
     pub mod game_counter;
 }
