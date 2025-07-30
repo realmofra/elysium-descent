@@ -31,6 +31,9 @@ pub struct QuestIcon;
 #[derive(Component)]
 pub struct QuestReward;
 
+#[derive(Component)]
+pub struct QuestEntriesContainer;
+
 #[derive(Resource)]
 pub struct ModalState {
     pub visible: bool,
@@ -307,6 +310,7 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                                 overflow: Overflow::clip_y(), // Enable vertical scrolling
                                 ..default()
                             },
+                            QuestEntriesContainer,
                             children![
                                 // Quest entries will be spawned here dynamically
                             ]
@@ -333,13 +337,13 @@ pub fn update_quest_list(
     objective_manager: Res<ObjectiveManager>,
     font_assets: Option<Res<FontAssets>>,
     ui_assets: Option<Res<UiAssets>>,
-    modal_query: Query<Entity, With<ModalContent>>,
+    quest_container_query: Query<Entity, With<QuestEntriesContainer>>,
     existing_quests: Query<Entity, With<QuestEntry>>,
 ) {
     let Some(font_assets) = font_assets else { return; };
     let Some(ui_assets) = ui_assets else { return; };
 
-    let Some(modal_entity) = modal_query.iter().next() else { return; };
+    let Some(quest_container_entity) = quest_container_query.iter().next() else { return; };
 
     // Clear existing quest entries
     for entity in existing_quests.iter() {
@@ -386,7 +390,7 @@ pub fn update_quest_list(
         };
         
         let quest_entity = spawn_quest_entry(&mut commands, &quest_objective, &font_assets, &ui_assets, i);
-        commands.entity(modal_entity).add_child(quest_entity);
+        commands.entity(quest_container_entity).add_child(quest_entity);
     }
 }
 
