@@ -72,6 +72,12 @@ pub struct AudioAssets {
 
     #[asset(path = "audio/coin.mp3")]
     pub coin_sound: Handle<AudioSource>,
+
+    #[asset(path = "audio/walking.mp3")]
+    pub walking_sound: Handle<AudioSource>,
+
+    #[asset(path = "audio/running.mp3")]
+    pub running_sound: Handle<AudioSource>,
 }
 
 // Font Assets
