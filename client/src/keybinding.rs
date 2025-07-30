@@ -195,11 +195,9 @@ fn handle_toggle_fullscreen(
         if let Ok(mut window) = windows.single_mut() {
             window.mode = match window.mode {
                 WindowMode::Windowed => {
-                    info!("Switching to fullscreen");
                     WindowMode::BorderlessFullscreen(MonitorSelection::Primary)
                 }
                 _ => {
-                    info!("Switching to windowed");
                     WindowMode::Windowed
                 }
             };
@@ -212,9 +210,16 @@ fn handle_toggle_fullscreen(
 fn handle_return_to_menu(
     trigger: Trigger<Started<ReturnToMainMenu>>,
     mut next_state: ResMut<NextState<Screen>>,
+    modal_state: Option<Res<crate::ui::modal::ModalState>>,
 ) {
     if trigger.value {
-        info!("Returning to main menu");
+        // Check if modal is open - if so, don't return to main menu
+        if let Some(modal_state) = modal_state {
+            if modal_state.visible {
+                return; // Modal is open, let the modal handle ESC
+            }
+        }
+        
         next_state.set(Screen::MainMenu);
     }
 }
@@ -224,7 +229,6 @@ fn handle_create_game(
     mut create_game_events: EventWriter<crate::systems::dojo::CreateGameEvent>,
 ) {
     if trigger.value {
-        info!("Create game key pressed - triggering blockchain game creation");
         create_game_events.write(crate::systems::dojo::CreateGameEvent);
     }
 }
@@ -236,15 +240,12 @@ fn handle_interact(
     mut next_state: ResMut<NextState<Screen>>,
 ) {
     if trigger.value {
-        info!("Interact key pressed - checking for book interaction");
-        
         // Check if player is near the book
         if let (Ok(player_transform), Ok(book_transform)) = (player_query.single(), book_query.single()) {
             let distance = player_transform.translation.distance(book_transform.translation);
             let proximity_threshold = 5.0;
 
             if distance <= proximity_threshold {
-                info!("Player near book - transitioning to fight scene");
                 next_state.set(Screen::FightScene);
                 return;
             }

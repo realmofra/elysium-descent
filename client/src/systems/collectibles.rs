@@ -354,7 +354,7 @@ fn handle_coin_collisions(
                     item_entity: entity,
                 });
 
-                info!("Player collected coin through collision!");
+
             }
         }
     }

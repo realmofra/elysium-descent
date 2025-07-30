@@ -20,7 +20,7 @@ fn reset_ui_camera(
     if let Ok(mut camera_transform) = ui_cameras.single_mut() {
         // Reset to the proper UI camera position
         *camera_transform = Transform::from_translation(Vec3::new(0.0, 0.0, 1000.0));
-        info!("UI camera reset to proper position");
+
     }
 }
 

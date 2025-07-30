@@ -17,6 +17,7 @@ pub struct DialogProximity {
 pub struct DialogConfig {
     pub text: String,
     pub width: f32,  // Percentage of screen width
+    #[allow(dead_code)]
     pub height: f32, // Percentage of screen height
     pub position: DialogPosition,
     pub background_color: Color,
@@ -65,7 +66,7 @@ pub fn spawn_dialog_with_proximity(
 ) {
     let window = windows.single().expect("No primary window");
     let window_height = window.height();
-    let window_width = window.width();
+    let _window_width = window.width();
 
     let (_, bottom) = match config.position {
         DialogPosition::BottomCenter { bottom_margin } => {
@@ -78,12 +79,7 @@ pub fn spawn_dialog_with_proximity(
     let base_font_size = window_height * 0.03; // 3% of screen height
     let responsive_font_size = base_font_size.max(20.0).min(60.0); // Min 20px, max 60px
     
-    // Debug output to help diagnose font size issues
-    println!("Dialog font size calculation:");
-    println!("  Window: {}x{}", window_width, window_height);
-    println!("  Dialog config: {}% x {}%", config.width, config.height);
-    println!("  Base font size: {}", base_font_size);
-    println!("  Final font size: {}", responsive_font_size);
+    // Calculate responsive font size based on screen size
     
     // Use exact same width as inventory (833px)
     let dialog_width_px = 833.0;
@@ -96,7 +92,7 @@ pub fn spawn_dialog_with_proximity(
     
     // Calculate minimum dialog size with padding
     let padding = responsive_font_size * 0.5; // Padding proportional to font size
-    let min_dialog_width = estimated_text_width + (padding * 2.0);
+    let _min_dialog_width = estimated_text_width + (padding * 2.0);
     let min_dialog_height = estimated_text_height + (padding * 2.0);
     
     // Use inventory width (833px), but ensure minimum height for text
@@ -107,18 +103,7 @@ pub fn spawn_dialog_with_proximity(
     // Inventory uses: left: Val::Percent(50.0), margin: UiRect::left(Val::Px(-416.5))
     // where -416.5 is half of 833px width
     
-    // Debug output for dynamic sizing
-    println!("Dynamic dialog sizing:");
-    println!("  Inventory width: 833px");
-    println!("  Dialog width: {}px", dynamic_width_px);
-    println!("  Text length: {}", text_length);
-    println!("  Estimated text width: {}px", estimated_text_width);
-    println!("  Estimated text height: {}px", estimated_text_height);
-    println!("  Padding: {}px", padding);
-    println!("  Min dialog width: {}px", min_dialog_width);
-    println!("  Min dialog height: {}px", min_dialog_height);
-    println!("  Dynamic width: {}px", dynamic_width_px);
-    println!("  Dynamic height: {}px", dynamic_height_px);
+    // Calculate dynamic dialog dimensions
 
     let mut entity_commands = commands.spawn((
         Node {

@@ -17,12 +17,15 @@ pub struct ModalContent;
 
 #[derive(Component)]
 pub struct NavigationTab {
+    #[allow(dead_code)]
     pub tab_name: String,
+    #[allow(dead_code)]
     pub is_active: bool,
 }
 
 #[derive(Component)]
 pub struct QuestEntry {
+    #[allow(dead_code)]
     pub quest_id: usize,
 }
 
@@ -38,6 +41,7 @@ pub struct QuestEntriesContainer;
 #[derive(Resource)]
 pub struct ModalState {
     pub visible: bool,
+    #[allow(dead_code)]
     pub active_tab: String,
 }
 
@@ -53,7 +57,6 @@ impl Default for ModalState {
 // ===== MODAL SYSTEMS =====
 
 pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAssets>, ui_assets: &Res<UiAssets>) {
-    println!("🎯 Spawning objectives modal...");
     commands
         .spawn((
             Node {
@@ -553,23 +556,17 @@ pub fn toggle_modal_visibility(
     mut background_query: Query<&mut Visibility, With<ModalBackground>>,
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
-    // Toggle modal with Escape key
+    // Handle Escape key - close modal if open, otherwise let the global handler deal with it
     if keyboard.just_pressed(KeyCode::Escape) {
-        modal_state.visible = !modal_state.visible;
-        
         if modal_state.visible {
-            println!("🎯 Modal opened with ESC key");
-        } else {
-            println!("🎯 Modal closed with ESC key");
+            // Close the modal
+            modal_state.visible = false;
+            
+            for mut visibility in &mut background_query {
+                *visibility = Visibility::Hidden;
+            }
         }
-        
-        for mut visibility in &mut background_query {
-            *visibility = if modal_state.visible { 
-                Visibility::Visible 
-            } else { 
-                Visibility::Hidden 
-            };
-        }
+        // If modal is not visible, let the global ESC handler (ReturnToMainMenu) take over
     }
 }
 
@@ -578,21 +575,16 @@ pub fn handle_view_more_click(
     mut background_query: Query<&mut Visibility, With<ModalBackground>>,
     mut interaction_query: Query<(&Interaction, &Name), Changed<Interaction>>,
 ) {
-    println!("🔍 Checking for View More button interactions...");
     for (interaction, name) in &mut interaction_query {
-        println!("🔍 Found interaction: {:?} for component: {}", interaction, name.as_str());
         if name.as_str() == "View More Button" {
-            println!("🎯 Found View More Button! Interaction: {:?}", interaction);
             match *interaction {
                 Interaction::Pressed => {
-                    println!("🎯 Modal opened! View More button clicked");
                     modal_state.visible = true;
                     for mut visibility in &mut background_query {
                         *visibility = Visibility::Visible;
                     }
                 }
                 Interaction::Hovered => {
-                    println!("🎯 View More button hovered");
                     // No hover effect - removed
                 }
                 Interaction::None => {
