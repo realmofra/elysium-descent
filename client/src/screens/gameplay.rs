@@ -280,6 +280,7 @@ impl PlayingScene {
         spawn_inventory_ui::<PlayingScene>(&mut commands);
         spawn_player_hud(&mut commands, &font_assets, &ui_assets);
         spawn_objectives_ui(&mut commands, &font_assets, &ui_assets);
+        crate::ui::modal::spawn_objectives_modal(&mut commands, &font_assets, &ui_assets);
         
         // Spawn the 'Press E to Open' dialog for Mystery Boxes
         use crate::ui::dialog::{spawn_dialog, DialogConfig, DialogPosition};

@@ -354,9 +354,14 @@ fn create_view_more_button(font: Handle<Font>) -> impl Bundle {
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
             margin: UiRect::top(Val::Px(12.0)),
+            border: UiRect::all(Val::Px(1.0)),
             ..default()
         },
+        BackgroundColor(Color::NONE),
+        BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.3)),
+        BorderRadius::all(Val::Px(8.0)),
         Name::new("View More Button"),
+        Interaction::None,
         children![(
             Text::new("VIEW MORE"),
             TextFont {

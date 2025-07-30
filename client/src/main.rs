@@ -46,7 +46,7 @@ fn main() -> AppExit {
         .add_event::<systems::dojo::pickup_item::PickupItemEvent>()
         .add_event::<systems::dojo::pickup_item::ItemPickedUpEvent>()
         .add_event::<systems::dojo::pickup_item::ItemPickupFailedEvent>()
-        .add_plugins((screens::plugin, keybinding::plugin, /* dojo::plugin, */))
+        .add_plugins((screens::plugin, keybinding::plugin, /* dojo::plugin, */ ui::modal::ModalPlugin))
         .run()
 }
 
