@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use crate::assets::{FontAssets, UiAssets};
 use crate::ui::styles::ElysiumDescentColorPalette;
 use crate::systems::objectives::ObjectiveManager;
+use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 
 // ===== MODAL COMPONENTS =====
 
@@ -307,7 +308,7 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                                 justify_content: JustifyContent::FlexStart,
                                 align_items: AlignItems::Center,
                                 padding: UiRect::all(Val::Px(10.0)),
-                                overflow: Overflow::clip_y(), // Enable vertical scrolling
+                                overflow: Overflow::scroll_y(), // Enable vertical scrolling
                                 ..default()
                             },
                             QuestEntriesContainer,
@@ -334,7 +335,7 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
 
 pub fn update_quest_list(
     mut commands: Commands,
-    objective_manager: Res<ObjectiveManager>,
+    _objective_manager: Res<ObjectiveManager>,
     font_assets: Option<Res<FontAssets>>,
     ui_assets: Option<Res<UiAssets>>,
     quest_container_query: Query<Entity, With<QuestEntriesContainer>>,
@@ -621,9 +622,24 @@ pub fn handle_view_more_click(
     }
 }
 
+pub fn update_scroll_position(
+    mut mouse_wheel_events: EventReader<MouseWheel>,
+    mut query: Query<&mut bevy::ui::ScrollPosition>,
+) {
+    for event in mouse_wheel_events.read() {
+        for mut scroll in &mut query {
+            let dy = match event.unit {
+                MouseScrollUnit::Line => event.y * 20.0,
+                MouseScrollUnit::Pixel => event.y,
+            };
+            scroll.offset_y -= dy;
+        }
+    }
+}
+
 pub fn despawn_modal(mut commands: Commands, query: Query<Entity, With<ModalBackground>>) {
     for entity in &query {
-        commands.entity(entity).despawn_recursive();
+        commands.entity(entity).despawn();
     }
 }
 
@@ -638,6 +654,7 @@ impl Plugin for ModalPlugin {
                 toggle_modal_visibility,
                 handle_view_more_click,
                 update_quest_list,
+                update_scroll_position,
             ));
     }
 } 
