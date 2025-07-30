@@ -71,23 +71,24 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
             Visibility::Hidden,
         ))
         .with_children(|parent| {
-            // Main modal panel - positioned higher and more compact
+            // Main modal panel - scaled up by 1.5x
             parent.spawn((
                 Node {
-                    width: Val::Px(900.0),
-                    height: Val::Px(600.0),
+                    width: Val::Px(1350.0), // Scaled up by 1.5x from 900
+                    height: Val::Px(900.0), // Scaled up by 1.5x from 600
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::FlexStart,
                     align_items: AlignItems::Center,
                     border: UiRect::all(Val::Px(1.0)), // Thin gold border
-                    padding: UiRect::all(Val::Px(20.0)),
-                    margin: UiRect::top(Val::Px(-50.0)),
+                    padding: UiRect::all(Val::Px(30.0)), // Scaled up by 1.5x from 20
+                    margin: UiRect::top(Val::Px(-75.0)), // Scaled up by 1.5x from -50
                     ..default()
                 },
                 BackgroundColor(Color::srgba(0.08, 0.10, 0.14, 0.95)), // Darker background
                 BorderColor(Color::ELYSIUM_GOLD),
-                BorderRadius::all(Val::Px(8.0)),
+                BorderRadius::all(Val::Px(12.0)), // Scaled up by 1.5x from 8
                 ModalContent,
+                ZIndex(100), // Higher Z-index to appear above other UI elements
             ))
             .with_children(|modal| {
                 // Decorative corner elements (gold infinity symbols)
@@ -95,10 +96,10 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                 modal.spawn((
                     Node {
                         position_type: PositionType::Absolute,
-                        top: Val::Px(5.0),
-                        left: Val::Px(5.0),
-                        width: Val::Px(25.0),
-                        height: Val::Px(25.0),
+                        top: Val::Px(7.5), // Scaled up by 1.5x from 5
+                        left: Val::Px(7.5), // Scaled up by 1.5x from 5
+                        width: Val::Px(37.5), // Scaled up by 1.5x from 25
+                        height: Val::Px(37.5), // Scaled up by 1.5x from 25
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         ..default()
@@ -106,7 +107,7 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                     children![(
                         Text::new("∞"),
                         TextFont {
-                            font_size: 16.0,
+                            font_size: 24.0, // Scaled up by 1.5x from 16
                             ..default()
                         },
                         TextColor(Color::ELYSIUM_GOLD),
@@ -117,10 +118,10 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                 modal.spawn((
                     Node {
                         position_type: PositionType::Absolute,
-                        top: Val::Px(5.0),
-                        right: Val::Px(5.0),
-                        width: Val::Px(25.0),
-                        height: Val::Px(25.0),
+                        top: Val::Px(7.5), // Scaled up by 1.5x from 5
+                        right: Val::Px(7.5), // Scaled up by 1.5x from 5
+                        width: Val::Px(37.5), // Scaled up by 1.5x from 25
+                        height: Val::Px(37.5), // Scaled up by 1.5x from 25
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         ..default()
@@ -128,7 +129,7 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                     children![(
                         Text::new("∞"),
                         TextFont {
-                            font_size: 16.0,
+                            font_size: 24.0, // Scaled up by 1.5x from 16
                             ..default()
                         },
                         TextColor(Color::ELYSIUM_GOLD),
@@ -139,10 +140,10 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                 modal.spawn((
                     Node {
                         position_type: PositionType::Absolute,
-                        bottom: Val::Px(5.0),
-                        left: Val::Px(5.0),
-                        width: Val::Px(25.0),
-                        height: Val::Px(25.0),
+                        bottom: Val::Px(7.5), // Scaled up by 1.5x from 5
+                        left: Val::Px(7.5), // Scaled up by 1.5x from 5
+                        width: Val::Px(37.5), // Scaled up by 1.5x from 25
+                        height: Val::Px(37.5), // Scaled up by 1.5x from 25
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         ..default()
@@ -150,7 +151,7 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                     children![(
                         Text::new("∞"),
                         TextFont {
-                            font_size: 16.0,
+                            font_size: 24.0, // Scaled up by 1.5x from 16
                             ..default()
                         },
                         TextColor(Color::ELYSIUM_GOLD),
@@ -161,10 +162,10 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                 modal.spawn((
                     Node {
                         position_type: PositionType::Absolute,
-                        bottom: Val::Px(5.0),
-                        right: Val::Px(5.0),
-                        width: Val::Px(25.0),
-                        height: Val::Px(25.0),
+                        bottom: Val::Px(7.5), // Scaled up by 1.5x from 5
+                        right: Val::Px(7.5), // Scaled up by 1.5x from 5
+                        width: Val::Px(37.5), // Scaled up by 1.5x from 25
+                        height: Val::Px(37.5), // Scaled up by 1.5x from 25
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         ..default()
@@ -172,7 +173,7 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                     children![(
                         Text::new("∞"),
                         TextFont {
-                            font_size: 16.0,
+                            font_size: 24.0, // Scaled up by 1.5x from 16
                             ..default()
                         },
                         TextColor(Color::ELYSIUM_GOLD),
@@ -184,11 +185,11 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                 modal.spawn((
                     Node {
                         width: Val::Percent(100.0),
-                        height: Val::Px(50.0),
+                        height: Val::Px(75.0), // Scaled up by 1.5x from 50
                         flex_direction: FlexDirection::Row,
                         justify_content: JustifyContent::SpaceEvenly,
                         align_items: AlignItems::Center,
-                        margin: UiRect::bottom(Val::Px(30.0)),
+                        margin: UiRect::bottom(Val::Px(45.0)), // Scaled up by 1.5x from 30
                         ..default()
                     },
                 ))
@@ -198,8 +199,8 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                         let is_active = *tab_name == "QUESTS";
                         tabs_parent.spawn((
                             Node {
-                                padding: UiRect::all(Val::Px(12.0)),
-                                border: if is_active { UiRect::bottom(Val::Px(2.0)) } else { UiRect::all(Val::Px(0.0)) },
+                                padding: UiRect::all(Val::Px(18.0)), // Scaled up by 1.5x from 12
+                                border: if is_active { UiRect::bottom(Val::Px(3.0)) } else { UiRect::all(Val::Px(0.0)) }, // Scaled up by 1.5x from 2
                                 ..default()
                             },
                             BackgroundColor(if is_active { 
@@ -218,7 +219,7 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                                 Text::new(*tab_name),
                                 TextFont {
                                     font: font_assets.rajdhani_medium.clone(),
-                                    font_size: 18.0,
+                                    font_size: 27.0, // Scaled up by 1.5x from 18
                                     ..default()
                                 },
                                 TextColor(if is_active { Color::ELYSIUM_GOLD } else { Color::WHITE.with_alpha(0.7) }),
@@ -231,10 +232,10 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                 modal.spawn((
                     Node {
                         width: Val::Percent(100.0),
-                        height: Val::Px(80.0),
+                        height: Val::Px(120.0), // Scaled up by 1.5x from 80
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
-                        margin: UiRect::bottom(Val::Px(30.0)),
+                        margin: UiRect::bottom(Val::Px(45.0)), // Scaled up by 1.5x from 30
                         ..default()
                     },
                     children![
@@ -252,20 +253,20 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                                     Text::new("QUESTS"),
                                     TextFont {
                                         font: font_assets.rajdhani_bold.clone(),
-                                        font_size: 36.0,
+                                        font_size: 54.0, // Scaled up by 1.5x from 36
                                         ..default()
                                     },
                                     TextColor(Color::WHITE),
                                     Node {
-                                        margin: UiRect::bottom(Val::Px(15.0)),
+                                        margin: UiRect::bottom(Val::Px(22.5)), // Scaled up by 1.5x from 15
                                         ..default()
                                     },
                                 ),
                                 // Horizontal line with infinity symbol underneath
                                 (
                                     Node {
-                                        width: Val::Px(200.0),
-                                        height: Val::Px(2.0),
+                                        width: Val::Px(300.0), // Scaled up by 1.5x from 200
+                                        height: Val::Px(3.0), // Scaled up by 1.5x from 2
                                         justify_content: JustifyContent::Center,
                                         align_items: AlignItems::Center,
                                         position_type: PositionType::Relative,
@@ -276,13 +277,13 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                                         (
                                             Text::new("∞"),
                                             TextFont {
-                                                font_size: 14.0,
+                                                font_size: 21.0, // Scaled up by 1.5x from 14
                                                 ..default()
                                             },
                                             TextColor(Color::ELYSIUM_GOLD),
                                             Node {
                                                 position_type: PositionType::Absolute,
-                                                padding: UiRect::horizontal(Val::Px(8.0)),
+                                                padding: UiRect::horizontal(Val::Px(12.0)), // Scaled up by 1.5x from 8
                                                 ..default()
                                             },
                                             BackgroundColor(Color::srgba(0.08, 0.10, 0.14, 0.95)),
@@ -294,15 +295,15 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                     ]
                 ));
                 
-                // Quest list container with proper scrollbar - more compact
+                // Quest list container with proper scrollbar - scaled up
                 modal.spawn((
                     Node {
                         width: Val::Percent(100.0),
-                        height: Val::Px(350.0), // Reduced height
+                        height: Val::Px(525.0), // Scaled up by 1.5x from 350
                         flex_direction: FlexDirection::Row,
                         justify_content: JustifyContent::SpaceBetween,
                         align_items: AlignItems::FlexStart,
-                        padding: UiRect::all(Val::Px(10.0)),
+                        padding: UiRect::all(Val::Px(15.0)), // Scaled up by 1.5x from 10
                         border: UiRect::all(Val::Px(1.0)),
                         ..default()
                     },
@@ -313,12 +314,12 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                         // Quest entries container - scrollable
                         (
                             Node {
-                                width: Val::Px(820.0),
-                                height: Val::Px(330.0), // Reduced height
+                                width: Val::Px(1230.0), // Scaled up by 1.5x from 820
+                                height: Val::Px(495.0), // Scaled up by 1.5x from 330
                                 flex_direction: FlexDirection::Column,
                                 justify_content: JustifyContent::FlexStart,
                                 align_items: AlignItems::Center,
-                                padding: UiRect::all(Val::Px(10.0)),
+                                padding: UiRect::all(Val::Px(15.0)), // Scaled up by 1.5x from 10
                                 overflow: Overflow::scroll_y(), // Enable vertical scrolling
                                 ..default()
                             },
@@ -330,9 +331,9 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                         // Scrollbar
                         (
                             Node {
-                                width: Val::Px(6.0),
-                                height: Val::Px(330.0),
-                                margin: UiRect::right(Val::Px(8.0)),
+                                width: Val::Px(9.0), // Scaled up by 1.5x from 6
+                                height: Val::Px(495.0), // Scaled up by 1.5x from 330
+                                margin: UiRect::right(Val::Px(12.0)), // Scaled up by 1.5x from 8
                                 ..default()
                             },
                             BackgroundColor(Color::srgba(0.2, 0.2, 0.2, 0.8)),
@@ -418,12 +419,12 @@ fn spawn_quest_entry(
     commands.spawn((
         Node {
             width: Val::Percent(100.0),
-            height: Val::Px(85.0), // More compact height
+            height: Val::Px(127.5), // Scaled up by 1.5x from 85
             flex_direction: FlexDirection::Row,
             justify_content: JustifyContent::SpaceBetween,
             align_items: AlignItems::Center,
-            margin: UiRect::bottom(Val::Px(8.0)), // Reduced margin
-            padding: UiRect::all(Val::Px(15.0)), // Reduced padding
+            margin: UiRect::bottom(Val::Px(12.0)), // Scaled up by 1.5x from 8
+            padding: UiRect::all(Val::Px(22.5)), // Scaled up by 1.5x from 15
             border: UiRect::all(Val::Px(1.0)),
             ..default()
         },
@@ -439,11 +440,11 @@ fn spawn_quest_entry(
             // Quest icon (coin image)
             (
                 Node {
-                    width: Val::Px(70.0), // Larger icon
-                    height: Val::Px(70.0), // Larger icon
+                    width: Val::Px(105.0), // Scaled up by 1.5x from 70
+                    height: Val::Px(105.0), // Scaled up by 1.5x from 70
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
-                    margin: UiRect::right(Val::Px(-70.0)), // Much smaller margin to bring text very close
+                    margin: UiRect::right(Val::Px(-105.0)), // Scaled up by 1.5x from -70
                     ..default()
                 },
                 ImageNode {
@@ -458,9 +459,9 @@ fn spawn_quest_entry(
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::Center, // Center like the reward section
                     align_items: AlignItems::FlexStart,
-                    width: Val::Px(450.0), // Reduced width
-                    height: Val::Px(65.0), // Reduced height
-                    margin: UiRect::right(Val::Px(15.0)),
+                    width: Val::Px(675.0), // Scaled up by 1.5x from 450
+                    height: Val::Px(97.5), // Scaled up by 1.5x from 65
+                    margin: UiRect::right(Val::Px(22.5)), // Scaled up by 1.5x from 15
                     ..default()
                 },
                 children![
@@ -469,12 +470,12 @@ fn spawn_quest_entry(
                         Text::new(&objective.title),
                         TextFont {
                             font: font_assets.rajdhani_bold.clone(),
-                            font_size: 18.0, // Smaller font
+                            font_size: 27.0, // Scaled up by 1.5x from 18
                             ..default()
                         },
                         TextColor(Color::WHITE),
                         Node {
-                            margin: UiRect::bottom(Val::Px(6.0)), // Reduced margin
+                            margin: UiRect::bottom(Val::Px(9.0)), // Scaled up by 1.5x from 6
                             ..default()
                         },
                     ),
@@ -483,7 +484,7 @@ fn spawn_quest_entry(
                         Text::new(&objective.description),
                         TextFont {
                             font: font_assets.rajdhani_medium.clone(),
-                            font_size: 14.0, // Smaller font
+                            font_size: 21.0, // Scaled up by 1.5x from 14
                             ..default()
                         },
                         TextColor(Color::WHITE.with_alpha(0.7)),
@@ -496,8 +497,8 @@ fn spawn_quest_entry(
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::FlexEnd,
-                    width: Val::Px(150.0), // Reduced width
-                    height: Val::Px(65.0), // Reduced height
+                    width: Val::Px(225.0), // Scaled up by 1.5x from 150
+                    height: Val::Px(97.5), // Scaled up by 1.5x from 65
                     ..default()
                 },
                 children![
@@ -506,12 +507,12 @@ fn spawn_quest_entry(
                         Text::new("REWARD"),
                         TextFont {
                             font: font_assets.rajdhani_medium.clone(),
-                            font_size: 12.0, // Smaller font
+                            font_size: 18.0, // Scaled up by 1.5x from 12
                             ..default()
                         },
                         TextColor(Color::WHITE.with_alpha(0.6)),
                         Node {
-                            margin: UiRect::bottom(Val::Px(4.0)), // Reduced margin
+                            margin: UiRect::bottom(Val::Px(6.0)), // Scaled up by 1.5x from 4
                             ..default()
                         },
                     ),
@@ -527,11 +528,11 @@ fn spawn_quest_entry(
                             // Reward coin icon
                             (
                                 Node {
-                                    width: Val::Px(30.0), // Slightly larger but still small
-                                    height: Val::Px(30.0), // Slightly larger but still small
+                                    width: Val::Px(45.0), // Scaled up by 1.5x from 30
+                                    height: Val::Px(45.0), // Scaled up by 1.5x from 30
                                     justify_content: JustifyContent::Center,
                                     align_items: AlignItems::Center,
-                                    margin: UiRect::right(Val::Px(4.0)), // Reduced margin to bring coin closer to text
+                                    margin: UiRect::right(Val::Px(6.0)), // Scaled up by 1.5x from 4
                                     ..default()
                                 },
                                 ImageNode {
@@ -545,7 +546,7 @@ fn spawn_quest_entry(
                                 Text::new(format!("{} Gold", (objective.id + 1) * 250)),
                                 TextFont {
                                     font: font_assets.rajdhani_medium.clone(),
-                                    font_size: 16.0, // Smaller font
+                                    font_size: 24.0, // Scaled up by 1.5x from 16
                                     ..default()
                                 },
                                 TextColor(Color::ELYSIUM_GOLD),
