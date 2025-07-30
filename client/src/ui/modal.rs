@@ -69,6 +69,7 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
             BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.7)), // Semi-transparent background
             ModalBackground,
             Visibility::Hidden,
+            ZIndex(99), // High Z-index for background, just below modal content
         ))
         .with_children(|parent| {
             // Main modal panel - scaled up by 1.5x
@@ -88,7 +89,7 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                 BorderColor(Color::ELYSIUM_GOLD),
                 BorderRadius::all(Val::Px(12.0)), // Scaled up by 1.5x from 8
                 ModalContent,
-                ZIndex(100), // Higher Z-index to appear above other UI elements
+                ZIndex(1000), // Very high Z-index to ensure it's always above other UI elements
             ))
             .with_children(|modal| {
                 // Decorative corner elements (gold infinity symbols)
