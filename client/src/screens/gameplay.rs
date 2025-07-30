@@ -18,6 +18,7 @@ use crate::ui::dialog::DialogPlugin;
 use crate::ui::inventory::spawn_inventory_ui;
 use crate::ui::styles::ElysiumDescentColorPalette;
 use crate::ui::widgets::{HudPosition, player_hud_widget};
+use crate::ui::modal::despawn_modal;
 use bevy_enhanced_input::prelude::*;
 
 // ===== PLUGIN SETUP =====
@@ -43,7 +44,7 @@ pub(super) fn plugin(app: &mut App) {
     )
     .add_systems(
         OnExit(Screen::GamePlay),
-        (despawn_scene::<PlayingScene>, despawn_gameplay_hud, cleanup_preloaded_environment),
+        (despawn_scene::<PlayingScene>, despawn_gameplay_hud, cleanup_preloaded_environment, despawn_modal),
     )
     .add_plugins(PhysicsPlugins::default())
     // .add_plugins(PhysicsDebugPlugin::default())
