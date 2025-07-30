@@ -55,6 +55,10 @@ pub struct UiAssets {
 
     #[asset(path = "avatars/enemy.png")]
     pub enemy_avatar: Handle<Image>,
+
+    // Decorative elements
+    #[asset(path = "images/ui/flower.png")]
+    pub flower: Handle<Image>,
 }
 
 // Audio Assets

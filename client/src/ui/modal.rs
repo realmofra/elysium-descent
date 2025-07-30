@@ -52,7 +52,7 @@ impl Default for ModalState {
 
 // ===== MODAL SYSTEMS =====
 
-pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAssets>, _ui_assets: &Res<UiAssets>) {
+pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAssets>, ui_assets: &Res<UiAssets>) {
     println!("🎯 Spawning objectives modal...");
     commands
         .spawn((
@@ -81,7 +81,7 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                     justify_content: JustifyContent::FlexStart,
                     align_items: AlignItems::Center,
                     border: UiRect::all(Val::Px(1.0)), // Thin gold border
-                    padding: UiRect::all(Val::Px(30.0)), // Scaled up by 1.5x from 20
+                    padding: UiRect::all(Val::Px(60.0)), // Increased padding to accommodate flower images
                     margin: UiRect::top(Val::Px(-75.0)), // Scaled up by 1.5x from -50
                     ..default()
                 },
@@ -92,93 +92,81 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                 ZIndex(1000), // Very high Z-index to ensure it's always above other UI elements
             ))
             .with_children(|modal| {
-                // Decorative corner elements (gold infinity symbols)
+                // Decorative corner elements (flower images)
                 // Top-left corner
                 modal.spawn((
                     Node {
                         position_type: PositionType::Absolute,
-                        top: Val::Px(7.5), // Scaled up by 1.5x from 5
-                        left: Val::Px(7.5), // Scaled up by 1.5x from 5
-                        width: Val::Px(37.5), // Scaled up by 1.5x from 25
-                        height: Val::Px(37.5), // Scaled up by 1.5x from 25
+                        top: Val::Px(15.0), // Increased padding
+                        left: Val::Px(15.0), // Increased padding
+                        width: Val::Px(60.0), // Larger size for flower
+                        height: Val::Px(60.0), // Larger size for flower
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    children![(
-                        Text::new("∞"),
-                        TextFont {
-                            font_size: 24.0, // Scaled up by 1.5x from 16
-                            ..default()
-                        },
-                        TextColor(Color::ELYSIUM_GOLD),
-                    )]
+                    ImageNode {
+                        image: ui_assets.flower.clone(),
+                        ..default()
+                    },
+                    Transform::from_rotation(Quat::from_rotation_z(0.0)), // No rotation
                 ));
                 
                 // Top-right corner
                 modal.spawn((
                     Node {
                         position_type: PositionType::Absolute,
-                        top: Val::Px(7.5), // Scaled up by 1.5x from 5
-                        right: Val::Px(7.5), // Scaled up by 1.5x from 5
-                        width: Val::Px(37.5), // Scaled up by 1.5x from 25
-                        height: Val::Px(37.5), // Scaled up by 1.5x from 25
+                        top: Val::Px(15.0), // Increased padding
+                        right: Val::Px(15.0), // Increased padding
+                        width: Val::Px(60.0), // Larger size for flower
+                        height: Val::Px(60.0), // Larger size for flower
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    children![(
-                        Text::new("∞"),
-                        TextFont {
-                            font_size: 24.0, // Scaled up by 1.5x from 16
-                            ..default()
-                        },
-                        TextColor(Color::ELYSIUM_GOLD),
-                    )]
+                    ImageNode {
+                        image: ui_assets.flower.clone(),
+                        ..default()
+                    },
+                    Transform::from_rotation(Quat::from_rotation_z(90.0_f32.to_radians())), // 90 degrees
                 ));
                 
                 // Bottom-left corner
                 modal.spawn((
                     Node {
                         position_type: PositionType::Absolute,
-                        bottom: Val::Px(7.5), // Scaled up by 1.5x from 5
-                        left: Val::Px(7.5), // Scaled up by 1.5x from 5
-                        width: Val::Px(37.5), // Scaled up by 1.5x from 25
-                        height: Val::Px(37.5), // Scaled up by 1.5x from 25
+                        bottom: Val::Px(15.0), // Increased padding
+                        left: Val::Px(15.0), // Increased padding
+                        width: Val::Px(60.0), // Larger size for flower
+                        height: Val::Px(60.0), // Larger size for flower
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    children![(
-                        Text::new("∞"),
-                        TextFont {
-                            font_size: 24.0, // Scaled up by 1.5x from 16
-                            ..default()
-                        },
-                        TextColor(Color::ELYSIUM_GOLD),
-                    )]
+                    ImageNode {
+                        image: ui_assets.flower.clone(),
+                        ..default()
+                    },
+                    Transform::from_rotation(Quat::from_rotation_z(270.0_f32.to_radians())), // 270 degrees
                 ));
                 
                 // Bottom-right corner
                 modal.spawn((
                     Node {
                         position_type: PositionType::Absolute,
-                        bottom: Val::Px(7.5), // Scaled up by 1.5x from 5
-                        right: Val::Px(7.5), // Scaled up by 1.5x from 5
-                        width: Val::Px(37.5), // Scaled up by 1.5x from 25
-                        height: Val::Px(37.5), // Scaled up by 1.5x from 25
+                        bottom: Val::Px(15.0), // Increased padding
+                        right: Val::Px(15.0), // Increased padding
+                        width: Val::Px(60.0), // Larger size for flower
+                        height: Val::Px(60.0), // Larger size for flower
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    children![(
-                        Text::new("∞"),
-                        TextFont {
-                            font_size: 24.0, // Scaled up by 1.5x from 16
-                            ..default()
-                        },
-                        TextColor(Color::ELYSIUM_GOLD),
-                    )]
+                    ImageNode {
+                        image: ui_assets.flower.clone(),
+                        ..default()
+                    },
+                    Transform::from_rotation(Quat::from_rotation_z(180.0_f32.to_radians())), // 180 degrees
                 ));
                 
                 // Navigation tabs - more prominent
