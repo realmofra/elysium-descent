@@ -433,7 +433,7 @@ fn spawn_quest_entry(
                     height: Val::Px(105.0), // Scaled up by 1.5x from 70
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
-                    margin: UiRect::right(Val::Px(-105.0)), // Scaled up by 1.5x from -70
+                    margin: UiRect::right(Val::Px(-50.0)), // Add spacing between icon and text
                     ..default()
                 },
                 ImageNode {
