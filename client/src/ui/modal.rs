@@ -399,7 +399,7 @@ fn spawn_quest_entry(
     commands: &mut Commands,
     objective: &crate::systems::objectives::Objective,
     font_assets: &Res<FontAssets>,
-    _ui_assets: &Res<UiAssets>,
+    ui_assets: &Res<UiAssets>,
     index: usize,
 ) -> Entity {
     let is_active = index < 2; // First two quests are active (lighter background)
@@ -425,37 +425,27 @@ fn spawn_quest_entry(
         BorderRadius::all(Val::Px(6.0)),
         QuestEntry { quest_id: objective.id },
         children![
-            // Quest icon (golden circle with infinity symbol)
+            // Quest icon (coin image)
             (
                 Node {
-                    width: Val::Px(50.0), // Smaller icon
-                    height: Val::Px(50.0),
+                    width: Val::Px(70.0), // Larger icon
+                    height: Val::Px(70.0), // Larger icon
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
-                    border: UiRect::all(Val::Px(2.0)),
-                    margin: UiRect::right(Val::Px(15.0)),
+                    margin: UiRect::right(Val::Px(-70.0)), // Much smaller margin to bring text very close
                     ..default()
                 },
-                BackgroundColor(Color::srgba(0.875, 0.667, 0.176, 0.9)), // Gold circle
-                BorderColor(Color::ELYSIUM_GOLD),
-                BorderRadius::all(Val::Px(25.0)),
+                ImageNode {
+                    image: ui_assets.coin.clone(),
+                    ..default()
+                },
                 QuestIcon,
-                children![
-                    (
-                        Text::new("∞"),
-                        TextFont {
-                            font_size: 20.0, // Smaller font
-                            ..default()
-                        },
-                        TextColor(Color::srgba(0.1, 0.1, 0.1, 1.0)), // Dark text on gold
-                    )
-                ]
             ),
             // Quest info (title and description)
             (
                 Node {
                     flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::FlexStart,
+                    justify_content: JustifyContent::Center, // Center like the reward section
                     align_items: AlignItems::FlexStart,
                     width: Val::Px(450.0), // Reduced width
                     height: Val::Px(65.0), // Reduced height
@@ -526,28 +516,18 @@ fn spawn_quest_entry(
                             // Reward coin icon
                             (
                                 Node {
-                                    width: Val::Px(25.0), // Smaller icon
-                                    height: Val::Px(25.0),
+                                    width: Val::Px(30.0), // Slightly larger but still small
+                                    height: Val::Px(30.0), // Slightly larger but still small
                                     justify_content: JustifyContent::Center,
                                     align_items: AlignItems::Center,
-                                    border: UiRect::all(Val::Px(1.0)),
-                                    margin: UiRect::right(Val::Px(8.0)),
+                                    margin: UiRect::right(Val::Px(4.0)), // Reduced margin to bring coin closer to text
                                     ..default()
                                 },
-                                BackgroundColor(Color::srgba(0.875, 0.667, 0.176, 0.9)),
-                                BorderColor(Color::ELYSIUM_GOLD),
-                                BorderRadius::all(Val::Px(12.5)),
+                                ImageNode {
+                                    image: ui_assets.coin.clone(),
+                                    ..default()
+                                },
                                 QuestReward,
-                                children![
-                                    (
-                                        Text::new("∞"),
-                                        TextFont {
-                                            font_size: 12.0, // Smaller font
-                                            ..default()
-                                        },
-                                        TextColor(Color::srgba(0.1, 0.1, 0.1, 1.0)),
-                                    )
-                                ]
                             ),
                             // Reward amount
                             (
