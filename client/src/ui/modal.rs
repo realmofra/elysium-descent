@@ -238,45 +238,56 @@ pub fn spawn_objectives_modal(commands: &mut Commands, font_assets: &Res<FontAss
                         ..default()
                     },
                     children![
-                        // Main title
-                        (
-                            Text::new("QUESTS"),
-                            TextFont {
-                                font: font_assets.rajdhani_bold.clone(),
-                                font_size: 36.0,
-                                ..default()
-                            },
-                            TextColor(Color::WHITE),
-                            Node {
-                                margin: UiRect::bottom(Val::Px(15.0)),
-                                ..default()
-                            },
-                        ),
-                        // Horizontal line with infinity symbol
+                        // Main title with line underneath
                         (
                             Node {
-                                width: Val::Px(200.0),
-                                height: Val::Px(2.0),
+                                flex_direction: FlexDirection::Column,
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
-                                position_type: PositionType::Relative,
                                 ..default()
                             },
-                            BackgroundColor(Color::ELYSIUM_GOLD),
                             children![
+                                // Title text
                                 (
-                                    Text::new("∞"),
+                                    Text::new("QUESTS"),
                                     TextFont {
-                                        font_size: 14.0,
+                                        font: font_assets.rajdhani_bold.clone(),
+                                        font_size: 36.0,
                                         ..default()
                                     },
-                                    TextColor(Color::ELYSIUM_GOLD),
+                                    TextColor(Color::WHITE),
                                     Node {
-                                        position_type: PositionType::Absolute,
-                                        padding: UiRect::horizontal(Val::Px(8.0)),
+                                        margin: UiRect::bottom(Val::Px(15.0)),
                                         ..default()
                                     },
-                                    BackgroundColor(Color::srgba(0.08, 0.10, 0.14, 0.95)),
+                                ),
+                                // Horizontal line with infinity symbol underneath
+                                (
+                                    Node {
+                                        width: Val::Px(200.0),
+                                        height: Val::Px(2.0),
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        position_type: PositionType::Relative,
+                                        ..default()
+                                    },
+                                    BackgroundColor(Color::ELYSIUM_GOLD),
+                                    children![
+                                        (
+                                            Text::new("∞"),
+                                            TextFont {
+                                                font_size: 14.0,
+                                                ..default()
+                                            },
+                                            TextColor(Color::ELYSIUM_GOLD),
+                                            Node {
+                                                position_type: PositionType::Absolute,
+                                                padding: UiRect::horizontal(Val::Px(8.0)),
+                                                ..default()
+                                            },
+                                            BackgroundColor(Color::srgba(0.08, 0.10, 0.14, 0.95)),
+                                        )
+                                    ]
                                 )
                             ]
                         )
