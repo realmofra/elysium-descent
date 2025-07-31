@@ -1,12 +1,16 @@
-use bevy::prelude::*;
 use avian3d::prelude::*;
+use bevy::prelude::*;
 use rand::Rng;
 use std::fs;
 
 use super::Screen;
 use crate::assets::{FontAssets, ModelAssets, UiAssets};
-use crate::constants::collectibles::{MAX_COINS, MAX_COIN_PLACEMENT_ATTEMPTS, MIN_DISTANCE_BETWEEN_COINS};
-use crate::systems::collectibles::{CollectibleSpawner, NavigationBasedSpawner, NavigationData, CoinStreamingManager};
+use crate::constants::collectibles::{
+    MAX_COIN_PLACEMENT_ATTEMPTS, MAX_COINS, MIN_DISTANCE_BETWEEN_COINS,
+};
+use crate::systems::collectibles::{
+    CoinStreamingManager, CollectibleSpawner, NavigationBasedSpawner, NavigationData,
+};
 
 #[derive(Component)]
 struct PreGameLoadingScreen;
@@ -27,17 +31,17 @@ pub struct LoadingProgress {
 impl LoadingProgress {
     pub fn new() -> Self {
         Self {
-            minimum_loading_time: 5.0, // 5 second total loading time
+            minimum_loading_time: 5.0,                  // 5 second total loading time
             stage_durations: [1.0, 1.0, 1.0, 1.0, 1.0], // 1 second per stage
             ..Default::default()
         }
     }
 
     pub fn is_ready(&self) -> bool {
-        self.assets_loaded 
-            && self.environment_spawned 
-            && self.navigation_loaded 
-            && self.collectibles_spawned 
+        self.assets_loaded
+            && self.environment_spawned
+            && self.navigation_loaded
+            && self.collectibles_spawned
             && self.game_initialized
     }
 
@@ -89,8 +93,11 @@ impl LoadingProgress {
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<LoadingProgress>()
-        .init_resource::<CoinStreamingManager>()  // Initialize here so it persists between screens
-        .add_systems(OnEnter(Screen::PreGameLoading), setup_pregame_loading_screen)
+        .init_resource::<CoinStreamingManager>() // Initialize here so it persists between screens
+        .add_systems(
+            OnEnter(Screen::PreGameLoading),
+            setup_pregame_loading_screen,
+        )
         .add_systems(
             Update,
             (
@@ -101,7 +108,8 @@ pub fn plugin(app: &mut App) {
                 initialize_game_system,
                 check_loading_complete,
                 update_loading_ui,
-            ).run_if(in_state(Screen::PreGameLoading))
+            )
+                .run_if(in_state(Screen::PreGameLoading)),
         )
         .add_systems(OnExit(Screen::PreGameLoading), cleanup_pregame_loading_only);
 }
@@ -119,17 +127,15 @@ fn setup_pregame_loading_screen(
     // Reset all loading-related resources to prevent hanging on re-entry
     *loading_progress = LoadingProgress::new();
     loading_progress.loading_start_time = Some(time.elapsed_secs());
-    
+
     // Reset streaming manager to clear old coin positions and spawned state
     *streaming_manager = CoinStreamingManager::default();
-    
+
     // Reset collectible spawner
     collectible_spawner.coins_spawned = 0;
-    
+
     // Reset navigation spawner loaded state to force reload
     nav_spawner.loaded = false;
-
-
 
     commands
         .spawn((
@@ -161,7 +167,7 @@ fn setup_pregame_loading_screen(
             parent.spawn((
                 Text::new("ELYSIUM DESCENT"),
                 TextFont {
-                    font: font_assets.rajdhani_bold.clone(),
+                    font: font_assets.goudy_trajan_regular.clone(),
                     font_size: 80.0,
                     ..default()
                 },
@@ -173,65 +179,67 @@ fn setup_pregame_loading_screen(
             ));
 
             // Loading status container
-            parent.spawn((
-                Node {
+            parent
+                .spawn((Node {
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::Center,
                     ..default()
-                },
-            )).with_children(|parent| {
-                // Loading text
-                parent.spawn((
-                    Text::new("Loading Assets..."),
-                    TextFont {
-                        font: font_assets.rajdhani_medium.clone(),
-                        font_size: 40.0,
-                        ..default()
-                    },
-                    TextColor(Color::WHITE),
-                    LoadingStatusText,
-                ));
-
-                // Progress bar background
-                parent.spawn((
-                    Node {
-                        width: Val::Px(400.0),
-                        height: Val::Px(20.0),
-                        margin: UiRect::top(Val::Px(20.0)),
-                        border: UiRect::all(Val::Px(2.0)),
-                        ..default()
-                    },
-                    BorderColor(Color::WHITE),
-                    BackgroundColor(Color::BLACK.with_alpha(0.5)),
-                )).with_children(|parent| {
-                    // Progress bar fill
+                },))
+                .with_children(|parent| {
+                    // Loading text
                     parent.spawn((
-                        Node {
-                            width: Val::Percent(0.0),
-                            height: Val::Percent(100.0),
+                        Text::new("Loading Assets..."),
+                        TextFont {
+                            font: font_assets.goudy_trajan_regular.clone(),
+                            font_size: 40.0,
                             ..default()
                         },
-                        BackgroundColor(Color::srgb(0.2, 0.8, 0.2)),
-                        ProgressBarFill,
+                        TextColor(Color::WHITE),
+                        LoadingStatusText,
+                    ));
+
+                    // Progress bar background
+                    parent
+                        .spawn((
+                            Node {
+                                width: Val::Px(400.0),
+                                height: Val::Px(20.0),
+                                margin: UiRect::top(Val::Px(20.0)),
+                                border: UiRect::all(Val::Px(2.0)),
+                                ..default()
+                            },
+                            BorderColor(Color::WHITE),
+                            BackgroundColor(Color::BLACK.with_alpha(0.5)),
+                        ))
+                        .with_children(|parent| {
+                            // Progress bar fill
+                            parent.spawn((
+                                Node {
+                                    width: Val::Percent(0.0),
+                                    height: Val::Percent(100.0),
+                                    ..default()
+                                },
+                                BackgroundColor(Color::srgb(0.2, 0.8, 0.2)),
+                                ProgressBarFill,
+                            ));
+                        });
+
+                    // Progress percentage
+                    parent.spawn((
+                        Text::new("0%"),
+                        TextFont {
+                            font: font_assets.goudy_trajan_regular.clone(), // Use goudy_trajan_regular instead
+                            font_size: 24.0,
+                            ..default()
+                        },
+                        TextColor(Color::WHITE),
+                        Node {
+                            margin: UiRect::top(Val::Px(10.0)),
+                            ..default()
+                        },
+                        ProgressPercentageText,
                     ));
                 });
-
-                // Progress percentage
-                parent.spawn((
-                    Text::new("0%"),
-                    TextFont {
-                        font: font_assets.rajdhani_medium.clone(),  // Use rajdhani_medium instead
-                        font_size: 24.0,
-                        ..default()
-                    },
-                    TextColor(Color::WHITE),
-                    Node {
-                        margin: UiRect::top(Val::Px(10.0)),
-                        ..default()
-                    },
-                    ProgressPercentageText,
-                ));
-            });
         });
 }
 
@@ -251,10 +259,10 @@ fn check_assets_loaded(
     mut loading_progress: ResMut<LoadingProgress>,
     time: Res<Time>,
 ) {
-    if !loading_progress.assets_loaded && loading_progress.should_load_stage(0, time.elapsed_secs()) {
+    if !loading_progress.assets_loaded && loading_progress.should_load_stage(0, time.elapsed_secs())
+    {
         if model_assets.is_some() && font_assets.is_some() && ui_assets.is_some() {
             loading_progress.assets_loaded = true;
-
         }
     }
 }
@@ -265,12 +273,12 @@ fn spawn_environment_system(
     mut loading_progress: ResMut<LoadingProgress>,
     time: Res<Time>,
 ) {
-    if loading_progress.assets_loaded 
-        && !loading_progress.environment_spawned 
-        && loading_progress.should_load_stage(1, time.elapsed_secs()) {
+    if loading_progress.assets_loaded
+        && !loading_progress.environment_spawned
+        && loading_progress.should_load_stage(1, time.elapsed_secs())
+    {
         if let Some(assets) = assets {
             // Pre-spawn environment in background (hidden)
-
 
             // Set up ambient light
             commands.insert_resource(AmbientLight {
@@ -295,7 +303,6 @@ fn spawn_environment_system(
             ));
 
             loading_progress.environment_spawned = true;
-
         }
     }
 }
@@ -308,22 +315,29 @@ fn load_navigation_system(
     mut loading_progress: ResMut<LoadingProgress>,
     time: Res<Time>,
 ) {
-    if loading_progress.environment_spawned 
-        && !loading_progress.navigation_loaded 
-        && loading_progress.should_load_stage(2, time.elapsed_secs()) {
+    if loading_progress.environment_spawned
+        && !loading_progress.navigation_loaded
+        && loading_progress.should_load_stage(2, time.elapsed_secs())
+    {
         if !nav_spawner.loaded {
             match fs::read_to_string("nav.json") {
                 Ok(contents) => {
-                                            match serde_json::from_str::<NavigationData>(&contents) {
+                    match serde_json::from_str::<NavigationData>(&contents) {
                         Ok(nav_data) => {
-                            nav_spawner.nav_positions = nav_data.positions
+                            nav_spawner.nav_positions = nav_data
+                                .positions
                                 .iter()
-                                .map(|point| Vec3::new(point.position[0], point.position[1], point.position[2]))
+                                .map(|point| {
+                                    Vec3::new(
+                                        point.position[0],
+                                        point.position[1],
+                                        point.position[2],
+                                    )
+                                })
                                 .collect();
-                            
+
                             nav_spawner.loaded = true;
                             loading_progress.navigation_loaded = true;
-
                         }
                         Err(e) => {
                             error!("Failed to parse nav.json: {}", e);
@@ -352,18 +366,16 @@ fn spawn_collectibles_system(
     spatial_query: SpatialQuery,
     time: Res<Time>,
 ) {
-    if !loading_progress.collectibles_spawned 
-        && loading_progress.should_load_stage(3, time.elapsed_secs()) {
+    if !loading_progress.collectibles_spawned
+        && loading_progress.should_load_stage(3, time.elapsed_secs())
+    {
         if collectible_spawner.coins_spawned == 0 {
             // Pre-calculate coin positions using navigation data
 
-            
             if nav_spawner.loaded && !nav_spawner.nav_positions.is_empty() {
-
             } else {
-
             }
-            
+
             let mut rng = rand::rng();
             let mut spawned_positions = Vec::new();
             let mut coins_calculated = 0;
@@ -380,11 +392,11 @@ fn spawn_collectibles_system(
                     // Generate fallback positions closer to spawn
                     Vec3::new(
                         rng.random_range(-60.0..60.0), // Reasonable range around spawn
-                        2.0, // Above ground for visibility
+                        2.0,                           // Above ground for visibility
                         rng.random_range(-60.0..60.0), // Reasonable range around spawn
                     )
                 };
-                
+
                 // Add some randomness around the navigation position
                 let offset_x = rng.random_range(-5.0..5.0);
                 let offset_z = rng.random_range(-5.0..5.0);
@@ -405,7 +417,6 @@ fn spawn_collectibles_system(
                     coins_calculated += 1;
 
                     // Log progress every 100 coins
-
                 }
             }
 
@@ -413,52 +424,40 @@ fn spawn_collectibles_system(
             loading_progress.collectibles_spawned = true;
 
             if coins_calculated < MAX_COINS {
-
             } else {
-
             }
-            
-
         }
     }
 }
 
 // Removed: No longer pre-spawning collectible entities
 
-fn is_valid_coin_position_preload(
-    position: Vec3,
-    spatial_query: &SpatialQuery,
-) -> bool {
+fn is_valid_coin_position_preload(position: Vec3, spatial_query: &SpatialQuery) -> bool {
     let coin_radius = 0.2;
     let check_radius = coin_radius + 0.05;
-    
-    let intersection_filter = SpatialQueryFilter::default()
-        .with_mask(LayerMask::ALL);
-    
+
+    let intersection_filter = SpatialQueryFilter::default().with_mask(LayerMask::ALL);
+
     let intersections = spatial_query.shape_intersections(
         &Collider::sphere(check_radius),
         position,
         Quat::IDENTITY,
         &intersection_filter,
     );
-    
+
     intersections.len() <= 5
 }
 
-fn initialize_game_system(
-    mut loading_progress: ResMut<LoadingProgress>,
-    time: Res<Time>,
-) {
-    if loading_progress.collectibles_spawned 
-        && !loading_progress.game_initialized 
-        && loading_progress.should_load_stage(4, time.elapsed_secs()) {
+fn initialize_game_system(mut loading_progress: ResMut<LoadingProgress>, time: Res<Time>) {
+    if loading_progress.collectibles_spawned
+        && !loading_progress.game_initialized
+        && loading_progress.should_load_stage(4, time.elapsed_secs())
+    {
         // Perform any final game initialization
 
-        
         // Add any additional initialization logic here
-        
-        loading_progress.game_initialized = true;
 
+        loading_progress.game_initialized = true;
     }
 }
 
@@ -468,24 +467,23 @@ fn check_loading_complete(
     time: Res<Time>,
 ) {
     let current_time = time.elapsed_secs();
-    
+
     if loading_progress.can_transition(current_time) && !loading_progress.loading_complete {
         loading_progress.loading_complete = true;
-        
+
         if let Some(start_time) = loading_progress.loading_start_time {
             let _elapsed = current_time - start_time;
             // Removed logging statement
         }
-        
+
         next_state.set(Screen::GamePlay);
     } else if loading_progress.is_ready() && loading_progress.loading_start_time.is_some() {
         let start_time = loading_progress.loading_start_time.unwrap();
         let elapsed = current_time - start_time;
         let remaining = loading_progress.minimum_loading_time - elapsed;
-        
+
         if remaining > 0.0 && !loading_progress.loading_complete {
             // Show "Ready!" but still waiting for minimum time
-
         }
     }
 }
@@ -498,18 +496,20 @@ fn cleanup_pregame_loading_only(
     for entity in loading_ui_query.iter() {
         commands.entity(entity).despawn();
     }
-
 }
 
 fn update_loading_ui(
     loading_progress: Res<LoadingProgress>,
     mut status_text_query: Query<&mut Text, With<LoadingStatusText>>,
     mut progress_bar_query: Query<&mut Node, With<ProgressBarFill>>,
-    mut percentage_text_query: Query<&mut Text, (With<ProgressPercentageText>, Without<LoadingStatusText>)>,
+    mut percentage_text_query: Query<
+        &mut Text,
+        (With<ProgressPercentageText>, Without<LoadingStatusText>),
+    >,
     time: Res<Time>,
 ) {
     let current_time = time.elapsed_secs();
-    
+
     if loading_progress.is_changed() || loading_progress.loading_start_time.is_some() {
         // Update status text
         if let Ok(mut text) = status_text_query.single_mut() {
@@ -523,7 +523,10 @@ fn update_loading_ui(
 
         // Update percentage text
         if let Ok(mut text) = percentage_text_query.single_mut() {
-            **text = format!("{:.0}%", loading_progress.get_progress_percentage(current_time));
+            **text = format!(
+                "{:.0}%",
+                loading_progress.get_progress_percentage(current_time)
+            );
         }
     }
-} 
+}

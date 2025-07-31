@@ -3,22 +3,24 @@ use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
 use rand::prelude::*;
 
-use super::{Screen, despawn_scene};
 use super::pregame_loading::EnvironmentPreload;
+use super::{Screen, despawn_scene};
 use crate::assets::{FontAssets, ModelAssets, UiAssets};
 use crate::constants::collectibles::{MAX_COINS, MIN_DISTANCE_BETWEEN_COINS};
 use crate::keybinding;
+use crate::systems::book_interaction::BookInteractionPlugin;
 use crate::systems::character_controller::{
     CharacterController, CharacterControllerBundle, CharacterControllerPlugin, setup_idle_animation,
 };
-use crate::systems::book_interaction::BookInteractionPlugin;
-use crate::systems::collectibles::{CollectiblesPlugin, NavigationBasedSpawner, CollectibleSpawner, CoinStreamingManager};
+use crate::systems::collectibles::{
+    CoinStreamingManager, CollectibleSpawner, CollectiblesPlugin, NavigationBasedSpawner,
+};
 use crate::systems::objectives::ObjectivesPlugin;
 use crate::ui::dialog::DialogPlugin;
 use crate::ui::inventory::spawn_inventory_ui;
+use crate::ui::modal::despawn_modal;
 use crate::ui::styles::ElysiumDescentColorPalette;
 use crate::ui::widgets::{HudPosition, player_hud_widget};
-use crate::ui::modal::despawn_modal;
 use bevy_enhanced_input::prelude::*;
 
 // ===== PLUGIN SETUP =====
@@ -40,11 +42,17 @@ pub(super) fn plugin(app: &mut App) {
             // Fallback systems that run if preloaded entities weren't found
             fallback_spawn_environment,
             fallback_spawn_collectibles,
-        ).run_if(in_state(Screen::GamePlay)),
+        )
+            .run_if(in_state(Screen::GamePlay)),
     )
     .add_systems(
         OnExit(Screen::GamePlay),
-        (despawn_scene::<PlayingScene>, despawn_gameplay_hud, cleanup_preloaded_environment, despawn_modal),
+        (
+            despawn_scene::<PlayingScene>,
+            despawn_gameplay_hud,
+            cleanup_preloaded_environment,
+            despawn_modal,
+        ),
     )
     .add_plugins(PhysicsPlugins::default())
     // .add_plugins(PhysicsDebugPlugin::default())
@@ -63,14 +71,10 @@ fn set_gameplay_clear_color(mut commands: Commands) {
 }
 
 fn debug_streaming_manager_state(streaming_manager: Res<CoinStreamingManager>) {
-    
     if streaming_manager.positions.is_empty() {
-
     } else {
 
-        
         // Show first few positions for debugging
-
     }
 }
 
@@ -126,7 +130,7 @@ fn spawn_player_hud(
     let level = 2;
     let health = (105, 115);
     let xp = (80, 100);
-    let font = font_assets.rajdhani_bold.clone();
+    let font = font_assets.goudy_trajan_regular.clone();
 
     commands.spawn((
         player_hud_widget(avatar, name, level, health, xp, font, HudPosition::Left),
@@ -139,11 +143,9 @@ fn spawn_objectives_ui(
     font_assets: &Res<FontAssets>,
     _ui_assets: &Res<UiAssets>,
 ) {
-
-    
     // This will be populated by the ObjectiveManager, but for now we'll create a simple UI structure
-    let font = font_assets.rajdhani_bold.clone();
-    
+    let font = font_assets.goudy_trajan_regular.clone();
+
     commands.spawn((
         Node {
             position_type: PositionType::Absolute,
@@ -205,16 +207,14 @@ fn despawn_gameplay_hud(mut commands: Commands, query: Query<Entity, With<Gamepl
 }
 
 fn cleanup_preloaded_environment(
-    mut commands: Commands, 
-    environment_query: Query<Entity, With<EnvironmentPreload>>
+    mut commands: Commands,
+    environment_query: Query<Entity, With<EnvironmentPreload>>,
 ) {
     for entity in environment_query.iter() {
         commands.entity(entity).despawn();
     }
     let count = environment_query.iter().count();
-    if count > 0 {
-
-    }
+    if count > 0 {}
 }
 
 // ===== PLAYING SCENE IMPLEMENTATION =====
@@ -227,8 +227,6 @@ impl PlayingScene {
         ui_assets: Res<UiAssets>,
         windows: Query<&Window>,
     ) {
-    
-
         // Add directional light (if not already added by preload)
         commands.spawn((
             Name::new("Directional Light"),
@@ -282,9 +280,9 @@ impl PlayingScene {
         spawn_player_hud(&mut commands, &font_assets, &ui_assets);
         spawn_objectives_ui(&mut commands, &font_assets, &ui_assets);
         crate::ui::modal::spawn_objectives_modal(&mut commands, &font_assets, &ui_assets);
-        
+
         // Spawn the 'Press E to Open' dialog for Mystery Boxes
-        use crate::ui::dialog::{spawn_dialog, DialogConfig, DialogPosition};
+        use crate::ui::dialog::{DialogConfig, DialogPosition, spawn_dialog};
         spawn_dialog(
             &mut commands,
             &font_assets,
@@ -296,8 +294,6 @@ impl PlayingScene {
             },
             PlayingScene,
         );
-
-    
     }
 }
 
@@ -305,27 +301,21 @@ fn reveal_preloaded_environment(
     mut commands: Commands,
     environment_query: Query<Entity, With<EnvironmentPreload>>,
 ) {
-
-    
     let mut revealed_count = 0;
     for entity in environment_query.iter() {
-        commands.entity(entity)
+        commands
+            .entity(entity)
             .insert(Visibility::Visible)
             .insert(PlayingScene);
         revealed_count += 1;
-        
     }
-    
-    if revealed_count == 0 {
 
+    if revealed_count == 0 {
     } else {
-    
     }
 }
 
 // Removed: No longer using preloaded collectibles - using streaming system instead
-
-
 
 fn fallback_spawn_environment(
     mut commands: Commands,
@@ -340,8 +330,6 @@ fn fallback_spawn_environment(
     }
 
     if let Some(assets) = assets {
-
-        
         // Set up ambient light
         commands.insert_resource(AmbientLight {
             color: Color::srgb_u8(68, 71, 88),
@@ -364,7 +352,6 @@ fn fallback_spawn_environment(
         ));
 
         *fallback_spawned = true;
-
     }
 }
 
@@ -384,8 +371,6 @@ fn fallback_spawn_collectibles(
 
     if let (Some(assets), Some(nav_spawner)) = (assets, nav_spawner) {
         if nav_spawner.loaded {
-    
-            
             let mut rng = rand::rng();
             let mut spawned_positions = Vec::new();
             let mut coins_spawned = 0;
@@ -397,11 +382,7 @@ fn fallback_spawn_collectibles(
 
                 let angle = rng.random::<f32>() * std::f32::consts::TAU;
                 let distance = rng.random::<f32>() * 8.0; // Use reasonable default radius
-                let offset = Vec3::new(
-                    angle.cos() * distance,
-                    0.0,
-                    angle.sin() * distance,
-                );
+                let offset = Vec3::new(angle.cos() * distance, 0.0, angle.sin() * distance);
                 let potential_pos = *nav_pos + offset;
 
                 let too_close = spawned_positions.iter().any(|&other_pos: &Vec3| {
@@ -418,12 +399,8 @@ fn fallback_spawn_collectibles(
                     potential_pos.y + 2.5
                 };
                 let coin_pos = Vec3::new(potential_pos.x, coin_y, potential_pos.z);
-                
-                spawn_fallback_collectible(
-                    &mut commands,
-                    &assets,
-                    coin_pos,
-                );
+
+                spawn_fallback_collectible(&mut commands, &assets, coin_pos);
 
                 spawned_positions.push(coin_pos);
                 coins_spawned += 1;
@@ -435,19 +412,13 @@ fn fallback_spawn_collectibles(
 
             collectible_spawner.coins_spawned = coins_spawned;
             *fallback_spawned = true;
-    
         }
     }
 }
 
-fn spawn_fallback_collectible(
-    commands: &mut Commands,
-    assets: &Res<ModelAssets>,
-    position: Vec3,
-) {
+fn spawn_fallback_collectible(commands: &mut Commands, assets: &Res<ModelAssets>, position: Vec3) {
     use crate::systems::collectibles::{
-        Collectible, CollectibleType, FloatingItem, CollectibleRotation, 
-        Sensor
+        Collectible, CollectibleRotation, CollectibleType, FloatingItem, Sensor,
     };
 
     commands.spawn((

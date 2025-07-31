@@ -2,8 +2,8 @@ use super::{Screen, despawn_scene};
 use crate::assets::ModelAssets;
 use crate::systems::character_controller::CharacterControllerBundle;
 use avian3d::prelude::{
-    Collider, ColliderConstructor, ColliderConstructorHierarchy, Friction, GravityScale,
-    Restitution, RigidBody, CollisionEventsEnabled,
+    Collider, ColliderConstructor, ColliderConstructorHierarchy, CollisionEventsEnabled, Friction,
+    GravityScale, Restitution, RigidBody,
 };
 use bevy::prelude::*;
 use bevy_enhanced_input::prelude::Actions;
@@ -138,7 +138,7 @@ fn spawn_fight_scene(
                 2,         // example level
                 (80, 100), // example health
                 (50, 100), // example xp
-                font_assets.rajdhani_bold.clone(),
+                font_assets.goudy_trajan_regular.clone(),
                 crate::ui::widgets::HudPosition::Left,
             ));
             parent.spawn(crate::ui::widgets::player_hud_widget(
@@ -147,7 +147,7 @@ fn spawn_fight_scene(
                 3,          // example level
                 (120, 150), // example health
                 (90, 100),  // example xp
-                font_assets.rajdhani_medium.clone(),
+                font_assets.goudy_trajan_regular.clone(),
                 crate::ui::widgets::HudPosition::Right,
             ));
             parent.spawn((

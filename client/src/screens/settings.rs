@@ -201,7 +201,7 @@ fn render_tab_content(
                                         volume_widget(
                                             content,
                                             window_height,
-                                            font_assets.rajdhani_medium.clone(),
+                                            font_assets.goudy_trajan_regular.clone(),
                                             "Master Volume",
                                             ((audio_settings.master_volume * 10.0).floor() as i32)
                                                 .to_string(),
@@ -213,7 +213,7 @@ fn render_tab_content(
                                         volume_widget(
                                             content,
                                             window_height,
-                                            font_assets.rajdhani_medium.clone(),
+                                            font_assets.goudy_trajan_regular.clone(),
                                             "Music Volume",
                                             ((audio_settings.music_volume * 10.0).floor() as i32)
                                                 .to_string(),
@@ -225,7 +225,7 @@ fn render_tab_content(
                                         volume_widget(
                                             content,
                                             window_height,
-                                            font_assets.rajdhani_medium.clone(),
+                                            font_assets.goudy_trajan_regular.clone(),
                                             "SFX Volume",
                                             ((audio_settings.sfx_volume * 10.0).floor() as i32)
                                                 .to_string(),
@@ -400,7 +400,9 @@ impl SettingsScene {
                                                     UiTextSize::from(Rh(50.0)),
                                                     Text2d::new(category.to_ascii_uppercase()),
                                                     TextFont {
-                                                        font: font_assets.rajdhani_medium.clone(),
+                                                        font: font_assets
+                                                            .goudy_trajan_regular
+                                                            .clone(),
                                                         font_size: 64.0,
                                                         ..default()
                                                     },

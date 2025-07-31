@@ -30,7 +30,13 @@ pub struct Objective {
 }
 
 impl Objective {
-    pub fn new(id: usize, title: String, description: String, item_type: CollectibleType, required_count: u32) -> Self {
+    pub fn new(
+        id: usize,
+        title: String,
+        description: String,
+        item_type: CollectibleType,
+        required_count: u32,
+    ) -> Self {
         Self {
             id,
             title,
@@ -50,8 +56,6 @@ pub struct ObjectiveManager {
     pub objectives: Vec<Objective>,
     pub next_id: usize,
 }
-
-
 
 impl ObjectiveManager {
     pub fn add_objective(&mut self, objective: Objective) {
@@ -86,27 +90,57 @@ fn setup_initial_objectives(mut objective_manager: ResMut<ObjectiveManager>) {
 
     // Add objectives with different completion states (1/5, 2/5, 3/5, 4/5, 5/5)
     let health_id = objective_manager.next_id;
-    let mut health_objective = Objective::new(health_id, "Collect Health Potions".to_string(), "Collect 5 Health Potions".to_string(), CollectibleType::HealthPotion, 5);
+    let mut health_objective = Objective::new(
+        health_id,
+        "Collect Health Potions".to_string(),
+        "Collect 5 Health Potions".to_string(),
+        CollectibleType::HealthPotion,
+        5,
+    );
     health_objective.current_count = 1; // 1/5 completed
     objective_manager.add_objective(health_objective);
 
     let survival_id = objective_manager.next_id;
-    let mut survival_objective = Objective::new(survival_id, "Find Survival Kits".to_string(), "Find 3 Survival Kits".to_string(), CollectibleType::SurvivalKit, 3);
+    let mut survival_objective = Objective::new(
+        survival_id,
+        "Find Survival Kits".to_string(),
+        "Find 3 Survival Kits".to_string(),
+        CollectibleType::SurvivalKit,
+        3,
+    );
     survival_objective.current_count = 2; // 2/3 completed (equivalent to 2/5)
     objective_manager.add_objective(survival_objective);
 
     let book_id = objective_manager.next_id;
-    let mut book_objective = Objective::new(book_id, "Gather Ancient Books".to_string(), "Gather 2 Ancient Books".to_string(), CollectibleType::Book, 2);
+    let mut book_objective = Objective::new(
+        book_id,
+        "Gather Ancient Books".to_string(),
+        "Gather 2 Ancient Books".to_string(),
+        CollectibleType::Book,
+        2,
+    );
     book_objective.current_count = 1; // 1/2 completed (equivalent to 3/5)
     objective_manager.add_objective(book_objective);
 
     let coin_id = objective_manager.next_id;
-    let mut coin_objective = Objective::new(coin_id, "Collect Golden Coins".to_string(), "Collect 10 Golden Coins".to_string(), CollectibleType::Coin, 10);
+    let mut coin_objective = Objective::new(
+        coin_id,
+        "Collect Golden Coins".to_string(),
+        "Collect 10 Golden Coins".to_string(),
+        CollectibleType::Coin,
+        10,
+    );
     coin_objective.current_count = 8; // 8/10 completed (equivalent to 4/5)
     objective_manager.add_objective(coin_objective);
 
     let exploration_id = objective_manager.next_id;
-    let mut exploration_objective = Objective::new(exploration_id, "Explore Ancient Ruins".to_string(), "Visit 3 Ancient Ruins".to_string(), CollectibleType::Book, 3);
+    let mut exploration_objective = Objective::new(
+        exploration_id,
+        "Explore Ancient Ruins".to_string(),
+        "Visit 3 Ancient Ruins".to_string(),
+        CollectibleType::Book,
+        3,
+    );
     exploration_objective.current_count = 3; // 3/3 completed (equivalent to 5/5)
     exploration_objective.completed = true; // Mark as completed
     objective_manager.add_objective(exploration_objective);
@@ -127,8 +161,12 @@ fn update_objective_ui(
         return; // Only update when objectives change
     }
 
-    let Some(font_assets) = font_assets else { return; };
-    let Some(ui_assets) = ui_assets else { return; };
+    let Some(font_assets) = font_assets else {
+        return;
+    };
+    let Some(ui_assets) = ui_assets else {
+        return;
+    };
 
     // Find the objectives list container
     let mut objectives_list_entity = None;
@@ -152,11 +190,18 @@ fn update_objective_ui(
     }
 
     // Spawn new objective slots for each objective
-    let font = font_assets.rajdhani_bold.clone();
+    let font = font_assets.goudy_trajan_regular.clone();
     let coin_image = ui_assets.coin.clone(); // Using coin as placeholder for all items
 
     for objective in &objective_manager.objectives {
-        let slot_entity = commands.spawn(create_objective_slot(objective, font.clone(), coin_image.clone(), ui_assets.green_check_icon.clone())).id();
+        let slot_entity = commands
+            .spawn(create_objective_slot(
+                objective,
+                font.clone(),
+                coin_image.clone(),
+                ui_assets.green_check_icon.clone(),
+            ))
+            .id();
         commands.entity(list_entity).add_child(slot_entity);
     }
 
@@ -207,7 +252,7 @@ fn create_objective_slot(
                 },
                 BackgroundColor(Color::LIGHT_GLASS),
                 BorderRadius::all(Val::Px(12.0)),
-                                children![
+                children![
                     // Item icon (always visible)
                     (
                         Node {
@@ -242,7 +287,11 @@ fn create_objective_slot(
                             height: Val::Px(32.0),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
-                            display: if objective.completed { Display::Flex } else { Display::None },
+                            display: if objective.completed {
+                                Display::Flex
+                            } else {
+                                Display::None
+                            },
                             border: UiRect::all(Val::Px(2.0)),
                             ..default()
                         },
@@ -304,7 +353,10 @@ fn create_objective_slot(
                     ),
                     // Progress Text
                     (
-                        Text::new(format!("{}/{}", objective.current_count, objective.required_count)),
+                        Text::new(format!(
+                            "{}/{}",
+                            objective.current_count, objective.required_count
+                        )),
                         TextFont {
                             font: font.clone(),
                             font_size: 18.0,
@@ -327,18 +379,16 @@ fn create_objective_slot(
                         BackgroundColor(Color::DARKER_GLASS),
                         BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.4)),
                         BorderRadius::all(Val::Px(6.0)),
-                        children![
-                            (
-                                Node {
-                                    width: Val::Px(267.0 * progress_percent),
-                                    height: Val::Px(9.0),
-                                    margin: UiRect::all(Val::Px(1.5)),
-                                    ..default()
-                                },
-                                BackgroundColor(Color::ELYSIUM_GOLD),
-                                BorderRadius::all(Val::Px(4.5)),
-                            )
-                        ]
+                        children![(
+                            Node {
+                                width: Val::Px(267.0 * progress_percent),
+                                height: Val::Px(9.0),
+                                margin: UiRect::all(Val::Px(1.5)),
+                                ..default()
+                            },
+                            BackgroundColor(Color::ELYSIUM_GOLD),
+                            BorderRadius::all(Val::Px(4.5)),
+                        )]
                     )
                 ]
             )
@@ -366,8 +416,6 @@ fn create_view_more_button(font: Handle<Font>) -> impl Bundle {
                 ..default()
             },
             TextColor(Color::ELYSIUM_GOLD),
-        )]
+        )],
     )
 }
-
- 

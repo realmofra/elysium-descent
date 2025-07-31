@@ -84,13 +84,7 @@ pub struct AudioAssets {
 #[derive(AssetCollection, Resource)]
 pub struct FontAssets {
     #[asset(path = "fonts/GoudyTrajan-Regular.otf")]
-    pub rajdhani_bold: Handle<Font>,
-
-    #[asset(path = "fonts/GoudyTrajan-Regular.otf")]
-    pub rajdhani_medium: Handle<Font>,
-
-    #[asset(path = "fonts/rajdhani/Rajdhani-Bold.ttf")]
-    pub rajdhani_extra_bold: Handle<Font>,
+    pub goudy_trajan_regular: Handle<Font>,
 }
 
 // Model Assets (for future use)

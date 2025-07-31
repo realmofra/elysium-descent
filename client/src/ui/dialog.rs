@@ -78,31 +78,31 @@ pub fn spawn_dialog_with_proximity(
     // Use screen height as the base for font size calculation
     let base_font_size = window_height * 0.03; // 3% of screen height
     let responsive_font_size = base_font_size.max(20.0).min(60.0); // Min 20px, max 60px
-    
+
     // Calculate responsive font size based on screen size
-    
+
     // Use exact same width as inventory (833px)
     let dialog_width_px = 833.0;
-    
+
     // Calculate dynamic dialog size based on text content and font size
     // Estimate text width based on character count and font size
     let text_length = config.text.len() as f32;
     let estimated_text_width = text_length * responsive_font_size * 0.6; // Approximate character width
     let estimated_text_height = responsive_font_size * 1.5; // Approximate line height
-    
+
     // Calculate minimum dialog size with padding
     let padding = responsive_font_size * 0.5; // Padding proportional to font size
     let _min_dialog_width = estimated_text_width + (padding * 2.0);
     let min_dialog_height = estimated_text_height + (padding * 2.0);
-    
+
     // Use inventory width (833px), but ensure minimum height for text
     let dynamic_width_px = dialog_width_px;
     let dynamic_height_px = min_dialog_height.max(100.0); // Minimum 100px height
-    
+
     // Use exact same centering method as inventory
     // Inventory uses: left: Val::Percent(50.0), margin: UiRect::left(Val::Px(-416.5))
     // where -416.5 is half of 833px width
-    
+
     // Calculate dynamic dialog dimensions
 
     let mut entity_commands = commands.spawn((
@@ -135,7 +135,7 @@ pub fn spawn_dialog_with_proximity(
     entity_commands.with_children(|parent| {
         parent.spawn(label_widget(
             responsive_font_size,
-            font_assets.rajdhani_bold.clone(),
+            font_assets.goudy_trajan_regular.clone(),
             config.text.clone(),
         ));
     });

@@ -20,7 +20,6 @@ fn reset_ui_camera(
     if let Ok(mut camera_transform) = ui_cameras.single_mut() {
         // Reset to the proper UI camera position
         *camera_transform = Transform::from_translation(Vec3::new(0.0, 0.0, 1000.0));
-
     }
 }
 
@@ -129,7 +128,7 @@ fn spawn(mut commands: Commands, ui_assets: Res<UiAssets>, font_assets: Res<Font
                                         // You can attach text like this
                                         Text2d::new(button),
                                         TextFont {
-                                            font: font_assets.rajdhani_medium.clone(),
+                                            font: font_assets.goudy_trajan_regular.clone(),
                                             font_size: 64.0,
                                             ..default()
                                         },
@@ -151,7 +150,7 @@ fn spawn(mut commands: Commands, ui_assets: Res<UiAssets>, font_assets: Res<Font
                                         // You can attach text like this
                                         Text2d::new("<-"),
                                         TextFont {
-                                            font: font_assets.rajdhani_bold.clone(),
+                                            font: font_assets.goudy_trajan_regular.clone(),
                                             font_size: 64.0,
                                             ..default()
                                         },
