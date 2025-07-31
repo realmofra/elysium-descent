@@ -21,7 +21,8 @@ pub fn plugin(app: &mut App) {
         .add_observer(sprint_completed)
         .add_observer(handle_create_game)
         .add_observer(handle_interact)
-        .add_observer(handle_fight_move);
+        .add_observer(handle_fight_move)
+        .add_observer(handle_fight_transition);
 }
 
 fn spawn_system_action(mut commands: Commands) {
@@ -55,6 +56,9 @@ fn player_binding(trigger: Trigger<Binding<Player>>, mut players: Query<&mut Act
 
         // Fight Move (X key, with or without shift)
         actions.bind::<FightMove>().to(KeyCode::KeyX);
+
+        // Fight Transition (Comma key)
+        actions.bind::<FightTransition>().to(KeyCode::Comma);
     } else {
         error!(
             "Failed to get player actions for entity {:?}",
@@ -164,6 +168,10 @@ pub struct Interact;
 #[input_action(output = bool)]
 pub struct FightMove;
 
+#[derive(Debug, InputAction)]
+#[input_action(output = bool)]
+pub struct FightTransition;
+
 /// Input context for the Elysium game
 #[derive(InputContext)]
 pub struct SystemInput;
@@ -268,5 +276,15 @@ fn handle_fight_move(
         } else {
             movement_events.write(crate::systems::character_controller::MovementAction::FightMove1);
         }
+    }
+}
+
+fn handle_fight_transition(
+    trigger: Trigger<Started<FightTransition>>,
+    mut next_state: ResMut<NextState<Screen>>,
+    current_state: Res<State<Screen>>,
+) {
+    if trigger.value && current_state.get() == &Screen::GamePlay {
+        next_state.set(Screen::FightScene);
     }
 }
