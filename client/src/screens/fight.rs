@@ -12,7 +12,7 @@ use bevy_gltf_animation::prelude::GltfSceneRoot;
 // ===== PLUGIN SETUP =====
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(OnEnter(Screen::FightScene), spawn_fight_scene)
+    app.add_systems(OnEnter(Screen::FightScene), (spawn_fight_scene, despawn_collectibles))
         .add_systems(OnExit(Screen::FightScene), despawn_scene::<FightScene>)
         .add_systems(
             Update,
@@ -207,6 +207,12 @@ fn camera_follow_fight_player(
             // Make camera look at player
             camera_transform.look_at(player_pos + Vec3::Y * 2.0, Vec3::Y);
         }
+    }
+}
+
+fn despawn_collectibles(mut commands: Commands, query: Query<Entity, With<crate::systems::collectibles::Collectible>>) {
+    for entity in &query {
+        commands.entity(entity).despawn();
     }
 }
 

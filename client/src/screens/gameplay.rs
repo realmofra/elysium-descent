@@ -44,7 +44,7 @@ pub(super) fn plugin(app: &mut App) {
     )
     .add_systems(
         OnExit(Screen::GamePlay),
-        (despawn_scene::<PlayingScene>, despawn_gameplay_hud, cleanup_preloaded_environment, despawn_modal),
+        (despawn_scene::<PlayingScene>, despawn_gameplay_hud, cleanup_preloaded_environment, despawn_modal, despawn_collectibles),
     )
     .add_plugins(PhysicsPlugins::default())
     // .add_plugins(PhysicsDebugPlugin::default())
@@ -214,6 +214,12 @@ fn cleanup_preloaded_environment(
     let count = environment_query.iter().count();
     if count > 0 {
 
+    }
+}
+
+fn despawn_collectibles(mut commands: Commands, query: Query<Entity, With<crate::systems::collectibles::Collectible>>) {
+    for entity in &query {
+        commands.entity(entity).despawn();
     }
 }
 
