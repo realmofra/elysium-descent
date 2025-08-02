@@ -1,8 +1,9 @@
 use super::{Screen, despawn_scene};
 use crate::assets::ModelAssets;
 use crate::systems::character_controller::CharacterControllerBundle;
+use crate::systems::enemy_ai::{EnemyBundle, EnemyAIPlugin};
 use avian3d::prelude::{
-    Collider, ColliderConstructor, ColliderConstructorHierarchy, Friction, GravityScale,
+    ColliderConstructor, ColliderConstructorHierarchy, Friction, GravityScale,
     Restitution, RigidBody, CollisionEventsEnabled,
 };
 use bevy::prelude::*;
@@ -21,7 +22,8 @@ pub(super) fn plugin(app: &mut App) {
         .add_systems(
             Update,
             camera_follow_fight_player.run_if(in_state(Screen::FightScene)),
-        );
+        )
+        .add_plugins(EnemyAIPlugin);
 }
 
 // ===== SYSTEMS =====
@@ -90,7 +92,7 @@ fn spawn_fight_scene(
         ))
         .observe(crate::systems::character_controller::setup_idle_animation);
 
-    // Spawn the enemy model at the opposite end (unchanged)
+    // Spawn the enemy model with AI and animations
     commands.spawn((
         Name::new("Fight Enemy"),
         SceneRoot(assets.enemy.clone()),
@@ -100,10 +102,13 @@ fn spawn_fight_scene(
             scale: Vec3::splat(4.0),
             ..default()
         },
-        Collider::capsule(0.5, 1.5),
-        RigidBody::Static,
+        EnemyBundle::default(),
+        Friction::new(0.5),
+        Restitution::new(0.0),
+        GravityScale(1.0),
+        CollisionEventsEnabled, // Enable collision events
         FightScene,
-    ));
+    )).observe(crate::systems::character_controller::setup_idle_animation);
 
     // Add a camera (match gameplay)
     commands.spawn((
