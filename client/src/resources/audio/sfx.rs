@@ -78,8 +78,15 @@ fn handle_movement_sfx(
     mut stop_events: EventWriter<StopMovementAudioEvent>,
     mut movement_state: ResMut<MovementAudioState>,
     character_query: Query<(&LinearVelocity, &AnimationState), With<CharacterController>>,
+    keyboard: Res<ButtonInput<KeyCode>>,
 ) {
-    // Check if character is moving
+    // Check if any movement keys are pressed
+    let is_movement_pressed = keyboard.any_pressed([
+        KeyCode::KeyW, KeyCode::KeyA, KeyCode::KeyS, KeyCode::KeyD,
+        KeyCode::ArrowUp, KeyCode::ArrowDown, KeyCode::ArrowLeft, KeyCode::ArrowRight,
+    ]);
+
+    // Check if character is moving (based on velocity)
     let is_moving = character_query.iter().any(|(velocity, _)| {
         let horizontal_velocity = Vec2::new(velocity.x, velocity.z);
         horizontal_velocity.length() > 0.05
@@ -95,8 +102,8 @@ fn handle_movement_sfx(
         println!("🎵 Movement detected - Running: {}, Moving: {}", is_running, is_moving);
     }
 
-    // Handle state changes
-    let _should_play_sound = if is_moving {
+    // Handle state changes - prioritize input over velocity for immediate response
+    let _should_play_sound = if is_movement_pressed && is_moving {
         let sound_to_play = if is_running { SfxType::Running } else { SfxType::Walking };
         
         // Check if we need to change the sound
@@ -122,7 +129,7 @@ fn handle_movement_sfx(
         
         true
     } else {
-        // Not moving, stop current sound
+        // Not moving or no movement keys pressed, stop current sound immediately
         if movement_state.current_sound.is_some() {
             movement_state.current_sound = None;
             stop_events.write(StopMovementAudioEvent);
@@ -132,8 +139,8 @@ fn handle_movement_sfx(
     };
 
     // Update state
-    movement_state.is_moving = is_moving;
-    movement_state.is_running = is_running;
+    movement_state.is_moving = is_moving && is_movement_pressed;
+    movement_state.is_running = is_running && is_movement_pressed;
 }
 
 fn stop_movement_audio(
