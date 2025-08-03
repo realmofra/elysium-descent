@@ -95,7 +95,7 @@ fn spawn_fight_scene(
     // Spawn the enemy model with AI and animations
     commands.spawn((
         Name::new("Fight Enemy"),
-        SceneRoot(assets.enemy.clone()),
+        GltfSceneRoot::new(assets.enemy.clone()),
         Transform {
             translation: Vec3::new(5.0, -1.65, 0.0),
             rotation: Quat::from_rotation_y(std::f32::consts::PI),
@@ -156,7 +156,7 @@ fn spawn_fight_scene(
                 crate::ui::widgets::HudPosition::Right,
             ));
             parent.spawn((
-                Text::new("FIGHT SCENE\nPress ESC to return to gameplay"),
+                Text::new("FIGHT SCENE\nPress ESC to return to gameplay\nPress COMMA from gameplay to enter fight"),
                 TextFont {
                     font_size: 40.0,
                     ..default()

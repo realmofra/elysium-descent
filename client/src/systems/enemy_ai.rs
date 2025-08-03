@@ -22,7 +22,7 @@ pub struct EnemyAI {
 impl Default for EnemyAI {
     fn default() -> Self {
         Self {
-            attack_range: 5.0,
+            attack_range: 3.5,
             move_speed: 3.0,
             attack_cooldown: 2.0,
             last_attack_time: 0.0,
@@ -126,29 +126,38 @@ fn enemy_ai_movement(
         }
 
         if !enemy_ai.is_attacking {
-            // Move towards player
-            let direction_to_player = (player_pos - enemy_pos).normalize();
-            let target_velocity = direction_to_player * enemy_ai.move_speed;
-            
-            // Keep Y velocity at 0 for kinematic movement
-            enemy_velocity.x = enemy_velocity.x.lerp(target_velocity.x, 5.0 * delta_time);
-            enemy_velocity.z = enemy_velocity.z.lerp(target_velocity.z, 5.0 * delta_time);
-            enemy_velocity.y = 0.0; // Keep enemy on ground
-            
-            // Rotate enemy to face the player (only Y rotation)
-            let direction_2d = Vec2::new(direction_to_player.x, direction_to_player.z).normalize();
-            let target_rotation = Quat::from_rotation_arc(Vec3::Z, Vec3::new(direction_2d.x, 0.0, direction_2d.y));
-            enemy_transform.rotation = enemy_transform.rotation.slerp(target_rotation, 3.0 * delta_time);
-            
-            // Keep enemy on ground level
-            enemy_transform.translation.y = -1.65; // Match the original enemy Y position
-            
-            // Update animation state for walking
-            let horizontal_speed = Vec2::new(enemy_velocity.x, enemy_velocity.z).length();
-            if horizontal_speed > 0.1 {
-                animation_state.forward_hold_time += delta_time;
-            } else {
+            // Check if we're close enough to the player
+            if distance_to_player <= enemy_ai.attack_range {
+                // Stop moving when close to player
+                enemy_velocity.x *= 0.8;
+                enemy_velocity.z *= 0.8;
+                enemy_velocity.y = 0.0;
                 animation_state.forward_hold_time = 0.0;
+            } else {
+                // Move towards player
+                let direction_to_player = (player_pos - enemy_pos).normalize();
+                let target_velocity = direction_to_player * enemy_ai.move_speed;
+                
+                // Keep Y velocity at 0 for kinematic movement
+                enemy_velocity.x = enemy_velocity.x.lerp(target_velocity.x, 5.0 * delta_time);
+                enemy_velocity.z = enemy_velocity.z.lerp(target_velocity.z, 5.0 * delta_time);
+                enemy_velocity.y = 0.0; // Keep enemy on ground
+                
+                // Rotate enemy to face the player (only Y rotation)
+                let direction_2d = Vec2::new(direction_to_player.x, direction_to_player.z).normalize();
+                let target_rotation = Quat::from_rotation_arc(Vec3::Z, Vec3::new(direction_2d.x, 0.0, direction_2d.y));
+                enemy_transform.rotation = enemy_transform.rotation.slerp(target_rotation, 3.0 * delta_time);
+                
+                // Keep enemy on ground level
+                enemy_transform.translation.y = -1.65; // Match the original enemy Y position
+                
+                // Update animation state for walking
+                let horizontal_speed = Vec2::new(enemy_velocity.x, enemy_velocity.z).length();
+                if horizontal_speed > 0.1 {
+                    animation_state.forward_hold_time += delta_time;
+                } else {
+                    animation_state.forward_hold_time = 0.0;
+                }
             }
         } else {
             // Stop moving when attacking
@@ -188,13 +197,15 @@ fn enemy_ai_animations(
         let is_moving = horizontal_velocity.length() > 0.1;
 
         // Determine target animation based on state
-        let target_animation = if enemy_ai.is_attacking {
-            5 // Attack animation
-        } else if !is_moving {
-            3 // Idle
-        } else {
-            4 // Walking animation (index 1)
-        };
+        // let target_animation = if enemy_ai.is_attacking {
+        //     5 // Attack animation
+        // } else if !is_moving {
+        //     3 // Idle
+        // } else {
+        //     1 // Walking animation (index 1)
+        // };
+
+        let target_animation = 1;
 
         // Only change animation if we need to
         if target_animation != animation_state.current_animation {
