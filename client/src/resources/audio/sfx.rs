@@ -40,7 +40,8 @@ impl Plugin for SfxPlugin {
             .add_event::<StopMovementAudioEvent>()
             .add_systems(Update, play_sfx_events)
             .add_systems(Update, stop_movement_audio)
-            .add_systems(Update, handle_movement_sfx.run_if(in_state(crate::screens::Screen::GamePlay)));
+            .add_systems(Update, handle_movement_sfx.run_if(in_state(crate::screens::Screen::GamePlay)))
+            .add_systems(Update, handle_movement_sfx.run_if(in_state(crate::screens::Screen::FightScene)));
     }
 }
 
