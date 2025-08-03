@@ -194,7 +194,7 @@ fn enemy_ai_animations(
 ) {
     for (velocity, mut animations, mut animation_state, enemy_ai) in &mut enemy_query {
         let horizontal_velocity = Vec2::new(velocity.x, velocity.z);
-        let is_moving = horizontal_velocity.length() > 0.1;
+        let _is_moving = horizontal_velocity.length() > 0.1;
 
         // Determine target animation based on state
         // let target_animation = if enemy_ai.is_attacking {

@@ -3,7 +3,7 @@ use bevy::{prelude::*, render::view::RenderLayers};
 use bevy_kira_audio::prelude::*;
 use bevy_lunex::prelude::*;
 use dojo_bevy_plugin::{DojoResource, TokioRuntime};
-use avian3d::prelude::*;
+// Removed unused import - PhysicsDebugPlugin is currently disabled
 
 mod constants;
 mod game;
