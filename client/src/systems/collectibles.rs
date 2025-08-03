@@ -273,6 +273,15 @@ fn spawn_streaming_coin(
         position.z,
     );
     
+    // Create a compound collider that better approximates a coin shape
+    // This is more performant than mesh-fitted colliders while still being more accurate than a single sphere
+    let coin_collider = Collider::compound(vec![
+        // Main body - slightly flattened sphere
+        (Vec3::ZERO, Quat::IDENTITY, Collider::sphere(0.4)),
+        // Edge rings for better coin-like collision
+        (Vec3::new(0.0, 0.0, 0.0), Quat::IDENTITY, Collider::cylinder(0.4, 0.1)),
+    ]);
+    
     commands.spawn((
         Name::new("Streaming Coin"),
         SceneRoot(assets.coin.clone()),
@@ -281,7 +290,7 @@ fn spawn_streaming_coin(
             scale: Vec3::splat(0.75),
             ..default()
         },
-        Collider::sphere(0.5),
+        coin_collider,
         RigidBody::Kinematic,
         Visibility::Visible,
         Collectible,

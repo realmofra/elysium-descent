@@ -47,7 +47,6 @@ pub(super) fn plugin(app: &mut App) {
         (despawn_scene::<PlayingScene>, despawn_gameplay_hud, cleanup_preloaded_environment, despawn_modal, despawn_collectibles),
     )
     .add_plugins(PhysicsPlugins::default())
-    // .add_plugins(PhysicsDebugPlugin::default())
     .add_plugins(CharacterControllerPlugin)
     .add_plugins(GltfAnimationPlugin)
     .add_plugins(CollectiblesPlugin)
@@ -105,6 +104,8 @@ fn camera_follow_player(
         }
     }
 }
+
+
 
 #[derive(Component, Default, Clone)]
 pub struct PlayingScene;
@@ -456,6 +457,15 @@ fn spawn_fallback_collectible(
         Sensor
     };
 
+    // Create a compound collider that better approximates a coin shape
+    // This is more performant than mesh-fitted colliders while still being more accurate than a single sphere
+    let coin_collider = Collider::compound(vec![
+        // Main body - slightly flattened sphere
+        (Vec3::ZERO, Quat::IDENTITY, Collider::sphere(0.4)),
+        // Edge rings for better coin-like collision
+        (Vec3::new(0.0, 0.0, 0.0), Quat::IDENTITY, Collider::cylinder(0.4, 0.1)),
+    ]);
+
     commands.spawn((
         Name::new("Fallback Coin"),
         SceneRoot(assets.coin.clone()),
@@ -464,7 +474,7 @@ fn spawn_fallback_collectible(
             scale: Vec3::splat(0.75),
             ..default()
         },
-        Collider::sphere(0.5),
+        coin_collider,
         RigidBody::Kinematic,
         Visibility::Visible,
         Collectible,
