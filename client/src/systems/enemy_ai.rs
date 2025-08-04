@@ -152,7 +152,7 @@ fn enemy_ai_animations(
         let target_animation = if !is_moving {
             1 // Idle animation when not moving (same as player's gameplay idle)
         } else {
-            3 // Walking animation when moving (try animation 1 for enemy)
+            4 // Walking animation when moving (try animation 1 for enemy)
         };
 
 
