@@ -12,11 +12,9 @@ pub struct Enemy;
 pub struct EnemyAI {
     pub attack_range: f32,
     pub move_speed: f32,
-    pub attack_cooldown: f32,
-    pub last_attack_time: f32,
-    pub is_attacking: bool,
-    pub attack_duration: f32,
-    pub current_attack_time: f32,
+    pub last_position: Option<Vec3>,
+    pub is_moving: bool,
+    pub animation_switch_timer: f32,
 }
 
 impl Default for EnemyAI {
@@ -24,11 +22,9 @@ impl Default for EnemyAI {
         Self {
             attack_range: 3.5,
             move_speed: 3.0,
-            attack_cooldown: 2.0,
-            last_attack_time: 0.0,
-            is_attacking: false,
-            attack_duration: 1.0, // Duration of attack animation
-            current_attack_time: 0.0,
+            last_position: None,
+            is_moving: false,
+            animation_switch_timer: 0.0,
         }
     }
 }
@@ -52,7 +48,7 @@ impl Default for EnemyBundle {
             ai: EnemyAI::default(),
             animation_state: AnimationState {
                 forward_hold_time: 0.0,
-                current_animation: 3, // Start with idle animation
+                current_animation: 1, // Start with walking animation
                 fight_move_1: false,
                 fight_move_2: false,
             },
@@ -79,7 +75,6 @@ impl Plugin for EnemyAIPlugin {
             Update,
             (
                 enemy_ai_movement,
-                enemy_ai_attack,
                 enemy_ai_animations,
             ).chain(),
         );
@@ -104,120 +99,93 @@ fn enemy_ai_movement(
         let enemy_pos = enemy_transform.translation;
         let distance_to_player = enemy_pos.distance(player_pos);
 
-        // Update attack cooldown
-        enemy_ai.last_attack_time += delta_time;
-
-        // Update attack duration if attacking
-        if enemy_ai.is_attacking {
-            enemy_ai.current_attack_time += delta_time;
-            if enemy_ai.current_attack_time >= enemy_ai.attack_duration {
-                enemy_ai.is_attacking = false;
-                enemy_ai.current_attack_time = 0.0;
-            }
-        }
-
-        // Check if we should start attacking
-        if distance_to_player <= enemy_ai.attack_range && 
-           enemy_ai.last_attack_time >= enemy_ai.attack_cooldown && 
-           !enemy_ai.is_attacking {
-            enemy_ai.is_attacking = true;
-            enemy_ai.last_attack_time = 0.0;
-            enemy_ai.current_attack_time = 0.0;
-        }
-
-        if !enemy_ai.is_attacking {
-            // Check if we're close enough to the player
-            if distance_to_player <= enemy_ai.attack_range {
-                // Stop moving when close to player
-                enemy_velocity.x *= 0.8;
-                enemy_velocity.z *= 0.8;
-                enemy_velocity.y = 0.0;
-                animation_state.forward_hold_time = 0.0;
-            } else {
-                // Move towards player
-                let direction_to_player = (player_pos - enemy_pos).normalize();
-                let target_velocity = direction_to_player * enemy_ai.move_speed;
-                
-                // Keep Y velocity at 0 for kinematic movement
-                enemy_velocity.x = enemy_velocity.x.lerp(target_velocity.x, 5.0 * delta_time);
-                enemy_velocity.z = enemy_velocity.z.lerp(target_velocity.z, 5.0 * delta_time);
-                enemy_velocity.y = 0.0; // Keep enemy on ground
-                
-                // Rotate enemy to face the player (only Y rotation)
-                let direction_2d = Vec2::new(direction_to_player.x, direction_to_player.z).normalize();
-                let target_rotation = Quat::from_rotation_arc(Vec3::Z, Vec3::new(direction_2d.x, 0.0, direction_2d.y));
-                enemy_transform.rotation = enemy_transform.rotation.slerp(target_rotation, 3.0 * delta_time);
-                
-                // Keep enemy on ground level
-                enemy_transform.translation.y = -1.65; // Match the original enemy Y position
-                
-                // Update animation state for walking
-                let horizontal_speed = Vec2::new(enemy_velocity.x, enemy_velocity.z).length();
-                if horizontal_speed > 0.1 {
-                    animation_state.forward_hold_time += delta_time;
-                } else {
-                    animation_state.forward_hold_time = 0.0;
-                }
-            }
+        // Track actual movement by comparing positions
+        let moved = if let Some(last_pos) = enemy_ai.last_position {
+            enemy_pos.distance(last_pos) > 0.1 // Increased threshold to reduce twitching
         } else {
-            // Stop moving when attacking
+            // On first frame, assume moving if not in attack range
+            distance_to_player > enemy_ai.attack_range
+        };
+        
+        // Only update is_moving if we're not in attack range to prevent twitching
+        if distance_to_player > enemy_ai.attack_range {
+            enemy_ai.is_moving = moved;
+        } else {
+            // Force idle when in attack range
+            enemy_ai.is_moving = false;
+        }
+        enemy_ai.last_position = Some(enemy_pos);
+
+
+        
+
+
+        // Check if we're close enough to the player
+        if distance_to_player <= enemy_ai.attack_range {
+            // Stop moving when close to player
             enemy_velocity.x *= 0.8;
             enemy_velocity.z *= 0.8;
             enemy_velocity.y = 0.0;
             animation_state.forward_hold_time = 0.0;
-        }
-    }
-}
-
-/// System that handles enemy attack logic
-fn enemy_ai_attack(
-    mut enemy_query: Query<(&mut EnemyAI, &mut GltfAnimations), (With<Enemy>, Without<crate::systems::character_controller::CharacterController>)>,
-    mut animation_players: Query<&mut AnimationPlayer>,
-) {
-    for (enemy_ai, mut animations) in &mut enemy_query {
-        if enemy_ai.is_attacking && enemy_ai.current_attack_time < 0.1 {
-            // Just started attacking, play attack animation
-            if let Some(attack_animation) = animations.get_by_number(5) {
-                if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
-                    player.stop_all();
-                    player.play(attack_animation);
-                }
+        } else {
+            // Move towards player
+            let direction_to_player = (player_pos - enemy_pos).normalize();
+            let target_velocity = direction_to_player * enemy_ai.move_speed;
+            
+            // Keep Y velocity at 0 for kinematic movement
+            enemy_velocity.x = enemy_velocity.x.lerp(target_velocity.x, 5.0 * delta_time);
+            enemy_velocity.z = enemy_velocity.z.lerp(target_velocity.z, 5.0 * delta_time);
+            enemy_velocity.y = 0.0; // Keep enemy on ground
+            
+            // Rotate enemy to face the player (only Y rotation)
+            let direction_2d = Vec2::new(direction_to_player.x, direction_to_player.z).normalize();
+            let target_rotation = Quat::from_rotation_arc(Vec3::Z, Vec3::new(direction_2d.x, 0.0, direction_2d.y));
+            enemy_transform.rotation = enemy_transform.rotation.slerp(target_rotation, 3.0 * delta_time);
+            
+            // Keep enemy on ground level
+            enemy_transform.translation.y = -1.65; // Match the original enemy Y position
+            
+            // Update animation state for walking
+            let horizontal_speed = Vec2::new(enemy_velocity.x, enemy_velocity.z).length();
+            if horizontal_speed > 0.1 {
+                animation_state.forward_hold_time += delta_time;
+            } else {
+                animation_state.forward_hold_time = 0.0;
             }
         }
     }
 }
 
+
+
 /// System that handles enemy animations
 fn enemy_ai_animations(
-    mut enemy_query: Query<(&LinearVelocity, &mut GltfAnimations, &mut AnimationState, &EnemyAI), (With<Enemy>, Without<crate::systems::character_controller::CharacterController>)>,
+    time: Res<Time>,
+    mut enemy_query: Query<(&mut GltfAnimations, &mut AnimationState, &mut EnemyAI), (With<Enemy>, Without<crate::systems::character_controller::CharacterController>)>,
     mut animation_players: Query<&mut AnimationPlayer>,
 ) {
-    for (velocity, mut animations, mut animation_state, enemy_ai) in &mut enemy_query {
-        let horizontal_velocity = Vec2::new(velocity.x, velocity.z);
-        let _is_moving = horizontal_velocity.length() > 0.1;
-
+    let delta_time = time.delta_secs();
+    
+    for (mut animations, mut animation_state, mut enemy_ai) in &mut enemy_query {
+        // Update animation switch timer
+        enemy_ai.animation_switch_timer += delta_time;
+        
         // Determine target animation based on state
-        // let target_animation = if enemy_ai.is_attacking {
-        //     5 // Attack animation
-        // } else if !is_moving {
-        //     3 // Idle
-        // } else {
-        //     1 // Walking animation (index 1)
-        // };
+        let target_animation = if !enemy_ai.is_moving {
+            3 // Idle animation when not moving
+        } else {
+            1 // Walking animation when moving
+        };
 
-        let target_animation = 1;
-
-        // Only change animation if we need to
-        if target_animation != animation_state.current_animation {
+        // Only change animation if we need to and enough time has passed
+        if target_animation != animation_state.current_animation && 
+           enemy_ai.animation_switch_timer > 0.2 {
             if let Some(animation) = animations.get_by_number(target_animation) {
                 if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
                     player.stop_all();
-                    if enemy_ai.is_attacking {
-                        player.play(animation); // Don't repeat attack animation
-                    } else {
-                        player.play(animation).repeat(); // Repeat movement animations
-                    }
+                    player.play(animation).repeat(); // Repeat movement animations
                     animation_state.current_animation = target_animation;
+                    enemy_ai.animation_switch_timer = 0.0; // Reset timer
                 }
             }
         }
