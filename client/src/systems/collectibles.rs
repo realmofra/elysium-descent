@@ -43,18 +43,7 @@ pub enum CollectibleType {
 #[derive(Resource)]
 pub struct NextItemToAdd(pub CollectibleType);
 
-#[derive(Resource)]
-pub struct PlayerPositionLogTimer {
-    pub timer: Timer,
-}
 
-impl Default for PlayerPositionLogTimer {
-    fn default() -> Self {
-        Self {
-            timer: Timer::from_seconds(3.0, TimerMode::Repeating),
-        }
-    }
-}
 
 #[derive(Resource)]
 pub struct CollectibleSpawner {
@@ -96,7 +85,7 @@ impl Default for CoinStreamingManager {
             spawned_coins: HashMap::new(),
             collected_positions: HashSet::new(),
             last_update_time: 0.0,
-            update_interval: 1.0,  // Update every 1 second for debugging
+            update_interval: 1.0,
             spawn_radius: COIN_STREAMING_RADIUS,   // Use centralized constant
         }
     }
@@ -145,7 +134,7 @@ impl Plugin for CollectiblesPlugin {
             .init_resource::<CollectibleSpawner>()
             .init_resource::<PlayerMovementTracker>()
             .init_resource::<NavigationBasedSpawner>()
-            .init_resource::<PlayerPositionLogTimer>()
+
             // CoinStreamingManager now initialized in pregame_loading to persist between screens
             .add_systems(
                 Update,
@@ -154,7 +143,7 @@ impl Plugin for CollectiblesPlugin {
                     handle_coin_collisions,           // Handle collision-based coin collection
                     update_floating_items,
                     rotate_collectibles,
-                    log_player_position,              // Log player position every 3 seconds
+
                     crate::ui::inventory::add_item_to_inventory,
                     crate::ui::inventory::toggle_inventory_visibility,
                     crate::ui::inventory::adjust_inventory_for_dialogs,
@@ -185,9 +174,6 @@ fn update_coin_streaming(
     };
 
     let current_time = time.elapsed_secs();
-    
-    // Debug: Log every few seconds even if not updating
-
     
     // Only update every 2-3 seconds
     if !streaming_manager.should_update(current_time) {
@@ -224,7 +210,7 @@ fn update_coin_streaming(
     for (position_id, &position) in streaming_manager.positions.iter().enumerate() {
         let distance = player_pos.distance(position);
         
-        // Track nearest coin for debugging
+
         if distance < nearest_coin_distance {
             nearest_coin_distance = distance;
         }
@@ -468,19 +454,7 @@ impl Default for NavigationData {
     }
 }
 
-/// Log player position every 3 seconds for debugging
-fn log_player_position(
-    time: Res<Time>,
-    mut timer: ResMut<PlayerPositionLogTimer>,
-    player_query: Query<&Transform, With<CharacterController>>,
-) {
-    if timer.timer.tick(time.delta()).just_finished() {
-        if let Ok(player_transform) = player_query.single() {
-            let _pos = player_transform.translation;
-    
-        }
-    }
-}
+
 
 // Replace the surface-based spawning with navigation-based spawning
 #[derive(Resource)]

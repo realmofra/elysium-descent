@@ -98,10 +98,7 @@ fn handle_movement_sfx(
         animation_state.forward_hold_time >= 3.0
     });
 
-    // Debug logging
-    if is_moving {
-        println!("🎵 Movement detected - Running: {}, Moving: {}", is_running, is_moving);
-    }
+
 
     // Handle state changes - prioritize input over velocity for immediate response
     let _should_play_sound = if is_movement_pressed && is_moving {
@@ -119,12 +116,10 @@ fn handle_movement_sfx(
                 // For now, we'll just change the sound immediately
                 movement_state.current_sound = Some(sound_to_play);
                 sfx_events.write(PlaySfxEvent { sfx_type: sound_to_play });
-                println!("🎵 Playing {} sound", if is_running { "running" } else { "walking" });
             } else {
                 // First time playing a sound
                 movement_state.current_sound = Some(sound_to_play);
                 sfx_events.write(PlaySfxEvent { sfx_type: sound_to_play });
-                println!("🎵 Playing {} sound", if is_running { "running" } else { "walking" });
             }
         }
         
@@ -134,7 +129,6 @@ fn handle_movement_sfx(
         if movement_state.current_sound.is_some() {
             movement_state.current_sound = None;
             stop_events.write(StopMovementAudioEvent);
-            println!("🎵 Stopped movement sound");
         }
         false
     };
