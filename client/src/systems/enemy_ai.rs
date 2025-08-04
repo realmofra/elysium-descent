@@ -12,9 +12,7 @@ pub struct Enemy;
 pub struct EnemyAI {
     pub attack_range: f32,
     pub move_speed: f32,
-    pub last_position: Option<Vec3>,
     pub is_moving: bool,
-    pub animation_switch_timer: f32,
 }
 
 impl Default for EnemyAI {
@@ -22,9 +20,7 @@ impl Default for EnemyAI {
         Self {
             attack_range: 3.5,
             move_speed: 3.0,
-            last_position: None,
             is_moving: false,
-            animation_switch_timer: 0.0,
         }
     }
 }
@@ -48,7 +44,7 @@ impl Default for EnemyBundle {
             ai: EnemyAI::default(),
             animation_state: AnimationState {
                 forward_hold_time: 0.0,
-                current_animation: 1, // Start with walking animation
+                current_animation: 0, // Start uninitialized to prevent twitching
                 fight_move_1: false,
                 fight_move_2: false,
             },
@@ -99,25 +95,14 @@ fn enemy_ai_movement(
         let enemy_pos = enemy_transform.translation;
         let distance_to_player = enemy_pos.distance(player_pos);
 
-        // Track actual movement by comparing positions
-        let moved = if let Some(last_pos) = enemy_ai.last_position {
-            enemy_pos.distance(last_pos) > 0.1 // Increased threshold to reduce twitching
-        } else {
-            // On first frame, assume moving if not in attack range
-            distance_to_player > enemy_ai.attack_range
-        };
-        
-        // Only update is_moving if we're not in attack range to prevent twitching
+        // Track intent to move based on distance to player
+        // Enemy should be considered "moving" if it's trying to reach the player
         if distance_to_player > enemy_ai.attack_range {
-            enemy_ai.is_moving = moved;
+            enemy_ai.is_moving = true; // Intent to move towards player
         } else {
             // Force idle when in attack range
             enemy_ai.is_moving = false;
         }
-        enemy_ai.last_position = Some(enemy_pos);
-
-
-        
 
 
         // Check if we're close enough to the player
@@ -160,32 +145,24 @@ fn enemy_ai_movement(
 
 /// System that handles enemy animations
 fn enemy_ai_animations(
-    time: Res<Time>,
-    mut enemy_query: Query<(&mut GltfAnimations, &mut AnimationState, &mut EnemyAI), (With<Enemy>, Without<crate::systems::character_controller::CharacterController>)>,
+    mut enemy_query: Query<(&mut GltfAnimations, &mut AnimationState, &EnemyAI), (With<Enemy>, Without<crate::systems::character_controller::CharacterController>)>,
     mut animation_players: Query<&mut AnimationPlayer>,
 ) {
-    let delta_time = time.delta_secs();
-    
-    for (mut animations, mut animation_state, mut enemy_ai) in &mut enemy_query {
-        // Update animation switch timer
-        enemy_ai.animation_switch_timer += delta_time;
-        
-        // Determine target animation based on state
+    for (mut animations, mut animation_state, enemy_ai) in &mut enemy_query {
+        // Determine target animation based on state - match player logic exactly
         let target_animation = if !enemy_ai.is_moving {
             3 // Idle animation when not moving
         } else {
             1 // Walking animation when moving
         };
 
-        // Only change animation if we need to and enough time has passed
-        if target_animation != animation_state.current_animation && 
-           enemy_ai.animation_switch_timer > 0.2 {
+        // Only change animation if we need to - no timer, immediate switching like player
+        if target_animation != animation_state.current_animation {
             if let Some(animation) = animations.get_by_number(target_animation) {
                 if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
                     player.stop_all();
-                    player.play(animation).repeat(); // Repeat movement animations
+                    player.play(animation).repeat();
                     animation_state.current_animation = target_animation;
-                    enemy_ai.animation_switch_timer = 0.0; // Reset timer
                 }
             }
         }
