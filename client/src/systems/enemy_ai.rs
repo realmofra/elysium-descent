@@ -150,9 +150,9 @@ fn enemy_ai_animations(
         
         // Determine target animation based on state - match player logic exactly
         let target_animation = if !is_moving {
-            3 // Idle animation when not moving (same as player's gameplay idle)
+            1 // Idle animation when not moving (same as player's gameplay idle)
         } else {
-            1 // Walking animation when moving (try animation 1 for enemy)
+            3 // Walking animation when moving (try animation 1 for enemy)
         };
 
 
