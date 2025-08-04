@@ -266,7 +266,7 @@ pub struct AnimationState {
 
 /// Updates animations based on character movement
 fn update_animations(
-    mut query: Query<(&LinearVelocity, &mut GltfAnimations, &mut AnimationState)>,
+    mut query: Query<(&LinearVelocity, &mut GltfAnimations, &mut AnimationState), Without<crate::systems::enemy_ai::Enemy>>,
     mut animation_players: Query<&mut AnimationPlayer>,
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {

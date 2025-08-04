@@ -12,6 +12,7 @@ pub struct Enemy;
 pub struct EnemyAI {
     pub attack_range: f32,
     pub move_speed: f32,
+    pub is_moving: bool,
 }
 
 impl Default for EnemyAI {
@@ -19,6 +20,7 @@ impl Default for EnemyAI {
         Self {
             attack_range: 3.5,
             move_speed: 3.0,
+            is_moving: false,
         }
     }
 }
@@ -95,6 +97,9 @@ fn enemy_ai_movement(
 
         // Simple logic: move if player is out of range, stop if in range
         if distance_to_player > enemy_ai.attack_range {
+            // Set moving state
+            enemy_ai.is_moving = true;
+            
             // Move towards player
             let direction_to_player = (player_pos - enemy_pos).normalize();
             let target_velocity = direction_to_player * enemy_ai.move_speed;
@@ -120,9 +125,12 @@ fn enemy_ai_movement(
                 animation_state.forward_hold_time = 0.0;
             }
         } else {
-            // Stop moving when close to player
-            enemy_velocity.x *= 0.8;
-            enemy_velocity.z *= 0.8;
+            // Set idle state
+            enemy_ai.is_moving = false;
+            
+            // Stop moving when close to player - stop immediately
+            enemy_velocity.x = 0.0;
+            enemy_velocity.z = 0.0;
             enemy_velocity.y = 0.0;
             animation_state.forward_hold_time = 0.0;
         }
@@ -133,20 +141,21 @@ fn enemy_ai_movement(
 
 /// System that handles enemy animations
 fn enemy_ai_animations(
-    mut enemy_query: Query<(&mut GltfAnimations, &mut AnimationState, &LinearVelocity), (With<Enemy>, Without<crate::systems::character_controller::CharacterController>)>,
+    mut enemy_query: Query<(&mut GltfAnimations, &mut AnimationState, &EnemyAI), (With<Enemy>, Without<crate::systems::character_controller::CharacterController>)>,
     mut animation_players: Query<&mut AnimationPlayer>,
 ) {
-    for (mut animations, mut animation_state, velocity) in &mut enemy_query {
-        // Determine if enemy is moving based on velocity (same as player logic)
-        let horizontal_velocity = Vec2::new(velocity.x, velocity.z);
-        let is_moving = horizontal_velocity.length() > 0.1;
+    for (mut animations, mut animation_state, enemy_ai) in &mut enemy_query {
+        // Use AI state directly - much simpler and more reliable
+        let is_moving = enemy_ai.is_moving;
         
         // Determine target animation based on state - match player logic exactly
         let target_animation = if !is_moving {
-            3 // Idle animation when not moving
+            3 // Idle animation when not moving (same as player's gameplay idle)
         } else {
-            7 // Walking animation when moving (same as player)
+            1 // Walking animation when moving (try animation 1 for enemy)
         };
+
+
 
         // Only change animation if we need to - no timer, immediate switching like player
         if target_animation != animation_state.current_animation {
