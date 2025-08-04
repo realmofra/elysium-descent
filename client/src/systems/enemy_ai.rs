@@ -18,7 +18,7 @@ pub struct EnemyAI {
 impl Default for EnemyAI {
     fn default() -> Self {
         Self {
-            attack_range: 3.5,
+            attack_range: 3.0,
             move_speed: 3.0,
             is_moving: false,
         }
