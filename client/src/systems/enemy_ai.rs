@@ -12,7 +12,6 @@ pub struct Enemy;
 pub struct EnemyAI {
     pub attack_range: f32,
     pub move_speed: f32,
-    pub is_moving: bool,
 }
 
 impl Default for EnemyAI {
@@ -20,7 +19,6 @@ impl Default for EnemyAI {
         Self {
             attack_range: 3.5,
             move_speed: 3.0,
-            is_moving: false,
         }
     }
 }
@@ -95,48 +93,38 @@ fn enemy_ai_movement(
         let enemy_pos = enemy_transform.translation;
         let distance_to_player = enemy_pos.distance(player_pos);
 
-        // Track intent to move based on distance to player
-        // Enemy should be considered "moving" if it's trying to reach the player
+        // Simple logic: move if player is out of range, stop if in range
         if distance_to_player > enemy_ai.attack_range {
-            enemy_ai.is_moving = true; // Intent to move towards player
-        } else {
-            // Force idle when in attack range
-            enemy_ai.is_moving = false;
-        }
-
-
-        // Check if we're close enough to the player
-        if distance_to_player <= enemy_ai.attack_range {
-            // Stop moving when close to player
-            enemy_velocity.x *= 0.8;
-            enemy_velocity.z *= 0.8;
-            enemy_velocity.y = 0.0;
-            animation_state.forward_hold_time = 0.0;
-        } else {
             // Move towards player
             let direction_to_player = (player_pos - enemy_pos).normalize();
             let target_velocity = direction_to_player * enemy_ai.move_speed;
             
-            // Keep Y velocity at 0 for kinematic movement
+            // Apply movement
             enemy_velocity.x = enemy_velocity.x.lerp(target_velocity.x, 5.0 * delta_time);
             enemy_velocity.z = enemy_velocity.z.lerp(target_velocity.z, 5.0 * delta_time);
-            enemy_velocity.y = 0.0; // Keep enemy on ground
+            enemy_velocity.y = 0.0;
             
-            // Rotate enemy to face the player (only Y rotation)
+            // Rotate to face player
             let direction_2d = Vec2::new(direction_to_player.x, direction_to_player.z).normalize();
             let target_rotation = Quat::from_rotation_arc(Vec3::Z, Vec3::new(direction_2d.x, 0.0, direction_2d.y));
             enemy_transform.rotation = enemy_transform.rotation.slerp(target_rotation, 3.0 * delta_time);
             
-            // Keep enemy on ground level
-            enemy_transform.translation.y = -1.65; // Match the original enemy Y position
+            // Keep on ground
+            enemy_transform.translation.y = -1.65;
             
-            // Update animation state for walking
+            // Update animation state
             let horizontal_speed = Vec2::new(enemy_velocity.x, enemy_velocity.z).length();
             if horizontal_speed > 0.1 {
                 animation_state.forward_hold_time += delta_time;
             } else {
                 animation_state.forward_hold_time = 0.0;
             }
+        } else {
+            // Stop moving when close to player
+            enemy_velocity.x *= 0.8;
+            enemy_velocity.z *= 0.8;
+            enemy_velocity.y = 0.0;
+            animation_state.forward_hold_time = 0.0;
         }
     }
 }
@@ -145,15 +133,19 @@ fn enemy_ai_movement(
 
 /// System that handles enemy animations
 fn enemy_ai_animations(
-    mut enemy_query: Query<(&mut GltfAnimations, &mut AnimationState, &EnemyAI), (With<Enemy>, Without<crate::systems::character_controller::CharacterController>)>,
+    mut enemy_query: Query<(&mut GltfAnimations, &mut AnimationState, &LinearVelocity), (With<Enemy>, Without<crate::systems::character_controller::CharacterController>)>,
     mut animation_players: Query<&mut AnimationPlayer>,
 ) {
-    for (mut animations, mut animation_state, enemy_ai) in &mut enemy_query {
+    for (mut animations, mut animation_state, velocity) in &mut enemy_query {
+        // Determine if enemy is moving based on velocity (same as player logic)
+        let horizontal_velocity = Vec2::new(velocity.x, velocity.z);
+        let is_moving = horizontal_velocity.length() > 0.1;
+        
         // Determine target animation based on state - match player logic exactly
-        let target_animation = if !enemy_ai.is_moving {
+        let target_animation = if !is_moving {
             3 // Idle animation when not moving
         } else {
-            1 // Walking animation when moving
+            7 // Walking animation when moving (same as player)
         };
 
         // Only change animation if we need to - no timer, immediate switching like player
