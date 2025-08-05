@@ -20,39 +20,39 @@ pub struct Game {
 
 #[derive(Copy, Drop, Serde)]
 #[dojo::model]
-struct LootBox {
+pub struct LootBox {
     #[key]
-    game_id: u128,
+    pub game_id: u128,
     #[key]
-    level: u32,
+    pub level: u32,
     #[key]
-    box_id: u32,
-    loot_type: u8,
-    amount: u32,
-    is_collected: bool,
-    spawn_time: u64,
-    expires_at: u64,
+    pub box_id: u32,
+    pub loot_type: u8,
+    pub amount: u32,
+    pub is_collected: bool,
+    pub spawn_time: u64,
+    pub expires_at: u64,
 }
 
 #[derive(Copy, Drop, Serde)]
 #[dojo::model]
-struct LootTable {
+pub struct LootTable {
     #[key]
-    level: u32,
+    pub level: u32,
     #[key]
-    loot_type: u8,
-    probability: u32,
-    min_amount: u32,
-    max_amount: u32,
+    pub loot_type: u8,
+    pub probability: u32,
+    pub min_amount: u32,
+    pub max_amount: u32,
 }
 
 #[derive(Copy, Drop, Serde)]
 #[dojo::model]
-struct LevelConfig {
+pub struct LevelConfig {
     #[key]
-    level: u32,
-    max_loot_boxes: u32,
-    spawn_interval: u64,
-    box_lifetime: u64,
-    gold_multiplier: u32,
+    pub level: u32,
+    pub max_loot_boxes: u32,
+    pub spawn_interval: u64,
+    pub box_lifetime: u64,
+    pub gold_multiplier: u32,
 }

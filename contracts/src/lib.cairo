@@ -4,10 +4,16 @@ pub mod systems {
     }
 }
 
+pub mod types {
+    pub mod loot;
+}
+
 pub mod models {
     pub mod index;
     pub mod game;
     pub mod game_counter;
+    pub mod loot_box;
+    pub mod config;
 }
 
 pub mod components {
