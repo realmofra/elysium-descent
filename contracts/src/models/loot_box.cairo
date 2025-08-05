@@ -1,4 +1,4 @@
-pub use elysium_descent::models::index::{LootBox, LootTable, LevelConfig};
+pub use elysium_descent::models::index::{LootBox, LootTable};
 use elysium_descent::types::loot::Loot;
 use starknet::get_block_timestamp;
 
