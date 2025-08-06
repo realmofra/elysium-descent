@@ -1,3 +1,21 @@
+#[starknet::component]
+pub mod LootableComponent {
+    // Dojo imports
+    use dojo::world::WorldStorage;
+
+    // Internal imports
+    use elysium_descent::utils::store::{Store, StoreTrait};
+    #[storage]
+    pub struct Storage {}
+
+    // Events
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    pub enum Event {}
+
+    #[generate_trait]
+    pub impl InternalImpl<TState, +HasComponent<TState>> of InternalTrait<TState> {}
+}
 //fn try_spawn_loot_box(
 //    game_id: u128,
 //    level: u32,
@@ -47,3 +65,4 @@
 //        expires_at: current_time + level_config.box_lifetime
 //    })
 //}
+
