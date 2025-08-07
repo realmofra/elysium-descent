@@ -1,4 +1,4 @@
-mod fight;
+pub mod fight;
 pub mod gameplay;
 mod loading;
 mod main_menu;

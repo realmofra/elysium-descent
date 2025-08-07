@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_gltf_animation::prelude::*;
 use avian3d::{math::*, prelude::*};
 use crate::systems::character_controller::AnimationState;
 
@@ -69,10 +68,7 @@ impl Plugin for EnemyAIPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (
-                enemy_ai_movement,
-                enemy_ai_animations,
-            ).chain(),
+            enemy_ai_movement,
         );
     }
 }
@@ -82,6 +78,7 @@ fn enemy_ai_movement(
     time: Res<Time>,
     mut enemy_query: Query<(&mut Transform, &mut LinearVelocity, &mut EnemyAI, &mut AnimationState), (With<Enemy>, Without<crate::systems::character_controller::CharacterController>)>,
     player_query: Query<&Transform, (With<crate::systems::character_controller::CharacterController>, Without<Enemy>)>,
+    combat_state: Option<Res<crate::screens::fight::CombatState>>,
 ) {
     let delta_time = time.delta_secs();
     
@@ -95,77 +92,75 @@ fn enemy_ai_movement(
         let enemy_pos = enemy_transform.translation;
         let distance_to_player = enemy_pos.distance(player_pos);
 
-        // Simple logic: move if player is out of range, stop if in range
-        if distance_to_player > enemy_ai.attack_range {
-            // Set moving state
-            enemy_ai.is_moving = true;
-            
-            // Move towards player
-            let direction_to_player = (player_pos - enemy_pos).normalize();
-            let target_velocity = direction_to_player * enemy_ai.move_speed;
-            
-            // Apply movement
-            enemy_velocity.x = enemy_velocity.x.lerp(target_velocity.x, 5.0 * delta_time);
-            enemy_velocity.z = enemy_velocity.z.lerp(target_velocity.z, 5.0 * delta_time);
+        // Check if we're in a turn-based combat scenario
+        let in_turn_based_combat = if let Some(combat_state) = &combat_state {
+            combat_state.in_range && (combat_state.current_turn == crate::screens::fight::CombatTurn::Enemy || 
+                                     combat_state.current_turn == crate::screens::fight::CombatTurn::Player)
+        } else {
+            false
+        };
+
+        if in_turn_based_combat {
+            // In turn-based combat, movement is controlled by the fight scene
+            // The handle_enemy_turn system will set is_moving appropriately
+            // Stop any movement and let the turn system handle behavior
+            enemy_velocity.x = 0.0;
+            enemy_velocity.z = 0.0;
             enemy_velocity.y = 0.0;
+            animation_state.forward_hold_time = 0.0;
             
-            // Rotate to face player
+            // Face the player
+            let direction_to_player = (player_pos - enemy_pos).normalize();
             let direction_2d = Vec2::new(direction_to_player.x, direction_to_player.z).normalize();
             let target_rotation = Quat::from_rotation_arc(Vec3::Z, Vec3::new(direction_2d.x, 0.0, direction_2d.y));
             enemy_transform.rotation = enemy_transform.rotation.slerp(target_rotation, 3.0 * delta_time);
             
             // Keep on ground
             enemy_transform.translation.y = -1.65;
-            
-            // Update animation state
-            let horizontal_speed = Vec2::new(enemy_velocity.x, enemy_velocity.z).length();
-            if horizontal_speed > 0.1 {
-                animation_state.forward_hold_time += delta_time;
+        } else {
+            // Normal AI behavior when not in turn-based combat or out of range
+            if distance_to_player > enemy_ai.attack_range {
+                // Set moving state
+                enemy_ai.is_moving = true;
+                
+                // Move towards player
+                let direction_to_player = (player_pos - enemy_pos).normalize();
+                let target_velocity = direction_to_player * enemy_ai.move_speed;
+                
+                // Apply movement
+                enemy_velocity.x = enemy_velocity.x.lerp(target_velocity.x, 5.0 * delta_time);
+                enemy_velocity.z = enemy_velocity.z.lerp(target_velocity.z, 5.0 * delta_time);
+                enemy_velocity.y = 0.0;
+                
+                // Rotate to face player
+                let direction_2d = Vec2::new(direction_to_player.x, direction_to_player.z).normalize();
+                let target_rotation = Quat::from_rotation_arc(Vec3::Z, Vec3::new(direction_2d.x, 0.0, direction_2d.y));
+                enemy_transform.rotation = enemy_transform.rotation.slerp(target_rotation, 3.0 * delta_time);
+                
+                // Keep on ground
+                enemy_transform.translation.y = -1.65;
+                
+                // Update animation state
+                let horizontal_speed = Vec2::new(enemy_velocity.x, enemy_velocity.z).length();
+                if horizontal_speed > 0.1 {
+                    animation_state.forward_hold_time += delta_time;
+                } else {
+                    animation_state.forward_hold_time = 0.0;
+                }
             } else {
+                // Set idle state
+                enemy_ai.is_moving = false;
+                
+                // Stop moving when close to player - stop immediately
+                enemy_velocity.x = 0.0;
+                enemy_velocity.z = 0.0;
+                enemy_velocity.y = 0.0;
                 animation_state.forward_hold_time = 0.0;
             }
-        } else {
-            // Set idle state
-            enemy_ai.is_moving = false;
-            
-            // Stop moving when close to player - stop immediately
-            enemy_velocity.x = 0.0;
-            enemy_velocity.z = 0.0;
-            enemy_velocity.y = 0.0;
-            animation_state.forward_hold_time = 0.0;
         }
     }
 }
 
 
 
-/// System that handles enemy animations
-fn enemy_ai_animations(
-    mut enemy_query: Query<(&mut GltfAnimations, &mut AnimationState, &EnemyAI), (With<Enemy>, Without<crate::systems::character_controller::CharacterController>)>,
-    mut animation_players: Query<&mut AnimationPlayer>,
-) {
-    for (mut animations, mut animation_state, enemy_ai) in &mut enemy_query {
-        // Use AI state directly - much simpler and more reliable
-        let is_moving = enemy_ai.is_moving;
-        
-        // Determine target animation based on state - match player logic exactly
-        let target_animation = if !is_moving {
-            1 // Idle animation when not moving (same as player's gameplay idle)
-        } else {
-            4 // Walking animation when moving (try animation 1 for enemy)
-        };
-
-
-
-        // Only change animation if we need to - no timer, immediate switching like player
-        if target_animation != animation_state.current_animation {
-            if let Some(animation) = animations.get_by_number(target_animation) {
-                if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
-                    player.stop_all();
-                    player.play(animation).repeat();
-                    animation_state.current_animation = target_animation;
-                }
-            }
-        }
-    }
-} 
+ 

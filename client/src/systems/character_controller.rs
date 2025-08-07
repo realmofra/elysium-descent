@@ -106,6 +106,7 @@ fn movement(
     )>,
     mut jump_cooldown: ResMut<JumpCooldown>,
     keyboard: Res<ButtonInput<KeyCode>>,
+    combat_state: Option<Res<crate::screens::fight::CombatState>>,
 ) {
     let delta_time = time.delta_secs();
     jump_cooldown.last_jump_time += delta_time;
@@ -116,12 +117,24 @@ fn movement(
         KeyCode::ArrowUp, KeyCode::ArrowDown, KeyCode::ArrowLeft, KeyCode::ArrowRight,
     ]);
 
+    // Check if player movement should be disabled in turn-based combat
+    let disable_movement = if let Some(combat_state) = &combat_state {
+        combat_state.in_range && combat_state.current_turn == crate::screens::fight::CombatTurn::Enemy
+    } else {
+        false
+    };
+
     for event in movement_event_reader.read() {
         for (jump_impulse, mut linear_velocity, mut transform, mut animation_state) in
             &mut controllers
         {
             match event {
                 MovementAction::Move(direction) => {
+                    // Skip movement if disabled in turn-based combat
+                    if disable_movement {
+                        continue;
+                    }
+                    
                     // Smooth rotation
                     if direction.x != 0.0 {
                         let target_rotation =
@@ -170,6 +183,11 @@ fn movement(
                         .lerp(target_velocity.z, interpolation_factor);
                 }
                 MovementAction::Jump => {
+                    // Skip jump if disabled in turn-based combat
+                    if disable_movement {
+                        continue;
+                    }
+                    
                     if jump_cooldown.last_jump_time >= jump_cooldown.cooldown_duration {
                         linear_velocity.y = jump_impulse.0;
                         jump_cooldown.last_jump_time = 0.0;
@@ -178,17 +196,31 @@ fn movement(
                 MovementAction::FightMove1 => {
                     // Trigger fight move 1 animation
                     animation_state.fight_move_1 = true;
+                    
+                    // In fight scene, mark that player is no longer waiting for input
+                    if let Some(combat_state) = &combat_state {
+                        if combat_state.in_range && combat_state.current_turn == crate::screens::fight::CombatTurn::Player {
+                            // This will be handled by the fight scene system
+                        }
+                    }
                 }
                 MovementAction::FightMove2 => {
                     // Trigger fight move 2 animation
                     animation_state.fight_move_2 = true;
+                    
+                    // In fight scene, mark that player is no longer waiting for input
+                    if let Some(combat_state) = &combat_state {
+                        if combat_state.in_range && combat_state.current_turn == crate::screens::fight::CombatTurn::Player {
+                            // This will be handled by the fight scene system
+                        }
+                    }
                 }
             }
         }
     }
 
-    // If no movement keys are pressed, immediately stop movement
-    if !is_movement_pressed {
+    // If no movement keys are pressed or movement is disabled, immediately stop movement
+    if !is_movement_pressed || disable_movement {
         for (_, mut linear_velocity, _, mut animation_state) in &mut controllers {
             // Immediately stop horizontal movement
             linear_velocity.x = 0.0;
@@ -204,16 +236,24 @@ fn movement(
 fn apply_movement_damping(
     mut query: Query<(&mut LinearVelocity, &AnimationState, &Transform), With<CharacterController>>,
     keyboard: Res<ButtonInput<KeyCode>>,
+    combat_state: Option<Res<crate::screens::fight::CombatState>>,
 ) {
     // Check if any movement keys are pressed
     let is_movement_pressed = keyboard.any_pressed([
         KeyCode::KeyW, KeyCode::KeyA, KeyCode::KeyS, KeyCode::KeyD,
         KeyCode::ArrowUp, KeyCode::ArrowDown, KeyCode::ArrowLeft, KeyCode::ArrowRight,
     ]);
+    
+    // Check if player movement should be disabled in turn-based combat
+    let disable_movement = if let Some(combat_state) = &combat_state {
+        combat_state.in_range && combat_state.current_turn == crate::screens::fight::CombatTurn::Enemy
+    } else {
+        false
+    };
 
     for (mut linear_velocity, animation_state, _transform) in &mut query {
-        // If no movement keys are pressed, immediately stop horizontal movement
-        if !is_movement_pressed {
+        // If no movement keys are pressed or movement is disabled, immediately stop horizontal movement
+        if !is_movement_pressed || disable_movement {
             linear_velocity.x = 0.0;
             linear_velocity.z = 0.0;
             continue;
@@ -266,9 +306,10 @@ pub struct AnimationState {
 
 /// Updates animations based on character movement
 fn update_animations(
-    mut query: Query<(&LinearVelocity, &mut GltfAnimations, &mut AnimationState), Without<crate::systems::enemy_ai::Enemy>>,
+    mut query: Query<(&LinearVelocity, &mut GltfAnimations, &mut AnimationState)>,
     mut animation_players: Query<&mut AnimationPlayer>,
     keyboard: Res<ButtonInput<KeyCode>>,
+    combat_state: Option<Res<crate::screens::fight::CombatState>>,
 ) {
     // Check if any movement keys are pressed
     let is_movement_pressed = keyboard.any_pressed([
@@ -280,12 +321,21 @@ fn update_animations(
         let horizontal_velocity = Vec2::new(velocity.x, velocity.z);
         let is_moving = horizontal_velocity.length() > 0.1;
 
-        // Check if fight moves are active
+        // Check if we're in turn-based combat
+        let in_turn_based_combat = if let Some(combat_state) = &combat_state {
+            combat_state.in_range && (combat_state.current_turn == crate::screens::fight::CombatTurn::Enemy || 
+                                     combat_state.current_turn == crate::screens::fight::CombatTurn::Player)
+        } else {
+            false
+        };
+
+        // Check if fight moves are active - highest priority
         if animation_state.fight_move_1 {
             // Play fight move 1 animation (index 5)
             if animation_state.current_animation != 5 {
                 if let Some(animation) = animations.get_by_number(5) {
                     if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
+
                         player.stop_all();
                         player.play(animation);
                         animation_state.current_animation = 5;
@@ -295,6 +345,7 @@ fn update_animations(
             // Check if animation has finished
             if let Ok(player) = animation_players.get(animations.animation_player) {
                 if player.all_finished() {
+
                     animation_state.fight_move_1 = false;
                 }
             }
@@ -313,6 +364,18 @@ fn update_animations(
             if let Ok(player) = animation_players.get(animations.animation_player) {
                 if player.all_finished() {
                     animation_state.fight_move_2 = false;
+                }
+            }
+        } else if in_turn_based_combat {
+            // In turn-based combat, force idle animation when no fight moves are active
+            let target_animation = 3; // Idle animation
+            if target_animation != animation_state.current_animation {
+                if let Some(animation) = animations.get_by_number(target_animation) {
+                    if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
+                        player.stop_all();
+                        player.play(animation).repeat();
+                        animation_state.current_animation = target_animation;
+                    }
                 }
             }
         } else {
