@@ -316,10 +316,7 @@ fn manage_turn_based_combat(
         let was_in_range = combat_state.in_range;
         combat_state.in_range = players_in_range;
         
-        // Only log when turn changes or when entering range
-        if was_in_range != players_in_range || (players_in_range && !was_in_range) {
-            println!("DEBUG: Distance: {:.2}, In Range: {}, Current Turn: {:?}", distance, players_in_range, combat_state.current_turn);
-        }
+
         
         if !players_in_range {
             // When out of range, switch to OutOfRange mode (existing behavior)
@@ -335,7 +332,6 @@ fn manage_turn_based_combat(
         
         // Just entered range - start with enemy turn
         if !was_in_range && players_in_range {
-            println!("DEBUG: ENTERING RANGE - Starting enemy turn");
             combat_state.current_turn = CombatTurn::Enemy;
             combat_state.enemy_attack_done = false;
             combat_state.player_waiting_for_input = false;
@@ -351,13 +347,9 @@ fn manage_turn_based_combat(
                 // Simple timer-based switching - much more reliable
                 turn_timer.timer.tick(time.delta());
                 
-                // Only log every 0.5 seconds to reduce spam
-                if (turn_timer.timer.elapsed().as_secs_f32() * 2.0) as i32 % 1 == 0 {
-                    println!("DEBUG: Enemy turn - Timer: {:.1}s / 2.0s", turn_timer.timer.elapsed().as_secs_f32());
-                }
+
                 
                 if turn_timer.timer.finished() {
-                    println!("DEBUG: SWITCHING TO PLAYER TURN");
                     combat_state.current_turn = CombatTurn::Player;
                     combat_state.enemy_attack_done = true;
                     combat_state.player_waiting_for_input = true;
@@ -424,7 +416,6 @@ fn handle_player_turn(
                     // Once animation finishes, the animation flags will be cleared by the animation system
                 } else if !combat_state.player_waiting_for_input {
                     // Player has finished attacking, switch back to enemy turn
-                    println!("DEBUG: SWITCHING TO ENEMY TURN");
                     combat_state.current_turn = CombatTurn::Enemy;
                     combat_state.enemy_attack_done = false;
                     combat_state.enemy_attack_triggered = false; // Reset for new enemy turn

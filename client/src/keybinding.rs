@@ -271,18 +271,13 @@ fn handle_fight_move(
     current_screen: Res<State<Screen>>,
 ) {
     if trigger.value {
-        println!("DEBUG: Fight move button pressed!");
-        
         // In fight scene, only allow attacks during player's turn
         if current_screen.get() == &Screen::FightScene {
             if let Some(combat_state) = combat_state {
-                println!("DEBUG: Current turn: {:?}, In range: {}", combat_state.current_turn, combat_state.in_range);
                 // Only allow fight moves during player turn and when in range
                 if combat_state.current_turn != crate::screens::fight::CombatTurn::Player || !combat_state.in_range {
-                    println!("DEBUG: Attack blocked - not player's turn or not in range");
                     return; // Block the attack if it's not player's turn
                 }
-                println!("DEBUG: Attack allowed - sending movement event");
             }
         }
         
