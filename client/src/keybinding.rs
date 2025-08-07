@@ -55,8 +55,14 @@ fn player_binding(trigger: Trigger<Binding<Player>>, mut players: Query<&mut Act
         // Interact (E key)
         actions.bind::<Interact>().to(KeyCode::KeyE);
 
-        // Fight Move (X key, with or without shift)
-        actions.bind::<FightMove>().to(KeyCode::KeyX);
+        // Fight Move: allow X or Shift+X (either left or right shift)
+        actions
+            .bind::<FightMove>()
+            .to((
+                KeyCode::KeyX,
+                (KeyCode::ShiftLeft, KeyCode::KeyX),
+                (KeyCode::ShiftRight, KeyCode::KeyX),
+            ));
 
         // Go to Fight Scene (Comma key)
         actions.bind::<GoToFightScene>().to(KeyCode::Comma);
