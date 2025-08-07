@@ -2,6 +2,7 @@ use crate::systems::character_controller::AnimationState;
 use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
+use crate::constants::animations;
 
 /// Marker component for enemy entities
 #[derive(Component)]
@@ -210,13 +211,13 @@ fn enemy_ai_animations(
                     crate::screens::fight::CombatTurn::Enemy => {
                         // If this turn's attack already finished, keep enemy idle until turn switches
                         if combat_state.enemy_attack_finished {
-                            if let Some(animation) = animations.get_by_number(2) {
+                            if let Some(animation) = animations.get_by_number(animations::enemy::IDLE) {
                                 if let Ok(mut player) =
                                     animation_players.get_mut(animations.animation_player)
                                 {
                                     player.stop_all();
                                     player.play(animation).repeat();
-                                    animation_state.current_animation = 2;
+                                    animation_state.current_animation = animations::enemy::IDLE;
                                 }
                             }
                             if prev != animation_state.current_animation {
@@ -231,14 +232,14 @@ fn enemy_ai_animations(
                         }
 
                         // ENEMY TURN and not finished: ensure attack (index 4) is playing
-                        if animation_state.current_animation != 4 {
-                            if let Some(animation) = animations.get_by_number(4) {
+                        if animation_state.current_animation != animations::enemy::ATTACK {
+                            if let Some(animation) = animations.get_by_number(animations::enemy::ATTACK) {
                                 if let Ok(mut player) =
                                     animation_players.get_mut(animations.animation_player)
                                 {
                                     player.stop_all();
                                     player.play(animation);
-                                    animation_state.current_animation = 4;
+                                    animation_state.current_animation = animations::enemy::ATTACK;
                                     animation_state.fight_move_1 = true; // Mark as attacking
                                 }
                             }
@@ -253,9 +254,9 @@ fn enemy_ai_animations(
                     }
                     crate::screens::fight::CombatTurn::Player => {
                         // PLAYER TURN: Enemy must be IDLE (index 2) indefinitely until player attacks
-                        let target_animation = 2; // Idle animation
+                        let target_animation = animations::enemy::IDLE; // Idle animation
                         // If somehow still on attack, log and correct
-                        if animation_state.current_animation == 4 {
+                        if animation_state.current_animation == animations::enemy::ATTACK {
                             println!(
                                 "🧯 FIX: Enemy was attacking during Player turn → forcing idle"
                             );
@@ -304,18 +305,18 @@ fn enemy_ai_animations(
         } else {
             // Normal movement animations - enemy follows player
             let target_animation = if animation_state.forward_hold_time >= 3.0 {
-                4 // Running animation
+                animations::enemy::RUN // Running animation
             } else if animation_state.forward_hold_time > 0.0 {
-                7 // Walking animation
+                animations::enemy::WALK // Walking animation
             } else {
-                2 // Idle animation
+                animations::enemy::IDLE // Idle animation
             };
 
             if target_animation != animation_state.current_animation {
                 if let Some(animation) = animations.get_by_number(target_animation) {
                     if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
                         player.stop_all();
-                        if target_animation == 2 {
+                        if target_animation == animations::enemy::IDLE {
                             player.play(animation).repeat();
                         } else {
                             player.play(animation);

@@ -9,6 +9,7 @@ use avian3d::prelude::{
 use bevy::prelude::*;
 use bevy_enhanced_input::prelude::Actions;
 use bevy_gltf_animation::prelude::{GltfAnimations, GltfSceneRoot};
+use crate::constants::animations;
 
 // ===== PLUGIN SETUP =====
 
@@ -317,7 +318,7 @@ fn manage_turn_based_combat(
     mut turn_timer: ResMut<TurnTimer>,
     player_query: Query<&Transform, (With<FightPlayer>, Without<FightEnemy>)>,
     enemy_query: Query<&Transform, (With<FightEnemy>, Without<FightPlayer>)>,
-    mut enemy_animation_query: Query<
+    _enemy_animation_query: Query<
         &mut crate::systems::character_controller::AnimationState,
         (With<FightEnemy>, Without<FightPlayer>),
     >,
@@ -473,8 +474,8 @@ fn detect_enemy_attack_finished(
     animation_players: Query<&AnimationPlayer>,
 ) {
     for (animation_state, animations) in &enemy_query {
-        // Check if enemy attack animation (index 4) has finished
-        if animation_state.current_animation == 4 {
+        // Check if enemy attack animation has finished
+        if animation_state.current_animation == animations::enemy::ATTACK {
             if let Ok(player) = animation_players.get(animations.animation_player) {
                 if player.all_finished() {
                     combat_state.enemy_attack_finished = true;

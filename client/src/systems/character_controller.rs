@@ -2,6 +2,7 @@ use crate::constants::movement::CharacterMovementConfig;
 use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
+use crate::constants::animations;
 
 pub struct CharacterControllerPlugin;
 
@@ -375,40 +376,40 @@ fn update_animations(
                 "🎬 PLAYER ANIMATION: FightMove1=true, CurrentAnim={}",
                 animation_state.current_animation
             );
-            // Play fight move 1 animation (index 5)
-            if animation_state.current_animation != 5 {
-                if let Some(animation) = animations.get_by_number(5) {
+            // Play fight move 1 animation
+            if animation_state.current_animation != animations::player::ATTACK_1 {
+                if let Some(animation) = animations.get_by_number(animations::player::ATTACK_1) {
                     if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
                         player.stop_all();
                         player.play(animation);
-                        animation_state.current_animation = 5;
-                        println!("🎬 PLAYER ANIMATION: Started animation 5");
+                        animation_state.current_animation = animations::player::ATTACK_1;
+                        println!("🎬 PLAYER ANIMATION: Started ATTACK_1");
                     } else {
                         println!("🎬 PLAYER ANIMATION: Failed to get animation player");
                     }
                 } else {
-                    println!("🎬 PLAYER ANIMATION: Animation 5 not found!");
+                    println!("🎬 PLAYER ANIMATION: ATTACK_1 not found!");
                 }
             } else {
-                println!("🎬 PLAYER ANIMATION: Already playing animation 5");
+                println!("🎬 PLAYER ANIMATION: Already playing ATTACK_1");
             }
             // Check if animation has finished
             if let Ok(player) = animation_players.get(animations.animation_player) {
                 if player.all_finished() {
                     animation_state.fight_move_1 = false;
-                    println!("🎬 PLAYER ANIMATION: Animation 5 finished");
+                    println!("🎬 PLAYER ANIMATION: ATTACK_1 finished");
                 } else {
-                    println!("🎬 PLAYER ANIMATION: Animation 5 still playing");
+                    println!("🎬 PLAYER ANIMATION: ATTACK_1 still playing");
                 }
             }
         } else if animation_state.fight_move_2 {
-            // Play fight move 2 animation (index 6)
-            if animation_state.current_animation != 6 {
-                if let Some(animation) = animations.get_by_number(6) {
+            // Play fight move 2 animation
+            if animation_state.current_animation != animations::player::ATTACK_2 {
+                if let Some(animation) = animations.get_by_number(animations::player::ATTACK_2) {
                     if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
                         player.stop_all();
                         player.play(animation);
-                        animation_state.current_animation = 6;
+                        animation_state.current_animation = animations::player::ATTACK_2;
                     }
                 }
             }
@@ -420,7 +421,7 @@ fn update_animations(
             }
         } else if in_turn_based_combat {
             // In turn-based combat, force idle animation when no fight moves are active
-            let target_animation = 3; // Idle animation
+            let target_animation = animations::player::IDLE; // Idle animation
             if target_animation != animation_state.current_animation {
                 if let Some(animation) = animations.get_by_number(target_animation) {
                     if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
@@ -433,11 +434,11 @@ fn update_animations(
         } else {
             // Normal movement animations - prioritize input over velocity for immediate response
             let target_animation = if !is_movement_pressed || !is_moving {
-                3 // Idle - immediately when no input or no movement
+                animations::player::IDLE // Idle - immediately when no input or no movement
             } else if animation_state.forward_hold_time >= 3.0 {
-                4 // Running
+                animations::player::RUN // Running
             } else {
-                7 // Regular walking
+                animations::player::WALK // Regular walking
             };
 
             // Only change animation if we need to
@@ -467,7 +468,7 @@ pub fn setup_idle_animation(
     let mut player = animation_players
         .get_mut(gltf_animations.animation_player)
         .unwrap();
-    let animation = gltf_animations.get_by_number(2).unwrap();
+    let animation = gltf_animations.get_by_number(animations::common::INITIAL_IDLE).unwrap();
     player.stop_all();
     player.play(animation).repeat();
 }
@@ -499,7 +500,7 @@ impl CharacterControllerBundle {
             movement: MovementBundle::new(CharacterMovementConfig::MOVEMENT_ACCELERATION, 0.9, 7.0),
             animation_state: AnimationState {
                 forward_hold_time: 0.0,
-                current_animation: 2, // Start with idle animation
+                current_animation: animations::common::INITIAL_IDLE, // Start with idle animation
                 fight_move_1: false,
                 fight_move_2: false,
             },
@@ -523,9 +524,9 @@ fn detect_player_attack_finished(
     if let Some(mut combat_state) = combat_state {
         for (animation_state, animations) in &player_query {
             // Check if player was recently in a fight move and animation has finished
-            // We check if the animation player is playing animation 5 (attack) and it's finished
+            // We check if the animation player is playing ATTACK_1 and it's finished
             if let Ok(player) = animation_players.get(animations.animation_player) {
-                if animation_state.current_animation == 5 && player.all_finished() {
+                if animation_state.current_animation == animations::player::ATTACK_1 && player.all_finished() {
                     combat_state.player_attack_finished = true;
                     println!("✅ PLAYER: Attack animation finished");
                 }
