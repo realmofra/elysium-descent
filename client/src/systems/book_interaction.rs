@@ -1,7 +1,9 @@
-use bevy::prelude::*;
-use avian3d::prelude::*;
 use crate::assets::ModelAssets;
-use crate::ui::dialog::{spawn_dialog_with_proximity, DialogConfig, DialogPosition, DialogProximity};
+use crate::ui::dialog::{
+    DialogConfig, DialogPosition, DialogProximity, spawn_dialog_with_proximity,
+};
+use avian3d::prelude::*;
+use bevy::prelude::*;
 
 // ===== COMPONENTS =====
 
@@ -10,10 +12,7 @@ pub struct Book;
 
 // ===== SYSTEMS =====
 
-pub fn spawn_book(
-    mut commands: Commands,
-    assets: Res<ModelAssets>,
-) {
+pub fn spawn_book(mut commands: Commands, assets: Res<ModelAssets>) {
     commands.spawn((
         Name::new("Book"),
         SceneRoot(assets.book.clone()),
@@ -23,7 +22,7 @@ pub fn spawn_book(
             ..default()
         },
         Collider::cuboid(1.0, 1.0, 1.0), // Add collision box
-        RigidBody::Static, // Make it static so it doesn't move
+        RigidBody::Static,               // Make it static so it doesn't move
         Book,
     ));
 }
@@ -59,4 +58,4 @@ impl Plugin for BookInteractionPlugin {
         app.add_systems(OnEnter(crate::screens::Screen::GamePlay), spawn_book)
             .add_systems(OnEnter(crate::screens::Screen::GamePlay), spawn_book_modal);
     }
-} 
+}

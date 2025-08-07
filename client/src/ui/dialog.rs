@@ -16,7 +16,7 @@ pub struct DialogProximity {
 #[derive(Resource, Clone)]
 pub struct DialogConfig {
     pub text: String,
-    pub width: f32,  // Percentage of screen width
+    pub width: f32, // Percentage of screen width
     #[allow(dead_code)]
     pub height: f32, // Percentage of screen height
     pub position: DialogPosition,
@@ -78,31 +78,31 @@ pub fn spawn_dialog_with_proximity(
     // Use screen height as the base for font size calculation
     let base_font_size = window_height * 0.03; // 3% of screen height
     let responsive_font_size = base_font_size.max(20.0).min(60.0); // Min 20px, max 60px
-    
+
     // Calculate responsive font size based on screen size
-    
+
     // Use exact same width as inventory (833px)
     let dialog_width_px = 833.0;
-    
+
     // Calculate dynamic dialog size based on text content and font size
     // Estimate text width based on character count and font size
     let text_length = config.text.len() as f32;
     let estimated_text_width = text_length * responsive_font_size * 0.6; // Approximate character width
     let estimated_text_height = responsive_font_size * 1.5; // Approximate line height
-    
+
     // Calculate minimum dialog size with padding
     let padding = responsive_font_size * 0.5; // Padding proportional to font size
     let _min_dialog_width = estimated_text_width + (padding * 2.0);
     let min_dialog_height = estimated_text_height + (padding * 2.0);
-    
+
     // Use inventory width (833px), but ensure minimum height for text
     let dynamic_width_px = dialog_width_px;
     let dynamic_height_px = min_dialog_height.max(100.0); // Minimum 100px height
-    
+
     // Use exact same centering method as inventory
     // Inventory uses: left: Val::Percent(50.0), margin: UiRect::left(Val::Px(-416.5))
     // where -416.5 is half of 833px width
-    
+
     // Calculate dynamic dialog dimensions
 
     let mut entity_commands = commands.spawn((
@@ -111,7 +111,7 @@ pub fn spawn_dialog_with_proximity(
             height: Val::Px(dynamic_height_px),
             position_type: PositionType::Absolute,
             bottom: Val::Percent(bottom),
-            left: Val::Percent(50.0), // Same as inventory
+            left: Val::Percent(50.0),              // Same as inventory
             margin: UiRect::left(Val::Px(-416.5)), // Same as inventory (-833/2)
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
@@ -168,7 +168,9 @@ pub fn check_dialog_proximity(
     for (mut visibility, proximity) in dialog_query.iter_mut() {
         if let Some(proximity) = proximity {
             // Check distance to target position
-            let distance = player_transform.translation.distance(proximity.target_position);
+            let distance = player_transform
+                .translation
+                .distance(proximity.target_position);
             if distance <= proximity.proximity_threshold {
                 *visibility = Visibility::Visible;
             } else {

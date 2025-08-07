@@ -8,4 +8,4 @@ pub const MAX_COIN_PLACEMENT_ATTEMPTS: usize = 10000;
 pub const MIN_DISTANCE_BETWEEN_COINS: f32 = 4.0;
 
 /// Coin streaming radius around the player
-pub const COIN_STREAMING_RADIUS: f32 = 100.0; 
+pub const COIN_STREAMING_RADIUS: f32 = 100.0;

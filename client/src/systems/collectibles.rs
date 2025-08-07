@@ -1,14 +1,14 @@
+use avian3d::prelude::*;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
-use avian3d::prelude::*;
 use std::collections::{HashMap, HashSet};
 
+use crate::assets::ModelAssets;
 use crate::constants::collectibles::COIN_STREAMING_RADIUS;
+use crate::resources::audio::{PlaySfxEvent, SfxType};
 use crate::screens::Screen;
 use crate::systems::character_controller::CharacterController;
 use crate::systems::dojo::PickupItemEvent;
-use crate::assets::ModelAssets;
-use crate::resources::audio::{PlaySfxEvent, SfxType};
 
 // ===== COMPONENTS & RESOURCES =====
 
@@ -43,8 +43,6 @@ pub enum CollectibleType {
 #[derive(Resource)]
 pub struct NextItemToAdd(pub CollectibleType);
 
-
-
 #[derive(Resource)]
 pub struct CollectibleSpawner {
     pub coins_spawned: usize,
@@ -52,9 +50,7 @@ pub struct CollectibleSpawner {
 
 impl Default for CollectibleSpawner {
     fn default() -> Self {
-        Self {
-            coins_spawned: 0,
-        }
+        Self { coins_spawned: 0 }
     }
 }
 
@@ -72,7 +68,7 @@ pub struct StreamingCoin {
 pub struct CoinStreamingManager {
     pub positions: Vec<Vec3>,
     pub spawned_coins: HashMap<usize, Entity>,
-    pub collected_positions: HashSet<usize>,  // Track collected positions to prevent respawning
+    pub collected_positions: HashSet<usize>, // Track collected positions to prevent respawning
     pub last_update_time: f32,
     pub update_interval: f32,
     pub spawn_radius: f32,
@@ -86,13 +82,12 @@ impl Default for CoinStreamingManager {
             collected_positions: HashSet::new(),
             last_update_time: 0.0,
             update_interval: 1.0,
-            spawn_radius: COIN_STREAMING_RADIUS,   // Use centralized constant
+            spawn_radius: COIN_STREAMING_RADIUS, // Use centralized constant
         }
     }
 }
 
 impl CoinStreamingManager {
-
     pub fn add_position(&mut self, position: Vec3) {
         self.positions.push(position);
     }
@@ -134,16 +129,14 @@ impl Plugin for CollectiblesPlugin {
             .init_resource::<CollectibleSpawner>()
             .init_resource::<PlayerMovementTracker>()
             .init_resource::<NavigationBasedSpawner>()
-
             // CoinStreamingManager now initialized in pregame_loading to persist between screens
             .add_systems(
                 Update,
                 (
-                    update_coin_streaming,            // Stream coins every 2-3 seconds
-                    handle_coin_collisions,           // Handle collision-based coin collection
+                    update_coin_streaming,  // Stream coins every 2-3 seconds
+                    handle_coin_collisions, // Handle collision-based coin collection
                     update_floating_items,
                     rotate_collectibles,
-
                     crate::ui::inventory::add_item_to_inventory,
                     crate::ui::inventory::toggle_inventory_visibility,
                     crate::ui::inventory::adjust_inventory_for_dialogs,
@@ -174,12 +167,11 @@ fn update_coin_streaming(
     };
 
     let current_time = time.elapsed_secs();
-    
+
     // Only update every 2-3 seconds
     if !streaming_manager.should_update(current_time) {
         return;
     }
-
 
     streaming_manager.mark_updated(current_time);
 
@@ -190,8 +182,9 @@ fn update_coin_streaming(
     for (entity, streaming_coin) in existing_coins.iter() {
         let coin_pos = streaming_manager.positions[streaming_coin.position_id];
         let distance = player_pos.distance(coin_pos);
-        
-        if distance > streaming_manager.spawn_radius * 1.2 { // Add hysteresis
+
+        if distance > streaming_manager.spawn_radius * 1.2 {
+            // Add hysteresis
             to_despawn.push((entity, streaming_coin.position_id));
         }
     }
@@ -206,35 +199,31 @@ fn update_coin_streaming(
     let mut positions_to_spawn = Vec::new();
     let mut nearest_coin_distance = f32::INFINITY;
     let mut _total_in_range = 0;
-    
+
     for (position_id, &position) in streaming_manager.positions.iter().enumerate() {
         let distance = player_pos.distance(position);
-        
 
         if distance < nearest_coin_distance {
             nearest_coin_distance = distance;
         }
-        
+
         if distance <= streaming_manager.spawn_radius {
             _total_in_range += 1;
-            if !streaming_manager.spawned_coins.contains_key(&position_id) 
-                && !streaming_manager.collected_positions.contains(&position_id) {
+            if !streaming_manager.spawned_coins.contains_key(&position_id)
+                && !streaming_manager.collected_positions.contains(&position_id)
+            {
                 positions_to_spawn.push((position_id, position));
             }
         }
     }
 
-
-
     // Spawn the collected positions
     for (position_id, position) in positions_to_spawn {
-        
         let entity = spawn_streaming_coin(&mut commands, &assets, position, position_id);
         streaming_manager.spawned_coins.insert(position_id, entity);
     }
 
     let _active_coins = streaming_manager.spawned_coins.len();
-
 }
 
 /// Spawn a single streaming coin
@@ -258,43 +247,49 @@ fn spawn_streaming_coin(
         },
         position.z,
     );
-    
+
     // Create a compound collider that better approximates a coin shape
     // This is more performant than mesh-fitted colliders while still being more accurate than a single sphere
     let coin_collider = Collider::compound(vec![
         // Main body - slightly flattened sphere
         (Vec3::ZERO, Quat::IDENTITY, Collider::sphere(0.4)),
         // Edge rings for better coin-like collision
-        (Vec3::new(0.0, 0.0, 0.0), Quat::IDENTITY, Collider::cylinder(0.4, 0.1)),
+        (
+            Vec3::new(0.0, 0.0, 0.0),
+            Quat::IDENTITY,
+            Collider::cylinder(0.4, 0.1),
+        ),
     ]);
-    
-    commands.spawn((
-        Name::new("Streaming Coin"),
-        SceneRoot(assets.coin.clone()),
-        Transform {
-            translation: adjusted_position,
-            scale: Vec3::splat(0.75),
-            ..default()
-        },
-        coin_collider,
-        RigidBody::Kinematic,
-        Visibility::Visible,
-        Collectible,
-        CollectibleType::Coin,
-        FloatingItem {
-            base_height: adjusted_position.y, // Use adjusted position for floating base height
-            hover_amplitude: 0.2,
-            hover_speed: 2.0,
-        },
-        CollectibleRotation {
-            enabled: true,
-            clockwise: true,
-            speed: 1.0,
-        },
-        Sensor, // This makes the coin non-solid but still detects collisions
-        CollisionEventsEnabled, // Enable collision events for this coin
-        StreamingCoin { position_id },
-    )).id()
+
+    commands
+        .spawn((
+            Name::new("Streaming Coin"),
+            SceneRoot(assets.coin.clone()),
+            Transform {
+                translation: adjusted_position,
+                scale: Vec3::splat(0.75),
+                ..default()
+            },
+            coin_collider,
+            RigidBody::Kinematic,
+            Visibility::Visible,
+            Collectible,
+            CollectibleType::Coin,
+            FloatingItem {
+                base_height: adjusted_position.y, // Use adjusted position for floating base height
+                hover_amplitude: 0.2,
+                hover_speed: 2.0,
+            },
+            CollectibleRotation {
+                enabled: true,
+                clockwise: true,
+                speed: 1.0,
+            },
+            Sensor, // This makes the coin non-solid but still detects collisions
+            CollisionEventsEnabled, // Enable collision events for this coin
+            StreamingCoin { position_id },
+        ))
+        .id()
 }
 
 /// System that handles coin collection through collision events
@@ -302,7 +297,10 @@ fn handle_coin_collisions(
     mut commands: Commands,
     mut collision_events: EventReader<CollisionStarted>,
     player_query: Query<Entity, With<CharacterController>>,
-    coin_query: Query<(Entity, &CollectibleType, Option<&StreamingCoin>), (With<Collectible>, Without<Collected>)>,
+    coin_query: Query<
+        (Entity, &CollectibleType, Option<&StreamingCoin>),
+        (With<Collectible>, Without<Collected>),
+    >,
     mut pickup_events: EventWriter<PickupItemEvent>,
     mut streaming_manager: ResMut<CoinStreamingManager>,
     mut sfx_events: EventWriter<PlaySfxEvent>,
@@ -328,8 +326,12 @@ fn handle_coin_collisions(
             if *collectible_type == CollectibleType::Coin {
                 // Remove from streaming manager if it's a streaming coin
                 if let Some(streaming) = streaming_coin {
-                    streaming_manager.spawned_coins.remove(&streaming.position_id);
-                    streaming_manager.collected_positions.insert(streaming.position_id);
+                    streaming_manager
+                        .spawned_coins
+                        .remove(&streaming.position_id);
+                    streaming_manager
+                        .collected_positions
+                        .insert(streaming.position_id);
                 }
 
                 // Play coin collection sound effect
@@ -348,16 +350,14 @@ fn handle_coin_collisions(
                     item_type: *collectible_type,
                     item_entity: entity,
                 });
-
-
             }
         }
     }
 }
 
 fn update_floating_items(
-    time: Res<Time>, 
-    mut query: Query<(&FloatingItem, &mut Transform), With<Collectible>>
+    time: Res<Time>,
+    mut query: Query<(&FloatingItem, &mut Transform), With<Collectible>>,
 ) {
     for (floating, mut transform) in query.iter_mut() {
         let time = time.elapsed_secs();
@@ -388,7 +388,9 @@ fn track_player_movement(
     player_query: Query<&Transform, With<CharacterController>>,
     mut tracker: ResMut<PlayerMovementTracker>,
 ) {
-    let Ok(player_transform) = player_query.single() else { return; };
+    let Ok(player_transform) = player_query.single() else {
+        return;
+    };
     let pos = player_transform.translation;
     let moved = if let Some(last) = tracker.last_position {
         pos.distance(last) > 0.05 // movement threshold
@@ -406,8 +408,6 @@ fn track_player_movement(
         }
     }
 }
-
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct NavigationData {
@@ -439,7 +439,7 @@ impl Default for NavigationData {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        
+
         Self {
             session_start: format!("{}", timestamp),
             positions: Vec::new(),
@@ -454,8 +454,6 @@ impl Default for NavigationData {
     }
 }
 
-
-
 // Replace the surface-based spawning with navigation-based spawning
 #[derive(Resource)]
 pub struct NavigationBasedSpawner {
@@ -468,7 +466,7 @@ impl Default for NavigationBasedSpawner {
     fn default() -> Self {
         Self {
             nav_positions: Vec::new(),
-            spawn_probability: 0.15,     // 15% chance per nav position
+            spawn_probability: 0.15, // 15% chance per nav position
             loaded: false,
         }
     }

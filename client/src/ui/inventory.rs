@@ -32,7 +32,7 @@ pub struct InventoryVisibilityState {
 impl Default for InventoryVisibilityState {
     fn default() -> Self {
         Self {
-            visible: true,  // Always visible by default
+            visible: true, // Always visible by default
             timer: Timer::from_seconds(2.0, TimerMode::Once),
             shifted_up: false,
         }
@@ -60,7 +60,7 @@ pub fn adjust_inventory_for_dialogs(
             } else {
                 0.0 // Windowed mode - lower position
             };
-            
+
             let final_position = 200.0 + inventory_padding;
             node.bottom = Val::Px(final_position);
             visibility_state.shifted_up = true;
@@ -94,41 +94,42 @@ pub fn spawn_inventory_ui<T: Component + Default>(commands: &mut Commands) {
             BorderColor(Color::ELYSIUM_GOLD),
             BorderRadius::all(Val::Px(21.0)),
             InventoryUI,
-            Visibility::Visible,  // Start visible
+            Visibility::Visible, // Start visible
             T::default(),
         ))
         .with_children(|parent| {
             for i in 0..6 {
-                parent.spawn((
-                    Node {
-                        width: Val::Px(120.0),
-                        height: Val::Px(133.0),
-                        margin: UiRect::all(Val::Px(8.0)),
-                        padding: UiRect::horizontal(Val::Px(32.0)),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        border: UiRect::all(Val::Px(1.0)),
-                        ..default()
-                    },
-                    BackgroundColor(Color::srgba(0.18, 0.20, 0.26, 0.65)),
-                    BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.7)),
-                    BorderRadius::all(Val::Px(12.0)),
-                    InventorySlot { index: i },
-                ))
-                .with_children(|slot| {
-                    // Always add a filler node to ensure consistent sizing
-                    slot.spawn((
+                parent
+                    .spawn((
                         Node {
-                            width: Val::Px(93.0),
-                            height: Val::Px(107.0),
+                            width: Val::Px(120.0),
+                            height: Val::Px(133.0),
+                            margin: UiRect::all(Val::Px(8.0)),
+                            padding: UiRect::horizontal(Val::Px(32.0)),
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
+                            border: UiRect::all(Val::Px(1.0)),
                             ..default()
                         },
-                        BackgroundColor(Color::NONE),
-                        ZIndex(-2),
-                    ));
-                });
+                        BackgroundColor(Color::srgba(0.18, 0.20, 0.26, 0.65)),
+                        BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.7)),
+                        BorderRadius::all(Val::Px(12.0)),
+                        InventorySlot { index: i },
+                    ))
+                    .with_children(|slot| {
+                        // Always add a filler node to ensure consistent sizing
+                        slot.spawn((
+                            Node {
+                                width: Val::Px(93.0),
+                                height: Val::Px(107.0),
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::Center,
+                                ..default()
+                            },
+                            BackgroundColor(Color::NONE),
+                            ZIndex(-2),
+                        ));
+                    });
             }
         });
 }
@@ -202,12 +203,10 @@ pub fn add_item_to_inventory(
     sorted_slots.sort_by_key(|(_, slot)| slot.index);
     for (slot_entity, _) in sorted_slots {
         // Check if slot has any InventoryItem children (not just if it has any children)
-        let has_item = children_query
-            .get(slot_entity)
-            .map_or(false, |children| {
-                children.iter().any(|child| item_query.get(child).is_ok())
-            });
-        
+        let has_item = children_query.get(slot_entity).map_or(false, |children| {
+            children.iter().any(|child| item_query.get(child).is_ok())
+        });
+
         if !has_item {
             commands.entity(slot_entity).with_children(|parent| {
                 parent
@@ -247,9 +246,9 @@ pub fn add_item_to_inventory(
                             .spawn((
                                 Node {
                                     position_type: PositionType::Absolute,
-                                    width: Val::Px(33.0),  // Slightly smaller for better proportion
+                                    width: Val::Px(33.0), // Slightly smaller for better proportion
                                     height: Val::Px(33.0), // Same as width for circle
-                                    right: Val::Px(-20.0),  // Positioned relative to image edge
+                                    right: Val::Px(-20.0), // Positioned relative to image edge
                                     bottom: Val::Px(13.0), // Positioned relative to image edge
                                     align_items: AlignItems::Center,
                                     justify_content: JustifyContent::Center,

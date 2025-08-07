@@ -203,12 +203,8 @@ fn handle_toggle_fullscreen(
     if trigger.value {
         if let Ok(mut window) = windows.single_mut() {
             window.mode = match window.mode {
-                WindowMode::Windowed => {
-                    WindowMode::BorderlessFullscreen(MonitorSelection::Primary)
-                }
-                _ => {
-                    WindowMode::Windowed
-                }
+                WindowMode::Windowed => WindowMode::BorderlessFullscreen(MonitorSelection::Primary),
+                _ => WindowMode::Windowed,
             };
         } else {
             error!("Failed to get window");
@@ -228,7 +224,7 @@ fn handle_return_to_menu(
                 return; // Modal is open, let the modal handle ESC
             }
         }
-        
+
         next_state.set(Screen::MainMenu);
     }
 }
@@ -244,14 +240,21 @@ fn handle_create_game(
 
 fn handle_interact(
     trigger: Trigger<Started<Interact>>,
-    player_query: Query<&Transform, With<crate::systems::character_controller::CharacterController>>,
+    player_query: Query<
+        &Transform,
+        With<crate::systems::character_controller::CharacterController>,
+    >,
     book_query: Query<&Transform, With<crate::systems::book_interaction::Book>>,
     mut next_state: ResMut<NextState<Screen>>,
 ) {
     if trigger.value {
         // Check if player is near the book
-        if let (Ok(player_transform), Ok(book_transform)) = (player_query.single(), book_query.single()) {
-            let distance = player_transform.translation.distance(book_transform.translation);
+        if let (Ok(player_transform), Ok(book_transform)) =
+            (player_query.single(), book_query.single())
+        {
+            let distance = player_transform
+                .translation
+                .distance(book_transform.translation);
             let proximity_threshold = 5.0;
 
             if distance <= proximity_threshold {
@@ -259,7 +262,7 @@ fn handle_interact(
                 return;
             }
         }
-        
+
         // Note: Coins are now automatically collected by physical contact/collision
     }
 }
@@ -273,15 +276,19 @@ fn handle_fight_move(
 ) {
     if trigger.value {
         println!("🔑 FIGHT MOVE: X key pressed!");
-        
+
         // In fight scene, only allow attacks during player's turn
         if current_screen.get() == &Screen::FightScene {
             println!("🔑 FIGHT MOVE: In fight scene");
             if let Some(combat_state) = combat_state {
-                println!("🔑 FIGHT MOVE: Current turn={:?}, InRange={}", 
-                    combat_state.current_turn, combat_state.in_range);
+                println!(
+                    "🔑 FIGHT MOVE: Current turn={:?}, InRange={}",
+                    combat_state.current_turn, combat_state.in_range
+                );
                 // Only allow fight moves during player turn and when in range
-                if combat_state.current_turn != crate::screens::fight::CombatTurn::Player || !combat_state.in_range {
+                if combat_state.current_turn != crate::screens::fight::CombatTurn::Player
+                    || !combat_state.in_range
+                {
                     println!("🔑 FIGHT MOVE: BLOCKED - Not player turn or not in range");
                     return; // Block the attack if it's not player's turn
                 }
@@ -292,7 +299,7 @@ fn handle_fight_move(
         } else {
             println!("🔑 FIGHT MOVE: Not in fight scene");
         }
-        
+
         let shift_pressed =
             keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
         if shift_pressed {
@@ -306,10 +313,7 @@ fn handle_fight_move(
 }
 
 // Add a simple test to see if ANY key presses are being detected
-fn test_key_press(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    current_screen: Res<State<Screen>>,
-) {
+fn test_key_press(keyboard: Res<ButtonInput<KeyCode>>, current_screen: Res<State<Screen>>) {
     if current_screen.get() == &Screen::FightScene {
         if keyboard.just_pressed(KeyCode::KeyX) {
             println!("🔑 TEST: X key just pressed!");

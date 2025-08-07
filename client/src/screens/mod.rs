@@ -2,7 +2,7 @@ pub mod fight;
 pub mod gameplay;
 mod loading;
 mod main_menu;
-mod pregame_loading;  // Add new module
+mod pregame_loading; // Add new module
 mod settings;
 
 use bevy::prelude::*;
@@ -18,7 +18,7 @@ pub(crate) enum Screen {
     #[default]
     Loading,
     MainMenu,
-    PreGameLoading,  // New loading state before gameplay
+    PreGameLoading, // New loading state before gameplay
     GamePlay,
     NewGame,
     Settings,
@@ -36,7 +36,7 @@ pub(super) fn plugin(app: &mut App) {
             main_menu::plugin,
             settings::plugin,
             loading::plugin,
-            pregame_loading::plugin,  // Add new plugin
+            pregame_loading::plugin, // Add new plugin
             gameplay::plugin,
             fight::plugin,
         ));
@@ -51,6 +51,6 @@ fn handle_new_game_transition(
     current_state: Res<State<Screen>>,
 ) {
     if current_state.get() == &Screen::NewGame {
-        next_state.set(Screen::PreGameLoading);  // Go to PreGameLoading instead of GamePlay
+        next_state.set(Screen::PreGameLoading); // Go to PreGameLoading instead of GamePlay
     }
 }

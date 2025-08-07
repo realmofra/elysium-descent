@@ -1,22 +1,28 @@
 use super::{Screen, despawn_scene};
 use crate::assets::ModelAssets;
 use crate::systems::character_controller::CharacterControllerBundle;
-use crate::systems::enemy_ai::{EnemyBundle, EnemyAIPlugin};
+use crate::systems::enemy_ai::{EnemyAIPlugin, EnemyBundle};
 use avian3d::prelude::{
-    ColliderConstructor, ColliderConstructorHierarchy, Friction, GravityScale,
-    Restitution, RigidBody, CollisionEventsEnabled,
+    ColliderConstructor, ColliderConstructorHierarchy, CollisionEventsEnabled, Friction,
+    GravityScale, Restitution, RigidBody,
 };
 use bevy::prelude::*;
 use bevy_enhanced_input::prelude::Actions;
-use bevy_gltf_animation::prelude::{GltfSceneRoot, GltfAnimations};
+use bevy_gltf_animation::prelude::{GltfAnimations, GltfSceneRoot};
 
 // ===== PLUGIN SETUP =====
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<CombatState>()
         .init_resource::<TurnTimer>()
-        .add_systems(OnEnter(Screen::FightScene), (spawn_fight_scene, despawn_collectibles, initialize_combat))
-        .add_systems(OnExit(Screen::FightScene), (despawn_scene::<FightScene>, reset_combat))
+        .add_systems(
+            OnEnter(Screen::FightScene),
+            (spawn_fight_scene, despawn_collectibles, initialize_combat),
+        )
+        .add_systems(
+            OnExit(Screen::FightScene),
+            (despawn_scene::<FightScene>, reset_combat),
+        )
         .add_systems(
             Update,
             (
@@ -28,7 +34,8 @@ pub(super) fn plugin(app: &mut App) {
                 detect_player_attack,
                 detect_enemy_attack_finished,
                 track_player_turn_time,
-            ).run_if(in_state(Screen::FightScene)),
+            )
+                .run_if(in_state(Screen::FightScene)),
         )
         .add_plugins(EnemyAIPlugin);
 }
@@ -101,23 +108,25 @@ fn spawn_fight_scene(
         .observe(crate::systems::character_controller::setup_idle_animation);
 
     // Spawn the enemy model with AI and animations
-    commands.spawn((
-        Name::new("Fight Enemy"),
-        GltfSceneRoot::new(assets.enemy.clone()),
-        Transform {
-            translation: Vec3::new(5.0, -1.65, 0.0),
-            rotation: Quat::from_rotation_y(std::f32::consts::PI),
-            scale: Vec3::splat(4.0),
-            ..default()
-        },
-        EnemyBundle::default(),
-        Friction::new(0.5),
-        Restitution::new(0.0),
-        GravityScale(1.0),
-        CollisionEventsEnabled, // Enable collision events
-        FightEnemy,
-        FightScene,
-    )).observe(crate::systems::character_controller::setup_idle_animation);
+    commands
+        .spawn((
+            Name::new("Fight Enemy"),
+            GltfSceneRoot::new(assets.enemy.clone()),
+            Transform {
+                translation: Vec3::new(5.0, -1.65, 0.0),
+                rotation: Quat::from_rotation_y(std::f32::consts::PI),
+                scale: Vec3::splat(4.0),
+                ..default()
+            },
+            EnemyBundle::default(),
+            Friction::new(0.5),
+            Restitution::new(0.0),
+            GravityScale(1.0),
+            CollisionEventsEnabled, // Enable collision events
+            FightEnemy,
+            FightScene,
+        ))
+        .observe(crate::systems::character_controller::setup_idle_animation);
 
     // Add a camera (match gameplay)
     commands.spawn((
@@ -224,7 +233,10 @@ fn camera_follow_fight_player(
     }
 }
 
-fn despawn_collectibles(mut commands: Commands, query: Query<Entity, With<crate::systems::collectibles::Collectible>>) {
+fn despawn_collectibles(
+    mut commands: Commands,
+    query: Query<Entity, With<crate::systems::collectibles::Collectible>>,
+) {
     for entity in &query {
         commands.entity(entity).despawn();
     }
@@ -281,10 +293,7 @@ pub struct FightPlayer;
 pub struct FightEnemy;
 
 /// Initialize combat state when entering fight scene
-fn initialize_combat(
-    mut combat_state: ResMut<CombatState>,
-    mut turn_timer: ResMut<TurnTimer>,
-) {
+fn initialize_combat(mut combat_state: ResMut<CombatState>, mut turn_timer: ResMut<TurnTimer>) {
     combat_state.current_turn = CombatTurn::Enemy;
     combat_state.enemy_attack_done = false;
     combat_state.player_waiting_for_input = false;
@@ -296,10 +305,7 @@ fn initialize_combat(
 }
 
 /// Reset combat state when exiting fight scene
-fn reset_combat(
-    mut combat_state: ResMut<CombatState>,
-    mut turn_timer: ResMut<TurnTimer>,
-) {
+fn reset_combat(mut combat_state: ResMut<CombatState>, mut turn_timer: ResMut<TurnTimer>) {
     *combat_state = CombatState::default();
     *turn_timer = TurnTimer::default();
 }
@@ -311,19 +317,24 @@ fn manage_turn_based_combat(
     mut turn_timer: ResMut<TurnTimer>,
     player_query: Query<&Transform, (With<FightPlayer>, Without<FightEnemy>)>,
     enemy_query: Query<&Transform, (With<FightEnemy>, Without<FightPlayer>)>,
-    mut enemy_animation_query: Query<&mut crate::systems::character_controller::AnimationState, (With<FightEnemy>, Without<FightPlayer>)>,
+    mut enemy_animation_query: Query<
+        &mut crate::systems::character_controller::AnimationState,
+        (With<FightEnemy>, Without<FightPlayer>),
+    >,
 ) {
     // Check if players are in range
-    if let (Ok(player_transform), Ok(enemy_transform)) = (player_query.single(), enemy_query.single()) {
-        let distance = player_transform.translation.distance(enemy_transform.translation);
+    if let (Ok(player_transform), Ok(enemy_transform)) =
+        (player_query.single(), enemy_query.single())
+    {
+        let distance = player_transform
+            .translation
+            .distance(enemy_transform.translation);
         let attack_range = 3.0; // Same as EnemyAI attack_range
-        
+
         let players_in_range = distance <= attack_range;
         let was_in_range = combat_state.in_range;
         combat_state.in_range = players_in_range;
-        
 
-        
         if !players_in_range {
             // When out of range, switch to OutOfRange mode (existing behavior)
             if combat_state.current_turn != CombatTurn::OutOfRange {
@@ -334,7 +345,7 @@ fn manage_turn_based_combat(
             }
             return;
         }
-        
+
         // Just entered range - start with enemy turn
         if !was_in_range && players_in_range {
             combat_state.current_turn = CombatTurn::Enemy;
@@ -343,11 +354,11 @@ fn manage_turn_based_combat(
             turn_timer.timer = Timer::from_seconds(2.0, TimerMode::Once);
             turn_timer.timer.reset(); // Start timer immediately
         }
-        
+
         // Handle turn transitions when in range
         match combat_state.current_turn {
             CombatTurn::Enemy => {
-                                // Enemy turn: wait for enemy attack animation to finish
+                // Enemy turn: wait for enemy attack animation to finish
                 if combat_state.enemy_attack_finished {
                     // Switch to player turn when enemy attack is done
                     combat_state.current_turn = CombatTurn::Player;
@@ -376,7 +387,13 @@ fn manage_turn_based_combat(
 /// Handle enemy turn behavior
 fn handle_enemy_turn(
     combat_state: ResMut<CombatState>,
-    mut enemy_query: Query<(&mut crate::systems::character_controller::AnimationState, &mut crate::systems::enemy_ai::EnemyAI), (With<FightEnemy>, Without<FightPlayer>)>,
+    mut enemy_query: Query<
+        (
+            &mut crate::systems::character_controller::AnimationState,
+            &mut crate::systems::enemy_ai::EnemyAI,
+        ),
+        (With<FightEnemy>, Without<FightPlayer>),
+    >,
 ) {
     if let Ok((_animation_state, mut enemy_ai)) = enemy_query.single_mut() {
         match combat_state.current_turn {
@@ -400,7 +417,10 @@ fn handle_enemy_turn(
 fn handle_player_turn(
     combat_state: ResMut<CombatState>,
     _turn_timer: ResMut<TurnTimer>,
-    player_query: Query<&crate::systems::character_controller::AnimationState, (With<FightPlayer>, Without<FightEnemy>)>,
+    player_query: Query<
+        &crate::systems::character_controller::AnimationState,
+        (With<FightPlayer>, Without<FightEnemy>),
+    >,
 ) {
     if let Ok(player_animation_state) = player_query.single() {
         match combat_state.current_turn {
@@ -421,14 +441,18 @@ fn handle_player_turn(
 /// Detect when player starts attacking and update combat state
 fn detect_player_attack(
     mut combat_state: ResMut<CombatState>,
-    player_query: Query<&crate::systems::character_controller::AnimationState, (With<FightPlayer>, Without<FightEnemy>)>,
+    player_query: Query<
+        &crate::systems::character_controller::AnimationState,
+        (With<FightPlayer>, Without<FightEnemy>),
+    >,
 ) {
     if let Ok(player_animation_state) = player_query.single() {
         // If player just started attacking during their turn
-        if combat_state.current_turn == CombatTurn::Player && 
-           combat_state.in_range && 
-           combat_state.player_waiting_for_input &&
-           (player_animation_state.fight_move_1 || player_animation_state.fight_move_2) {
+        if combat_state.current_turn == CombatTurn::Player
+            && combat_state.in_range
+            && combat_state.player_waiting_for_input
+            && (player_animation_state.fight_move_1 || player_animation_state.fight_move_2)
+        {
             // Player is no longer waiting for input - they've started attacking
             combat_state.player_waiting_for_input = false;
             println!("🎮 PLAYER: Started attack animation");
@@ -439,7 +463,13 @@ fn detect_player_attack(
 /// Detects when enemy attack animations finish and updates combat state
 fn detect_enemy_attack_finished(
     mut combat_state: ResMut<CombatState>,
-    enemy_query: Query<(&crate::systems::character_controller::AnimationState, &GltfAnimations), (With<FightEnemy>, Without<FightPlayer>)>,
+    enemy_query: Query<
+        (
+            &crate::systems::character_controller::AnimationState,
+            &GltfAnimations,
+        ),
+        (With<FightEnemy>, Without<FightPlayer>),
+    >,
     animation_players: Query<&AnimationPlayer>,
 ) {
     for (animation_state, animations) in &enemy_query {
@@ -456,10 +486,7 @@ fn detect_enemy_attack_finished(
 }
 
 /// Tracks player turn time and ensures player has enough time to attack
-fn track_player_turn_time(
-    time: Res<Time>,
-    mut combat_state: ResMut<CombatState>,
-) {
+fn track_player_turn_time(time: Res<Time>, mut combat_state: ResMut<CombatState>) {
     if combat_state.current_turn == CombatTurn::Player && combat_state.player_waiting_for_input {
         // We used to auto-switch back to enemy after 5 seconds.
         // Disabled: keep player turn active indefinitely until the player actually attacks.

@@ -125,5 +125,3 @@ fn instance_control(input: Res<ButtonInput<KeyCode>>, mut settings: ResMut<Audio
         info!("Mute toggled: {}", settings.muted);
     }
 }
-
-
