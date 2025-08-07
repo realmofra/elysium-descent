@@ -329,13 +329,13 @@ fn update_animations(
             false
         };
 
+        // PLAYER ANIMATIONS ONLY - enemy animations are handled in enemy_ai.rs
         // Check if fight moves are active - highest priority
         if animation_state.fight_move_1 {
             // Play fight move 1 animation (index 5)
             if animation_state.current_animation != 5 {
                 if let Some(animation) = animations.get_by_number(5) {
                     if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
-
                         player.stop_all();
                         player.play(animation);
                         animation_state.current_animation = 5;
@@ -345,7 +345,6 @@ fn update_animations(
             // Check if animation has finished
             if let Ok(player) = animation_players.get(animations.animation_player) {
                 if player.all_finished() {
-
                     animation_state.fight_move_1 = false;
                 }
             }

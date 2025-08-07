@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use avian3d::{math::*, prelude::*};
+use bevy_gltf_animation::prelude::*;
 use crate::systems::character_controller::AnimationState;
 
 /// Marker component for enemy entities
@@ -68,7 +69,7 @@ impl Plugin for EnemyAIPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            enemy_ai_movement,
+            (enemy_ai_movement, enemy_ai_animations),
         );
     }
 }
@@ -99,6 +100,8 @@ fn enemy_ai_movement(
         } else {
             false
         };
+
+
 
         if in_turn_based_combat {
             // In turn-based combat, movement is controlled by the fight scene
@@ -161,6 +164,105 @@ fn enemy_ai_movement(
     }
 }
 
+/// Updates enemy animations based on AI state
+fn enemy_ai_animations(
+    mut query: Query<(&mut GltfAnimations, &mut AnimationState), (With<Enemy>, Without<crate::systems::character_controller::CharacterController>)>,
+    mut animation_players: Query<&mut AnimationPlayer>,
+    combat_state: Option<Res<crate::screens::fight::CombatState>>,
+) {
+    for (mut animations, mut animation_state) in &mut query {
+        // Check if we're in turn-based combat
+        let in_turn_based_combat = if let Some(combat_state) = &combat_state {
+            combat_state.in_range && (combat_state.current_turn == crate::screens::fight::CombatTurn::Enemy || 
+                                     combat_state.current_turn == crate::screens::fight::CombatTurn::Player)
+        } else {
+            false
+        };
 
+        if in_turn_based_combat {
+            // In turn-based combat, check whose turn it is
+            if let Some(combat_state) = &combat_state {
+                match combat_state.current_turn {
+                    crate::screens::fight::CombatTurn::Enemy => {
+                        // Enemy turn - play attack animation (index 4) if triggered
+                        if animation_state.fight_move_1 {
+                            if animation_state.current_animation != 4 {
+                                if let Some(animation) = animations.get_by_number(4) {
+                                    if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
+                                        player.stop_all();
+                                        player.play(animation);
+                                        animation_state.current_animation = 4;
+                                    }
+                                }
+                            }
+                            // Check if animation has finished
+                            if let Ok(player) = animation_players.get(animations.animation_player) {
+                                if player.all_finished() {
+                                    animation_state.fight_move_1 = false;
+                                }
+                            }
+                        } else {
+                            // Enemy turn but no attack triggered - play idle
+                            let target_animation = 3; // Idle animation
+                            if target_animation != animation_state.current_animation {
+                                if let Some(animation) = animations.get_by_number(target_animation) {
+                                    if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
+                                        player.stop_all();
+                                        player.play(animation).repeat();
+                                        animation_state.current_animation = target_animation;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    crate::screens::fight::CombatTurn::Player => {
+                        // Player turn - enemy should be idle
+                        let target_animation = 3; // Idle animation
+                        if target_animation != animation_state.current_animation {
+                            if let Some(animation) = animations.get_by_number(target_animation) {
+                                if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
+                                    player.stop_all();
+                                    player.play(animation).repeat();
+                                    animation_state.current_animation = target_animation;
+                                }
+                            }
+                        }
+                    }
+                    _ => {
+                        // Default to idle
+                        let target_animation = 3; // Idle animation
+                        if target_animation != animation_state.current_animation {
+                            if let Some(animation) = animations.get_by_number(target_animation) {
+                                if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
+                                    player.stop_all();
+                                    player.play(animation).repeat();
+                                    animation_state.current_animation = target_animation;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Normal movement animations - enemy follows player
+            let target_animation = if animation_state.forward_hold_time >= 3.0 {
+                4 // Running
+            } else if animation_state.forward_hold_time > 0.0 {
+                7 // Walking
+            } else {
+                3 // Idle
+            };
 
- 
+            // Only change animation if we need to
+            if target_animation != animation_state.current_animation {
+                if let Some(animation) = animations.get_by_number(target_animation) {
+                    if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
+                        player.stop_all();
+                        player.play(animation).repeat();
+                        animation_state.current_animation = target_animation;
+                    }
+                }
+            }
+        }
+    }
+}
