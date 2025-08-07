@@ -22,7 +22,8 @@ pub fn plugin(app: &mut App) {
         .add_observer(handle_create_game)
         .add_observer(handle_interact)
         .add_observer(handle_fight_move)
-        .add_observer(handle_go_to_fight_scene);
+        .add_observer(handle_go_to_fight_scene)
+        .add_systems(Update, test_key_press);
 }
 
 fn spawn_system_action(mut commands: Commands) {
@@ -271,22 +272,53 @@ fn handle_fight_move(
     current_screen: Res<State<Screen>>,
 ) {
     if trigger.value {
+        println!("🔑 FIGHT MOVE: X key pressed!");
+        
         // In fight scene, only allow attacks during player's turn
         if current_screen.get() == &Screen::FightScene {
+            println!("🔑 FIGHT MOVE: In fight scene");
             if let Some(combat_state) = combat_state {
+                println!("🔑 FIGHT MOVE: Current turn={:?}, InRange={}", 
+                    combat_state.current_turn, combat_state.in_range);
                 // Only allow fight moves during player turn and when in range
                 if combat_state.current_turn != crate::screens::fight::CombatTurn::Player || !combat_state.in_range {
+                    println!("🔑 FIGHT MOVE: BLOCKED - Not player turn or not in range");
                     return; // Block the attack if it's not player's turn
                 }
+                println!("🔑 FIGHT MOVE: ALLOWED - Player turn and in range");
+            } else {
+                println!("🔑 FIGHT MOVE: No combat state");
             }
+        } else {
+            println!("🔑 FIGHT MOVE: Not in fight scene");
         }
         
         let shift_pressed =
             keyboard.pressed(KeyCode::ShiftLeft) || keyboard.pressed(KeyCode::ShiftRight);
         if shift_pressed {
+            println!("🔑 FIGHT MOVE: Sending FightMove2 (Shift+X)");
             movement_events.write(crate::systems::character_controller::MovementAction::FightMove2);
         } else {
+            println!("🔑 FIGHT MOVE: Sending FightMove1 (X)");
             movement_events.write(crate::systems::character_controller::MovementAction::FightMove1);
+        }
+    }
+}
+
+// Add a simple test to see if ANY key presses are being detected
+fn test_key_press(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    current_screen: Res<State<Screen>>,
+) {
+    if current_screen.get() == &Screen::FightScene {
+        if keyboard.just_pressed(KeyCode::KeyX) {
+            println!("🔑 TEST: X key just pressed!");
+        }
+        if keyboard.just_pressed(KeyCode::Space) {
+            println!("🔑 TEST: Space key just pressed!");
+        }
+        if keyboard.just_pressed(KeyCode::KeyW) {
+            println!("🔑 TEST: W key just pressed!");
         }
     }
 }

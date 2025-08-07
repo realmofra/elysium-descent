@@ -101,12 +101,8 @@ fn enemy_ai_movement(
             false
         };
 
-
-
         if in_turn_based_combat {
             // In turn-based combat, movement is controlled by the fight scene
-            // The handle_enemy_turn system will set is_moving appropriately
-            // Stop any movement and let the turn system handle behavior
             enemy_velocity.x = 0.0;
             enemy_velocity.z = 0.0;
             enemy_velocity.y = 0.0;
@@ -122,43 +118,43 @@ fn enemy_ai_movement(
             enemy_transform.translation.y = -1.65;
         } else {
             // Normal AI behavior when not in turn-based combat or out of range
-            if distance_to_player > enemy_ai.attack_range {
-                // Set moving state
-                enemy_ai.is_moving = true;
-                
-                // Move towards player
-                let direction_to_player = (player_pos - enemy_pos).normalize();
-                let target_velocity = direction_to_player * enemy_ai.move_speed;
-                
-                // Apply movement
-                enemy_velocity.x = enemy_velocity.x.lerp(target_velocity.x, 5.0 * delta_time);
-                enemy_velocity.z = enemy_velocity.z.lerp(target_velocity.z, 5.0 * delta_time);
-                enemy_velocity.y = 0.0;
-                
-                // Rotate to face player
-                let direction_2d = Vec2::new(direction_to_player.x, direction_to_player.z).normalize();
-                let target_rotation = Quat::from_rotation_arc(Vec3::Z, Vec3::new(direction_2d.x, 0.0, direction_2d.y));
-                enemy_transform.rotation = enemy_transform.rotation.slerp(target_rotation, 3.0 * delta_time);
-                
-                // Keep on ground
-                enemy_transform.translation.y = -1.65;
-                
-                // Update animation state
-                let horizontal_speed = Vec2::new(enemy_velocity.x, enemy_velocity.z).length();
-                if horizontal_speed > 0.1 {
-                    animation_state.forward_hold_time += delta_time;
-                } else {
-                    animation_state.forward_hold_time = 0.0;
-                }
+        if distance_to_player > enemy_ai.attack_range {
+            // Set moving state
+            enemy_ai.is_moving = true;
+            
+            // Move towards player
+            let direction_to_player = (player_pos - enemy_pos).normalize();
+            let target_velocity = direction_to_player * enemy_ai.move_speed;
+            
+            // Apply movement
+            enemy_velocity.x = enemy_velocity.x.lerp(target_velocity.x, 5.0 * delta_time);
+            enemy_velocity.z = enemy_velocity.z.lerp(target_velocity.z, 5.0 * delta_time);
+            enemy_velocity.y = 0.0;
+            
+            // Rotate to face player
+            let direction_2d = Vec2::new(direction_to_player.x, direction_to_player.z).normalize();
+            let target_rotation = Quat::from_rotation_arc(Vec3::Z, Vec3::new(direction_2d.x, 0.0, direction_2d.y));
+            enemy_transform.rotation = enemy_transform.rotation.slerp(target_rotation, 3.0 * delta_time);
+            
+            // Keep on ground
+            enemy_transform.translation.y = -1.65;
+            
+            // Update animation state
+            let horizontal_speed = Vec2::new(enemy_velocity.x, enemy_velocity.z).length();
+            if horizontal_speed > 0.1 {
+                animation_state.forward_hold_time += delta_time;
             } else {
-                // Set idle state
-                enemy_ai.is_moving = false;
-                
-                // Stop moving when close to player - stop immediately
-                enemy_velocity.x = 0.0;
-                enemy_velocity.z = 0.0;
-                enemy_velocity.y = 0.0;
                 animation_state.forward_hold_time = 0.0;
+            }
+        } else {
+            // Set idle state
+            enemy_ai.is_moving = false;
+            
+            // Stop moving when close to player - stop immediately
+            enemy_velocity.x = 0.0;
+            enemy_velocity.z = 0.0;
+            enemy_velocity.y = 0.0;
+            animation_state.forward_hold_time = 0.0;
             }
         }
     }
@@ -171,54 +167,57 @@ fn enemy_ai_animations(
     combat_state: Option<Res<crate::screens::fight::CombatState>>,
 ) {
     for (mut animations, mut animation_state) in &mut query {
-        // Check if we're in turn-based combat
-        let in_turn_based_combat = if let Some(combat_state) = &combat_state {
-            combat_state.in_range && (combat_state.current_turn == crate::screens::fight::CombatTurn::Enemy || 
-                                     combat_state.current_turn == crate::screens::fight::CombatTurn::Player)
-        } else {
-            false
-        };
+        let prev = animation_state.current_animation;
+        // When CombatState exists, we are in the fight scene and must follow strict turn-based rules
+        let in_turn_based_combat = combat_state.is_some();
 
         if in_turn_based_combat {
-            // In turn-based combat, check whose turn it is
+            // In turn-based combat - check whose turn it is
             if let Some(combat_state) = &combat_state {
                 match combat_state.current_turn {
                     crate::screens::fight::CombatTurn::Enemy => {
-                        // Enemy turn - play attack animation (index 4) if triggered
-                        if animation_state.fight_move_1 {
-                            if animation_state.current_animation != 4 {
-                                if let Some(animation) = animations.get_by_number(4) {
-                                    if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
-                                        player.stop_all();
-                                        player.play(animation);
-                                        animation_state.current_animation = 4;
-                                    }
+                        // If this turn's attack already finished, keep enemy idle until turn switches
+                        if combat_state.enemy_attack_finished {
+                            if let Some(animation) = animations.get_by_number(2) {
+                                if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
+                                    player.stop_all();
+                                    player.play(animation).repeat();
+                                    animation_state.current_animation = 2;
                                 }
                             }
-                            // Check if animation has finished
-                            if let Ok(player) = animation_players.get(animations.animation_player) {
-                                if player.all_finished() {
-                                    animation_state.fight_move_1 = false;
+                            if prev != animation_state.current_animation {
+                                println!("👹 ENEMY ANIM CHANGE (Enemy turn, finished): {} → {}", prev, animation_state.current_animation);
+                            }
+                            animation_state.fight_move_1 = false;
+                            animation_state.fight_move_2 = false;
+                            continue;
+                        }
+
+                        // ENEMY TURN and not finished: ensure attack (index 4) is playing
+                        if animation_state.current_animation != 4 {
+                            if let Some(animation) = animations.get_by_number(4) {
+                                if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
+                                    player.stop_all();
+                                    player.play(animation);
+                                    animation_state.current_animation = 4;
+                                    animation_state.fight_move_1 = true; // Mark as attacking
                                 }
                             }
-                        } else {
-                            // Enemy turn but no attack triggered - play idle
-                            let target_animation = 3; // Idle animation
-                            if target_animation != animation_state.current_animation {
-                                if let Some(animation) = animations.get_by_number(target_animation) {
-                                    if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
-                                        player.stop_all();
-                                        player.play(animation).repeat();
-                                        animation_state.current_animation = target_animation;
-                                    }
-                                }
+                            if prev != animation_state.current_animation {
+                                println!("👹 ENEMY ANIM CHANGE (Enemy turn, attack): {} → {}", prev, animation_state.current_animation);
                             }
                         }
+                        // Do not force-switch to idle here; wait for detect system to flag finished
                     }
                     crate::screens::fight::CombatTurn::Player => {
-                        // Player turn - enemy should be idle
-                        let target_animation = 3; // Idle animation
-                        if target_animation != animation_state.current_animation {
+                        // PLAYER TURN: Enemy must be IDLE (index 2) indefinitely until player attacks
+                        let target_animation = 2; // Idle animation
+                        // If somehow still on attack, log and correct
+                        if animation_state.current_animation == 4 {
+                            println!("🧯 FIX: Enemy was attacking during Player turn → forcing idle");
+                        }
+                        // Enforce idle only if changing to reduce spam
+                        if animation_state.current_animation != target_animation {
                             if let Some(animation) = animations.get_by_number(target_animation) {
                                 if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
                                     player.stop_all();
@@ -226,19 +225,24 @@ fn enemy_ai_animations(
                                     animation_state.current_animation = target_animation;
                                 }
                             }
+                            println!("👹 ENEMY ANIM CHANGE (Player turn, idle): {} → {}", prev, animation_state.current_animation);
                         }
+                        // Clear any attack flags during player turn
+                        animation_state.fight_move_1 = false;
+                        animation_state.fight_move_2 = false;
                     }
                     _ => {
-                        // Default to idle
-                        let target_animation = 3; // Idle animation
-                        if target_animation != animation_state.current_animation {
-                            if let Some(animation) = animations.get_by_number(target_animation) {
-                                if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
-                                    player.stop_all();
-                                    player.play(animation).repeat();
-                                    animation_state.current_animation = target_animation;
-                                }
+                        // Default to idle for any other state
+                        let target_animation = 2; // Idle animation
+        if target_animation != animation_state.current_animation {
+            if let Some(animation) = animations.get_by_number(target_animation) {
+                if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
+                    player.stop_all();
+                    player.play(animation).repeat();
+                    animation_state.current_animation = target_animation;
+                }
                             }
+                            println!("👹 ENEMY ANIM CHANGE (Other, idle): {} → {}", prev, animation_state.current_animation);
                         }
                     }
                 }
@@ -246,23 +250,27 @@ fn enemy_ai_animations(
         } else {
             // Normal movement animations - enemy follows player
             let target_animation = if animation_state.forward_hold_time >= 3.0 {
-                4 // Running
+                4 // Running animation
             } else if animation_state.forward_hold_time > 0.0 {
-                7 // Walking
+                7 // Walking animation
             } else {
-                3 // Idle
+                2 // Idle animation
             };
 
-            // Only change animation if we need to
             if target_animation != animation_state.current_animation {
                 if let Some(animation) = animations.get_by_number(target_animation) {
                     if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
                         player.stop_all();
-                        player.play(animation).repeat();
+                        if target_animation == 2 {
+                            player.play(animation).repeat();
+                        } else {
+                            player.play(animation);
+                        }
                         animation_state.current_animation = target_animation;
                     }
                 }
+                println!("👹 ENEMY ANIM CHANGE (Chase): {} → {}", prev, animation_state.current_animation);
             }
         }
     }
-}
+} 

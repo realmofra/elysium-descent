@@ -12,7 +12,7 @@ impl Plugin for CharacterControllerPlugin {
             .add_event::<MovementAction>()
             .add_systems(
                 Update,
-                (movement, apply_movement_damping, update_animations).chain(),
+                (movement, apply_movement_damping, update_animations, detect_player_attack_finished).chain(),
             );
     }
 }
@@ -306,7 +306,7 @@ pub struct AnimationState {
 
 /// Updates animations based on character movement
 fn update_animations(
-    mut query: Query<(&LinearVelocity, &mut GltfAnimations, &mut AnimationState)>,
+    mut query: Query<(&LinearVelocity, &mut GltfAnimations, &mut AnimationState), (With<CharacterController>, Without<crate::systems::enemy_ai::Enemy>)>,
     mut animation_players: Query<&mut AnimationPlayer>,
     keyboard: Res<ButtonInput<KeyCode>>,
     combat_state: Option<Res<crate::screens::fight::CombatState>>,
@@ -332,6 +332,7 @@ fn update_animations(
         // PLAYER ANIMATIONS ONLY - enemy animations are handled in enemy_ai.rs
         // Check if fight moves are active - highest priority
         if animation_state.fight_move_1 {
+            println!("🎬 PLAYER ANIMATION: FightMove1=true, CurrentAnim={}", animation_state.current_animation);
             // Play fight move 1 animation (index 5)
             if animation_state.current_animation != 5 {
                 if let Some(animation) = animations.get_by_number(5) {
@@ -339,13 +340,23 @@ fn update_animations(
                         player.stop_all();
                         player.play(animation);
                         animation_state.current_animation = 5;
+                        println!("🎬 PLAYER ANIMATION: Started animation 5");
+                    } else {
+                        println!("🎬 PLAYER ANIMATION: Failed to get animation player");
                     }
+                } else {
+                    println!("🎬 PLAYER ANIMATION: Animation 5 not found!");
                 }
+            } else {
+                println!("🎬 PLAYER ANIMATION: Already playing animation 5");
             }
             // Check if animation has finished
             if let Ok(player) = animation_players.get(animations.animation_player) {
                 if player.all_finished() {
                     animation_state.fight_move_1 = false;
+                    println!("🎬 PLAYER ANIMATION: Animation 5 finished");
+                } else {
+                    println!("🎬 PLAYER ANIMATION: Animation 5 still playing");
                 }
             }
         } else if animation_state.fight_move_2 {
@@ -451,6 +462,26 @@ impl CharacterControllerBundle {
                 fight_move_2: false,
             },
             stair_climbing_state: StairClimbingState {},
+        }
+    }
+}
+
+/// Detects when player attack animations finish and updates combat state
+fn detect_player_attack_finished(
+    combat_state: Option<ResMut<crate::screens::fight::CombatState>>,
+    player_query: Query<(&AnimationState, &GltfAnimations), (With<CharacterController>, With<crate::screens::fight::FightPlayer>)>,
+    animation_players: Query<&AnimationPlayer>,
+) {
+    if let Some(mut combat_state) = combat_state {
+        for (animation_state, animations) in &player_query {
+            // Check if player was recently in a fight move and animation has finished
+            // We check if the animation player is playing animation 5 (attack) and it's finished
+            if let Ok(player) = animation_players.get(animations.animation_player) {
+                if animation_state.current_animation == 5 && player.all_finished() {
+                    combat_state.player_attack_finished = true;
+                    println!("✅ PLAYER: Attack animation finished");
+                }
+            }
         }
     }
 }
