@@ -6,20 +6,20 @@ categories = ["game"]
 description = "Elysium Descent is a roguelike game inspired by lootsurvivor built with Bevy and Dojo"
 homepage = "https://realmofra.com"
 authors = [
-  "Okhai Omotuebe <okhaio@protonmail.com>"
+  "Okhai Omotuebe <okhaio@protonmail.com>",
+  "Victor Omorogbe <victoromorogbe6@gmail.com>"
 ]
 keywords = ["game", "starknet", "bevy", "focg", "roguelike"]
 repository = "https://github.com/realmofra/elysium_descent"
 
 [dependencies]
 avian3d = { version = "0.3.1", features = ["debug-plugin"] }
-bevy = { version = "0.16.0", default-features = false, features = ["animation", "bevy_asset", "bevy_color", "bevy_core_pipeline", "bevy_gilrs", "bevy_gizmos", "bevy_gltf", "bevy_mesh_picking_backend", "bevy_pbr", "bevy_picking", "bevy_render", "bevy_scene", "bevy_sprite", "bevy_sprite_picking_backend", "bevy_state", "bevy_text", "bevy_ui", "bevy_ui_picking_backend", "bevy_window", "bevy_winit", "custom_cursor", "hdr", "multi_threaded", "png", "jpeg", "smaa_luts", "sysinfo_plugin", "tonemapping_luts", "webgl2", "x11"] }
+bevy = { version = "0.16.0", default-features = false, features = ["animation", "bevy_asset", "bevy_color", "bevy_core_pipeline", "bevy_gizmos", "bevy_gltf", "bevy_mesh_picking_backend", "bevy_pbr", "bevy_picking", "bevy_render", "bevy_scene", "bevy_sprite", "bevy_sprite_picking_backend", "bevy_state", "bevy_text", "bevy_ui", "bevy_ui_picking_backend", "bevy_window", "bevy_winit", "custom_cursor", "hdr", "multi_threaded", "png", "jpeg", "smaa_luts", "sysinfo_plugin", "tonemapping_luts", "webgl2"] }
 bevy_asset_loader = "0.23.0"
 bevy_enhanced_input = "0.12.0"
 bevy_gltf_animation = "0.2.0"
 bevy_kira_audio = { version = "0.23.0", features = ["mp3"] }
 bevy_lunex = "0.4.1"
-dojo_bevy_plugin = { git = "https://github.com/okhaimie-dev/dojo.bevy.git", rev = "6e2763d" }
 futures = "0.3.31"
 futures-lite = "2.6.0"
 log = { version = "0.4", features = [
@@ -30,8 +30,6 @@ once_cell = "1.21.3"
 rand = "0.9.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-starknet = "0.16.0"
-tokio = { version = "1.46.1", features = ["rt-multi-thread"] }
 tracing = { version = "0.1", features = [
     "max_level_debug",
     "release_max_level_warn",
@@ -65,3 +63,16 @@ codegen-units = 1
 # Do a second optimization pass over the entire program, including dependencies.
 # Slows compile times, marginal improvements.
 lto = "thin"
+
+#[patch.crates-io]
+#uuid = "=1.8.0"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1.46.1", features = ["rt-multi-thread"] }
+dojo_bevy_plugin = { git = "https://github.com/okhaimie-dev/dojo.bevy.git", rev = "6e2763d" }
+starknet = "0.16.0"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# Disable default features (includes net/mio) for wasm; only use the basic runtime
+tokio = { version = "1.46.1", default-features = false, features = ["rt"] }
+getrandom = { version = "0.3", features = ["wasm_js"] }

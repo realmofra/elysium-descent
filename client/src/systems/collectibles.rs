@@ -6,7 +6,7 @@ use std::collections::{HashMap, HashSet};
 use crate::constants::collectibles::COIN_STREAMING_RADIUS;
 use crate::screens::Screen;
 use crate::systems::character_controller::CharacterController;
-use crate::systems::dojo::PickupItemEvent;
+use crate::systems::dojo::pickup_item::PickupItemEvent;
 use crate::assets::ModelAssets;
 use crate::resources::audio::{PlaySfxEvent, SfxType};
 

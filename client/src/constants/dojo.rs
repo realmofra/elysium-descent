@@ -1,4 +1,6 @@
+#[cfg(not(target_arch = "wasm32"))]
 use starknet::core::types::Felt;
+#[cfg(not(target_arch = "wasm32"))]
 use starknet::macros::selector;
 use std::env;
 
@@ -10,8 +12,10 @@ pub struct DojoConfig {
     #[allow(dead_code)]
     pub katana_url: String,
     #[allow(dead_code)]
+    #[cfg(not(target_arch = "wasm32"))]
     pub world_address: Felt,
     #[allow(dead_code)]
+    #[cfg(not(target_arch = "wasm32"))]
     pub action_address: Felt,
     #[allow(dead_code)]
     pub use_dev_account: bool,
@@ -28,6 +32,7 @@ impl Default for DojoConfig {
             katana_url: env::var("KATANA_URL").unwrap_or_else(|_| {
                 "https://api.cartridge.gg/x/elysium-descent001/katana".to_string()
             }),
+            #[cfg(not(target_arch = "wasm32"))]
             world_address: env::var("WORLD_ADDRESS")
                 .ok()
                 .and_then(|addr| Felt::from_hex(&addr).ok())
@@ -37,6 +42,7 @@ impl Default for DojoConfig {
                         "0x002f3fd3e14a14bb1c98095c6f9c305b5660e41f6bbbf8f8dc8a52c6104fe5fa",
                     )
                 }),
+            #[cfg(not(target_arch = "wasm32"))]
             action_address: env::var("ACTION_ADDRESS")
                 .ok()
                 .and_then(|addr| Felt::from_hex(&addr).ok())
@@ -58,6 +64,8 @@ impl Default for DojoConfig {
 
 // Updated selectors for Elysium Descent contract functions
 #[allow(dead_code)]
+#[cfg(not(target_arch = "wasm32"))]
 pub const CREATE_GAME_SELECTOR: Felt = selector!("create_game");
 #[allow(dead_code)]
+#[cfg(not(target_arch = "wasm32"))]
 pub const PICKUP_ITEM_SELECTOR: Felt = selector!("pickup_item");
