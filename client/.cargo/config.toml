@@ -1,4 +1,6 @@
+# Use wasm-server-runner for wasm builds
 [target.wasm32-unknown-unknown]
-rustflags = ["--cfg=getrandom_backend=\"wasm_js\""]
+runner = "wasm-server-runner"
+rustflags = ['--cfg=getrandom_backend="wasm_js"']
 
 
