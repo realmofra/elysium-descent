@@ -1,11 +1,13 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
 use rand::Rng;
+use rand::seq::SliceRandom;
 use std::fs;
+use std::collections::HashSet;
 
 use super::Screen;
 use crate::assets::{FontAssets, ModelAssets, UiAssets};
-use crate::constants::collectibles::{MAX_COINS, MAX_COIN_PLACEMENT_ATTEMPTS, MIN_DISTANCE_BETWEEN_COINS};
+use crate::constants::collectibles::{MAX_COINS, MIN_DISTANCE_BETWEEN_COINS};
 use crate::systems::collectibles::{CollectibleSpawner, NavigationBasedSpawner, NavigationData, CoinStreamingManager};
 
 #[derive(Component)]
@@ -355,70 +357,109 @@ fn spawn_collectibles_system(
     if !loading_progress.collectibles_spawned 
         && loading_progress.should_load_stage(3, time.elapsed_secs()) {
         if collectible_spawner.coins_spawned == 0 {
-            // Pre-calculate coin positions using navigation data
-
-            
-            if nav_spawner.loaded && !nav_spawner.nav_positions.is_empty() {
-
-            } else {
-
-            }
-            
-            let mut rng = rand::rng();
-            let mut spawned_positions = Vec::new();
+            // Pre-calculate coin positions using navigation data with a simple, even, grid-based sampler
             let mut coins_calculated = 0;
-            let mut attempts = 0;
 
-            while coins_calculated < MAX_COINS && attempts < MAX_COIN_PLACEMENT_ATTEMPTS {
-                attempts += 1;
+            if nav_spawner.loaded && !nav_spawner.nav_positions.is_empty() {
+                // Build a shuffled order over nav positions
+                let mut rng = rand::rng();
+                let mut indices: Vec<usize> = (0..nav_spawner.nav_positions.len()).collect();
+                indices.shuffle(&mut rng);
 
-                // Use navigation positions if available, otherwise generate fallback positions
-                let base_pos = if nav_spawner.loaded && !nav_spawner.nav_positions.is_empty() {
-                    // Use actual navigation data
-                    nav_spawner.nav_positions[rng.random_range(0..nav_spawner.nav_positions.len())]
-                } else {
-                    // Generate fallback positions closer to spawn
-                    Vec3::new(
-                        rng.random_range(-60.0..60.0), // Reasonable range around spawn
-                        2.0, // Above ground for visibility
-                        rng.random_range(-60.0..60.0), // Reasonable range around spawn
-                    )
-                };
-                
-                // Add some randomness around the navigation position
-                let offset_x = rng.random_range(-5.0..5.0);
-                let offset_z = rng.random_range(-5.0..5.0);
-                let coin_pos = Vec3::new(
-                    base_pos.x + offset_x,
-                    base_pos.y.max(1.5), // Ensure above ground
-                    base_pos.z + offset_z,
-                );
+                // Use a spatial grid over XZ to ensure at most one coin per cell
+                // Cell size equals MIN_DISTANCE_BETWEEN_COINS to enforce spacing
+                let cell_size = MIN_DISTANCE_BETWEEN_COINS.max(2.0);
+                let mut occupied_cells: HashSet<(i32, i32)> = HashSet::new();
 
-                // Check minimum distance from other coins
-                let too_close = spawned_positions.iter().any(|&other_pos: &Vec3| {
-                    coin_pos.distance(other_pos) < MIN_DISTANCE_BETWEEN_COINS
-                });
+                // Optional: modest jitter within cell for natural placement
+                let jitter_max = (cell_size * 0.3).min(1.5);
 
-                if !too_close && is_valid_coin_position_preload(coin_pos, &spatial_query) {
-                    streaming_manager.add_position(coin_pos);
-                    spawned_positions.push(coin_pos);
-                    coins_calculated += 1;
+                for idx in indices {
+                    if coins_calculated >= MAX_COINS { break; }
 
-                    // Log progress every 100 coins
+                    let base = nav_spawner.nav_positions[idx];
+                    let cell = (
+                        (base.x / cell_size).floor() as i32,
+                        (base.z / cell_size).floor() as i32,
+                    );
 
+                    // Skip if cell already has a coin
+                    if occupied_cells.contains(&cell) { continue; }
+
+                    // Apply small jitter and clamp Y slightly above ground
+                    let jx = rng.random_range(-jitter_max..jitter_max);
+                    let jz = rng.random_range(-jitter_max..jitter_max);
+                    let candidate = Vec3::new(
+                        base.x + jx,
+                        base.y.max(1.5),
+                        base.z + jz,
+                    );
+
+                    // Validate against environment so we don't embed into geometry
+                    if is_valid_coin_position_preload(candidate, &spatial_query) {
+                        streaming_manager.add_position(candidate);
+                        occupied_cells.insert(cell);
+                        coins_calculated += 1;
+                    }
+                }
+
+                // If we didn't reach target, relax to allow a second pass with a smaller cell
+                if coins_calculated < MAX_COINS {
+                    let relaxed_cell_size = (cell_size * 0.75).max(1.5);
+                    let mut relaxed_cells: HashSet<(i32, i32)> = HashSet::new();
+                    let len = nav_spawner.nav_positions.len();
+                    let mut rng2 = rand::rng();
+                    for _ in 0..len {
+                        if coins_calculated >= MAX_COINS { break; }
+                        let idx = rng2.random_range(0..len);
+                        let base = nav_spawner.nav_positions[idx];
+                        let cell = (
+                            (base.x / relaxed_cell_size).floor() as i32,
+                            (base.z / relaxed_cell_size).floor() as i32,
+                        );
+                        if occupied_cells.contains(&cell) || relaxed_cells.contains(&cell) { continue; }
+                        let jx = rng2.random_range(-jitter_max..jitter_max);
+                        let jz = rng2.random_range(-jitter_max..jitter_max);
+                        let candidate = Vec3::new(base.x + jx, base.y.max(1.5), base.z + jz);
+                        if is_valid_coin_position_preload(candidate, &spatial_query) {
+                            streaming_manager.add_position(candidate);
+                            relaxed_cells.insert(cell);
+                            coins_calculated += 1;
+                        }
+                    }
+                }
+            } else {
+                // Fallback: grid around origin to avoid clumping when nav data is missing
+                let cell_size = MIN_DISTANCE_BETWEEN_COINS.max(2.0);
+                let half_extent = 60.0;
+                let mut occupied_cells: HashSet<(i32, i32)> = HashSet::new();
+                let mut rng = rand::rng();
+                let jitter_max = (cell_size * 0.3).min(1.5);
+
+                // Iterate over a coarse grid and place at most one per cell
+                let mut x = -half_extent;
+                while x <= half_extent && coins_calculated < MAX_COINS {
+                    let mut z = -half_extent;
+                    while z <= half_extent && coins_calculated < MAX_COINS {
+                        let cell = ((x / cell_size).floor() as i32, (z / cell_size).floor() as i32);
+                        if !occupied_cells.contains(&cell) {
+                            let jx = rng.random_range(-jitter_max..jitter_max);
+                            let jz = rng.random_range(-jitter_max..jitter_max);
+                            let candidate = Vec3::new(x + jx, 2.0, z + jz);
+                            if is_valid_coin_position_preload(candidate, &spatial_query) {
+                                streaming_manager.add_position(candidate);
+                                occupied_cells.insert(cell);
+                                coins_calculated += 1;
+                            }
+                        }
+                        z += cell_size;
+                    }
+                    x += cell_size;
                 }
             }
 
             collectible_spawner.coins_spawned = coins_calculated;
             loading_progress.collectibles_spawned = true;
-
-            if coins_calculated < MAX_COINS {
-
-            } else {
-
-            }
-            
-
         }
     }
 }
