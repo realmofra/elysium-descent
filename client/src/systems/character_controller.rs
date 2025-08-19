@@ -112,8 +112,14 @@ fn movement(
 
     // Check if any movement keys are pressed
     let is_movement_pressed = keyboard.any_pressed([
-        KeyCode::KeyW, KeyCode::KeyA, KeyCode::KeyS, KeyCode::KeyD,
-        KeyCode::ArrowUp, KeyCode::ArrowDown, KeyCode::ArrowLeft, KeyCode::ArrowRight,
+        KeyCode::KeyW,
+        KeyCode::KeyA,
+        KeyCode::KeyS,
+        KeyCode::KeyD,
+        KeyCode::ArrowUp,
+        KeyCode::ArrowDown,
+        KeyCode::ArrowLeft,
+        KeyCode::ArrowRight,
     ]);
 
     for event in movement_event_reader.read() {
@@ -193,7 +199,7 @@ fn movement(
             // Immediately stop horizontal movement
             linear_velocity.x = 0.0;
             linear_velocity.z = 0.0;
-            
+
             // Reset animation state for immediate idle
             animation_state.forward_hold_time = 0.0;
         }
@@ -207,8 +213,14 @@ fn apply_movement_damping(
 ) {
     // Check if any movement keys are pressed
     let is_movement_pressed = keyboard.any_pressed([
-        KeyCode::KeyW, KeyCode::KeyA, KeyCode::KeyS, KeyCode::KeyD,
-        KeyCode::ArrowUp, KeyCode::ArrowDown, KeyCode::ArrowLeft, KeyCode::ArrowRight,
+        KeyCode::KeyW,
+        KeyCode::KeyA,
+        KeyCode::KeyS,
+        KeyCode::KeyD,
+        KeyCode::ArrowUp,
+        KeyCode::ArrowDown,
+        KeyCode::ArrowLeft,
+        KeyCode::ArrowRight,
     ]);
 
     for (mut linear_velocity, animation_state, _transform) in &mut query {
@@ -266,14 +278,23 @@ pub struct AnimationState {
 
 /// Updates animations based on character movement
 fn update_animations(
-    mut query: Query<(&LinearVelocity, &mut GltfAnimations, &mut AnimationState), Without<crate::systems::enemy_ai::Enemy>>,
+    mut query: Query<
+        (&LinearVelocity, &mut GltfAnimations, &mut AnimationState),
+        Without<crate::systems::enemy_ai::Enemy>,
+    >,
     mut animation_players: Query<&mut AnimationPlayer>,
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
     // Check if any movement keys are pressed
     let is_movement_pressed = keyboard.any_pressed([
-        KeyCode::KeyW, KeyCode::KeyA, KeyCode::KeyS, KeyCode::KeyD,
-        KeyCode::ArrowUp, KeyCode::ArrowDown, KeyCode::ArrowLeft, KeyCode::ArrowRight,
+        KeyCode::KeyW,
+        KeyCode::KeyA,
+        KeyCode::KeyS,
+        KeyCode::KeyD,
+        KeyCode::ArrowUp,
+        KeyCode::ArrowDown,
+        KeyCode::ArrowLeft,
+        KeyCode::ArrowRight,
     ]);
 
     for (velocity, mut animations, mut animation_state) in &mut query {
@@ -318,11 +339,11 @@ fn update_animations(
         } else {
             // Normal movement animations - prioritize input over velocity for immediate response
             let target_animation = if !is_movement_pressed || !is_moving {
-                3 // Idle - immediately when no input or no movement
+                1 // Idle - immediately when no input or no movement
             } else if animation_state.forward_hold_time >= 3.0 {
-                4 // Running
+                3 // Running
             } else {
-                7 // Regular walking
+                4 // Regular walking
             };
 
             // Only change animation if we need to
@@ -352,7 +373,7 @@ pub fn setup_idle_animation(
     let mut player = animation_players
         .get_mut(gltf_animations.animation_player)
         .unwrap();
-    let animation = gltf_animations.get_by_number(2).unwrap();
+    let animation = gltf_animations.get_by_number(1).unwrap();
     player.stop_all();
     player.play(animation).repeat();
 }
@@ -384,7 +405,7 @@ impl CharacterControllerBundle {
             movement: MovementBundle::new(CharacterMovementConfig::MOVEMENT_ACCELERATION, 0.9, 7.0),
             animation_state: AnimationState {
                 forward_hold_time: 0.0,
-                current_animation: 2, // Start with idle animation
+                current_animation: 1, // Start with idle animation
                 fight_move_1: false,
                 fight_move_2: false,
             },
