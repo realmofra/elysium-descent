@@ -6,9 +6,22 @@ use std::collections::{HashMap, HashSet};
 use crate::constants::collectibles::COIN_STREAMING_RADIUS;
 use crate::screens::Screen;
 use crate::systems::character_controller::CharacterController;
-use crate::systems::dojo::PickupItemEvent;
 use crate::assets::ModelAssets;
 use crate::resources::audio::{PlaySfxEvent, SfxType};
+use crate::systems::level_manager::LevelManager;
+use crate::systems::objectives::ObjectiveManager;
+
+
+// ===== RESOURCES =====
+
+/// Resource to track collectible progress for objectives
+#[derive(Resource, Default)]
+pub struct CollectibleProgressTracker {
+    pub coins_collected: u32,
+    pub books_collected: u32,
+    pub health_potions_collected: u32,
+    pub survival_kits_collected: u32,
+}
 
 // ===== COMPONENTS & RESOURCES =====
 
@@ -130,7 +143,8 @@ pub struct CollectiblesPlugin;
 
 impl Plugin for CollectiblesPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(crate::ui::inventory::InventoryVisibilityState::default())
+        app.init_resource::<CollectibleProgressTracker>()
+            .insert_resource(crate::ui::inventory::InventoryVisibilityState::default())
             .init_resource::<CollectibleSpawner>()
             .init_resource::<PlayerMovementTracker>()
             .init_resource::<NavigationBasedSpawner>()
@@ -143,6 +157,7 @@ impl Plugin for CollectiblesPlugin {
                     handle_coin_collisions,           // Handle collision-based coin collection
                     update_floating_items,
                     rotate_collectibles,
+                    spawn_objective_targets,          // Spawn target items for reach_location objectives
 
                     crate::ui::inventory::add_item_to_inventory,
                     crate::ui::inventory::toggle_inventory_visibility,
@@ -303,7 +318,7 @@ fn handle_coin_collisions(
     mut collision_events: EventReader<CollisionStarted>,
     player_query: Query<Entity, With<CharacterController>>,
     coin_query: Query<(Entity, &CollectibleType, Option<&StreamingCoin>), (With<Collectible>, Without<Collected>)>,
-    mut pickup_events: EventWriter<PickupItemEvent>,
+    mut progress_tracker: ResMut<CollectibleProgressTracker>,
     mut streaming_manager: ResMut<CoinStreamingManager>,
     mut sfx_events: EventWriter<PlaySfxEvent>,
 ) {
@@ -343,11 +358,23 @@ fn handle_coin_collisions(
                 commands.insert_resource(NextItemToAdd(*collectible_type));
                 // Despawn the entity immediately
                 commands.entity(entity).despawn();
-                // Trigger blockchain event
-                pickup_events.write(PickupItemEvent {
-                    item_type: *collectible_type,
-                    item_entity: entity,
-                });
+                // Update progress tracker
+                match collectible_type {
+                    CollectibleType::Coin => {
+                        progress_tracker.coins_collected += 1;
+                    },
+                    CollectibleType::Book => {
+                        progress_tracker.books_collected += 1;
+                    },
+                    CollectibleType::HealthPotion => {
+                        progress_tracker.health_potions_collected += 1;
+                    },
+                    CollectibleType::SurvivalKit => {
+                        progress_tracker.survival_kits_collected += 1;
+                    },
+                }
+                
+
 
 
             }
@@ -470,6 +497,78 @@ impl Default for NavigationBasedSpawner {
             nav_positions: Vec::new(),
             spawn_probability: 0.15,     // 15% chance per nav position
             loaded: false,
+        }
+    }
+}
+
+// ===== TARGET ITEM SPAWNING FOR REACH_LOCATION OBJECTIVES =====
+
+/// Component to mark items that are targets for reach_location objectives
+#[derive(Component)]
+pub struct ObjectiveTarget;
+
+/// System to spawn target items for reach_location objectives
+pub fn spawn_objective_targets(
+    mut commands: Commands,
+    level_manager: Res<LevelManager>,
+    objective_manager: Res<ObjectiveManager>,
+    model_assets: Res<ModelAssets>,
+    target_query: Query<Entity, With<ObjectiveTarget>>,
+) {
+    // Only run when level changes or objectives are loaded
+    if !level_manager.is_changed() && !objective_manager.is_changed() {
+        return;
+    }
+
+    // Clear existing target items
+    for entity in target_query.iter() {
+        commands.entity(entity).despawn();
+    }
+
+    // Get current level data
+    let Some(level_data) = level_manager.get_current_level() else { return; };
+
+    // Spawn target items for reach_location objectives
+    for level_obj in &level_data.objectives {
+        if level_obj.objective_type == "reach_location" {
+            if let Some(position) = &level_obj.position {
+                let target_pos = Vec3::new(position.x, position.y, position.z);
+                
+                // Determine which model to use based on target type
+                let model_handle = match level_obj.target.as_single().unwrap_or("ancient_book") {
+                    "ancient_book" => model_assets.book.clone(),
+                    "mystery_box" => model_assets.mystery_box.clone(),
+                    "power_crystal" => model_assets.book.clone(), // Use book as fallback for power crystal
+                    _ => model_assets.book.clone(), // Default to book
+                };
+
+                // Spawn the target item
+                let _entity = commands.spawn((
+                    Name::new(format!("Objective Target: {}", level_obj.title)),
+                    SceneRoot(model_handle),
+                    Transform {
+                        translation: target_pos,
+                        scale: Vec3::splat(1.0),
+                        ..default()
+                    },
+                    ObjectiveTarget,
+                    Collectible,
+                    CollectibleType::Book, // Default type for reach_location targets
+                    FloatingItem {
+                        base_height: target_pos.y,
+                        hover_amplitude: 0.3,
+                        hover_speed: 1.5,
+                    },
+                    CollectibleRotation {
+                        enabled: true,
+                        clockwise: true,
+                        speed: 1.0,
+                    },
+                    Visibility::Visible,
+                )).id();
+
+                info!("🎯 Spawned objective target '{}' at position {:?}", level_obj.title, target_pos);
+            }
         }
     }
 }

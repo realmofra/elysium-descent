@@ -19,36 +19,60 @@ pub struct ObjectiveSlot {
 pub struct ObjectiveCheckmark;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum ObjectiveType {
+    Collect(CollectibleType, u32), // Collectible type and required count
+    ReachLocation(Vec3, f32),      // Target position and completion radius
+    Defeat(String),                 // Target entity ID
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Objective {
     pub id: usize,
     pub title: String,
     pub description: String,
-    pub item_type: CollectibleType,
-    pub required_count: u32,
-    pub current_count: u32,
+    pub objective_type: ObjectiveType,
     pub completed: bool,
 }
 
 impl Objective {
-    pub fn new(id: usize, title: String, description: String, item_type: CollectibleType, required_count: u32) -> Self {
+    pub fn new_collect(id: usize, title: String, description: String, item_type: CollectibleType, required_count: u32) -> Self {
         Self {
             id,
             title,
             description,
-            item_type,
-            required_count,
-            current_count: 0,
+            objective_type: ObjectiveType::Collect(item_type, required_count),
             completed: false,
         }
     }
 
-    // Removed unused is_completed and add_progress methods
+    pub fn new_location(id: usize, title: String, description: String, position: Vec3, radius: f32) -> Self {
+        Self {
+            id,
+            title,
+            description,
+            objective_type: ObjectiveType::ReachLocation(position, radius),
+            completed: false,
+        }
+    }
+
+    pub fn new_defeat(id: usize, title: String, description: String, target_id: String) -> Self {
+        Self {
+            id,
+            title,
+            description,
+            objective_type: ObjectiveType::Defeat(target_id),
+            completed: false,
+        }
+    }
+
+
 }
 
 #[derive(Resource, Default)]
 pub struct ObjectiveManager {
     pub objectives: Vec<Objective>,
     pub next_id: usize,
+    pub version: u32, // Track changes to trigger UI updates
 }
 
 
@@ -79,53 +103,33 @@ impl Plugin for ObjectivesPlugin {
 
 // ===== SYSTEMS =====
 
-fn setup_initial_objectives(mut objective_manager: ResMut<ObjectiveManager>) {
-    // Clear any existing objectives
-    objective_manager.objectives.clear();
-    objective_manager.next_id = 0;
-
-    // Add objectives with different completion states (1/5, 2/5, 3/5, 4/5, 5/5)
-    let health_id = objective_manager.next_id;
-    let mut health_objective = Objective::new(health_id, "Collect Health Potions".to_string(), "Collect 5 Health Potions".to_string(), CollectibleType::HealthPotion, 5);
-    health_objective.current_count = 1; // 1/5 completed
-    objective_manager.add_objective(health_objective);
-
-    let survival_id = objective_manager.next_id;
-    let mut survival_objective = Objective::new(survival_id, "Find Survival Kits".to_string(), "Find 3 Survival Kits".to_string(), CollectibleType::SurvivalKit, 3);
-    survival_objective.current_count = 2; // 2/3 completed (equivalent to 2/5)
-    objective_manager.add_objective(survival_objective);
-
-    let book_id = objective_manager.next_id;
-    let mut book_objective = Objective::new(book_id, "Gather Ancient Books".to_string(), "Gather 2 Ancient Books".to_string(), CollectibleType::Book, 2);
-    book_objective.current_count = 1; // 1/2 completed (equivalent to 3/5)
-    objective_manager.add_objective(book_objective);
-
-    let coin_id = objective_manager.next_id;
-    let mut coin_objective = Objective::new(coin_id, "Collect Golden Coins".to_string(), "Collect 10 Golden Coins".to_string(), CollectibleType::Coin, 10);
-    coin_objective.current_count = 8; // 8/10 completed (equivalent to 4/5)
-    objective_manager.add_objective(coin_objective);
-
-    let exploration_id = objective_manager.next_id;
-    let mut exploration_objective = Objective::new(exploration_id, "Explore Ancient Ruins".to_string(), "Visit 3 Ancient Ruins".to_string(), CollectibleType::Book, 3);
-    exploration_objective.current_count = 3; // 3/3 completed (equivalent to 5/5)
-    exploration_objective.completed = true; // Mark as completed
-    objective_manager.add_objective(exploration_objective);
+fn setup_initial_objectives(_objective_manager: ResMut<ObjectiveManager>) {
+    // This function is now handled by the level manager
+    // Objectives are loaded from level JSON files
 }
 
 fn update_objective_ui(
     mut commands: Commands,
     objective_manager: Res<ObjectiveManager>,
+    progress_tracker: Res<crate::systems::collectibles::CollectibleProgressTracker>,
     font_assets: Option<Res<crate::assets::FontAssets>>,
     ui_assets: Option<Res<crate::assets::UiAssets>>,
     _objectives_ui_query: Query<Entity, With<ObjectiveUI>>,
     objectives_list_query: Query<Entity, (With<Node>, With<Name>)>,
     existing_slots: Query<Entity, With<ObjectiveSlot>>,
+    view_more_query: Query<Entity, With<Name>>,
     _children: Query<&Children>,
     names: Query<&Name>,
 ) {
-    if !objective_manager.is_changed() {
-        return; // Only update when objectives change
+    // Always update progress display, but only recreate UI when objectives change
+    let needs_ui_rebuild = objective_manager.is_changed();
+    let needs_progress_update = progress_tracker.is_changed();
+    
+    if !needs_ui_rebuild && !needs_progress_update {
+        return; // Only update when objectives or progress changes
     }
+    
+
 
     let Some(font_assets) = font_assets else { return; };
     let Some(ui_assets) = ui_assets else { return; };
@@ -146,41 +150,124 @@ fn update_objective_ui(
         return;
     };
 
-    // Clear existing objective slots
-    for slot_entity in existing_slots.iter() {
-        commands.entity(slot_entity).despawn();
+    // Check if we need to create the initial UI or just update existing slots
+    let existing_slots_count = existing_slots.iter().count();
+    let objectives_count = objective_manager.objectives.len();
+    
+    if existing_slots_count == 0 {
+        // Initial creation - create all objective slots and View More button
+        let font = font_assets.rajdhani_bold.clone();
+        let coin_image = ui_assets.coin.clone();
+
+        for objective in &objective_manager.objectives {
+            let slot_entity = commands.spawn(create_objective_slot(objective, font.clone(), coin_image.clone(), ui_assets.green_check_icon.clone(), &progress_tracker)).id();
+            commands.entity(list_entity).add_child(slot_entity);
+        }
+
+        // Add "View More" button after objectives
+        let view_more_entity = commands.spawn(create_view_more_button(font.clone())).id();
+        commands.entity(list_entity).add_child(view_more_entity);
+    } else if existing_slots_count == objectives_count {
+        // Check if we need to update the UI
+        let needs_update = needs_ui_rebuild || needs_progress_update;
+        
+        if needs_update {
+            // Clear existing objective slots
+            for slot_entity in existing_slots.iter() {
+                commands.entity(slot_entity).despawn();
+            }
+            
+            // Remove any existing View More buttons to prevent duplicates
+            for entity in view_more_query.iter() {
+                if let Ok(name) = names.get(entity) {
+                    if name.as_str() == "View More Button" {
+                        commands.entity(entity).despawn();
+                    }
+                }
+            }
+            
+            // Recreate all objective slots
+            let font = font_assets.rajdhani_bold.clone();
+            let coin_image = ui_assets.coin.clone();
+            
+            for objective in &objective_manager.objectives {
+                let slot_entity = commands.spawn(create_objective_slot(objective, font.clone(), coin_image.clone(), ui_assets.green_check_icon.clone(), &progress_tracker)).id();
+                commands.entity(list_entity).add_child(slot_entity);
+            }
+            
+            // Add "View More" button after objectives
+            let view_more_entity = commands.spawn(create_view_more_button(font.clone())).id();
+            commands.entity(list_entity).add_child(view_more_entity);
+        }
+    } else {
+        // Count mismatch - recreate everything
+        // Clear existing objective slots
+        for slot_entity in existing_slots.iter() {
+            commands.entity(slot_entity).despawn();
+        }
+
+        // Remove any existing View More buttons to prevent duplicates
+        for entity in view_more_query.iter() {
+            if let Ok(name) = names.get(entity) {
+                if name.as_str() == "View More Button" {
+                    commands.entity(entity).despawn();
+                }
+            }
+        }
+
+        // Spawn new objective slots for each objective
+        let font = font_assets.rajdhani_bold.clone();
+        let coin_image = ui_assets.coin.clone();
+
+        for objective in &objective_manager.objectives {
+            let slot_entity = commands.spawn(create_objective_slot(objective, font.clone(), coin_image.clone(), ui_assets.green_check_icon.clone(), &progress_tracker)).id();
+            commands.entity(list_entity).add_child(slot_entity);
+        }
+
+        // Add "View More" button after objectives
+        let view_more_entity = commands.spawn(create_view_more_button(font.clone())).id();
+        commands.entity(list_entity).add_child(view_more_entity);
     }
-
-    // Spawn new objective slots for each objective
-    let font = font_assets.rajdhani_bold.clone();
-    let coin_image = ui_assets.coin.clone(); // Using coin as placeholder for all items
-
-    for objective in &objective_manager.objectives {
-        let slot_entity = commands.spawn(create_objective_slot(objective, font.clone(), coin_image.clone(), ui_assets.green_check_icon.clone())).id();
-        commands.entity(list_entity).add_child(slot_entity);
-    }
-
-    // Add "View More" button after objectives
-    let view_more_entity = commands.spawn(create_view_more_button(font.clone())).id();
-    commands.entity(list_entity).add_child(view_more_entity);
 }
+
+
 
 fn create_objective_slot(
     objective: &Objective,
     font: Handle<Font>,
     item_image: Handle<Image>,
     check_icon: Handle<Image>,
+    progress_tracker: &crate::systems::collectibles::CollectibleProgressTracker,
 ) -> impl Bundle {
-    let progress_percent = if objective.required_count > 0 {
-        objective.current_count as f32 / objective.required_count as f32
-    } else {
-        1.0
+    let (progress_text, progress_percent) = match &objective.objective_type {
+        ObjectiveType::Collect(collectible_type, required_count) => {
+            let current_count = match collectible_type {
+                crate::systems::collectibles::CollectibleType::Coin => progress_tracker.coins_collected,
+                crate::systems::collectibles::CollectibleType::Book => progress_tracker.books_collected,
+                crate::systems::collectibles::CollectibleType::HealthPotion => progress_tracker.health_potions_collected,
+                crate::systems::collectibles::CollectibleType::SurvivalKit => progress_tracker.survival_kits_collected,
+            };
+            let percent = if *required_count > 0 {
+                current_count as f32 / *required_count as f32
+            } else {
+                1.0
+            };
+            (format!("{}/{}", current_count, required_count), percent)
+        },
+        ObjectiveType::ReachLocation(_, _) => {
+            let percent = if objective.completed { 1.0 } else { 0.0 };
+            (if objective.completed { "COMPLETED" } else { "GO TO LOCATION" }.to_string(), percent)
+        },
+        ObjectiveType::Defeat(_) => {
+            let percent = if objective.completed { 1.0 } else { 0.0 };
+            (if objective.completed { "COMPLETED" } else { "DEFEAT TARGET" }.to_string(), percent)
+        },
     };
 
     (
         Node {
             width: Val::Percent(100.0),
-            height: Val::Px(136.0),
+            height: Val::Px(160.0), // Increased from 136px to 160px for better progress bar spacing
             flex_direction: FlexDirection::Row,
             align_items: AlignItems::Center,
             margin: UiRect::bottom(Val::Px(12.0)),
@@ -197,8 +284,8 @@ fn create_objective_slot(
             // Item Icon Container
             (
                 Node {
-                    width: Val::Px(96.0),
-                    height: Val::Px(96.0),
+                    width: Val::Px(113.0), // Increased from 96px to 113px to maintain proportions (17.6% increase)
+                    height: Val::Px(120.0), // Increased from 96px to 120px to maintain proportions
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
                     margin: UiRect::right(Val::Px(18.0)),
@@ -269,8 +356,8 @@ fn create_objective_slot(
                 Node {
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::SpaceBetween,
-                    width: Val::Px(300.0),
-                    height: Val::Px(96.0),
+                    width: Val::Px(353.0), // Increased from 300px to 353px to maintain proportions (17.6% increase)
+                    height: Val::Px(120.0), // Increased from 96px to 120px to maintain proportions
                     ..default()
                 },
                 children![
@@ -304,7 +391,7 @@ fn create_objective_slot(
                     ),
                     // Progress Text
                     (
-                        Text::new(format!("{}/{}", objective.current_count, objective.required_count)),
+                        Text::new(&progress_text),
                         TextFont {
                             font: font.clone(),
                             font_size: 18.0,
@@ -319,24 +406,24 @@ fn create_objective_slot(
                     // Progress Bar
                     (
                         Node {
-                            width: Val::Px(270.0),
-                            height: Val::Px(12.0),
+                            width: Val::Px(318.0), // Increased from 270px to 318px to maintain proportions (17.6% increase)
+                            height: Val::Px(16.0), // Increased from 12px to 16px for better visibility
                             border: UiRect::all(Val::Px(1.5)),
                             ..default()
                         },
                         BackgroundColor(Color::DARKER_GLASS),
                         BorderColor(Color::ELYSIUM_GOLD.with_alpha(0.4)),
-                        BorderRadius::all(Val::Px(6.0)),
+                        BorderRadius::all(Val::Px(8.0)), // Adjusted border radius for new height
                         children![
                             (
                                 Node {
-                                    width: Val::Px(267.0 * progress_percent),
-                                    height: Val::Px(9.0),
+                                    width: Val::Px(315.0 * progress_percent), // Increased from 267px to 315px to maintain proportions (17.6% increase)
+                                    height: Val::Px(13.0), // Increased from 9px to 13px for better visibility
                                     margin: UiRect::all(Val::Px(1.5)),
                                     ..default()
                                 },
                                 BackgroundColor(Color::ELYSIUM_GOLD),
-                                BorderRadius::all(Val::Px(4.5)),
+                                BorderRadius::all(Val::Px(6.5)), // Adjusted border radius for new height
                             )
                         ]
                     )
