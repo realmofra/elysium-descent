@@ -1,4 +1,4 @@
-use crate::constants::movement::CharacterMovementConfig;
+use crate::constants::movement::{CharacterAnimationConfig, CharacterMovementConfig};
 use avian3d::{math::*, prelude::*};
 use bevy::prelude::*;
 use bevy_gltf_animation::prelude::*;
@@ -94,6 +94,17 @@ impl Default for JumpCooldown {
     }
 }
 
+const MOVEMENT_KEYS: [KeyCode; 8] = [
+    KeyCode::KeyW,
+    KeyCode::KeyA,
+    KeyCode::KeyS,
+    KeyCode::KeyD,
+    KeyCode::ArrowUp,
+    KeyCode::ArrowDown,
+    KeyCode::ArrowLeft,
+    KeyCode::ArrowRight,
+];
+
 /// Responds to [`MovementAction`] events and moves character controllers accordingly
 fn movement(
     time: Res<Time>,
@@ -111,16 +122,7 @@ fn movement(
     jump_cooldown.last_jump_time += delta_time;
 
     // Check if any movement keys are pressed
-    let is_movement_pressed = keyboard.any_pressed([
-        KeyCode::KeyW,
-        KeyCode::KeyA,
-        KeyCode::KeyS,
-        KeyCode::KeyD,
-        KeyCode::ArrowUp,
-        KeyCode::ArrowDown,
-        KeyCode::ArrowLeft,
-        KeyCode::ArrowRight,
-    ]);
+    let is_movement_pressed = keyboard.any_pressed(MOVEMENT_KEYS);
 
     for event in movement_event_reader.read() {
         for (jump_impulse, mut linear_velocity, mut transform, mut animation_state) in
@@ -212,16 +214,7 @@ fn apply_movement_damping(
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
     // Check if any movement keys are pressed
-    let is_movement_pressed = keyboard.any_pressed([
-        KeyCode::KeyW,
-        KeyCode::KeyA,
-        KeyCode::KeyS,
-        KeyCode::KeyD,
-        KeyCode::ArrowUp,
-        KeyCode::ArrowDown,
-        KeyCode::ArrowLeft,
-        KeyCode::ArrowRight,
-    ]);
+    let is_movement_pressed = keyboard.any_pressed(MOVEMENT_KEYS);
 
     for (mut linear_velocity, animation_state, _transform) in &mut query {
         // If no movement keys are pressed, immediately stop horizontal movement
@@ -286,16 +279,7 @@ fn update_animations(
     keyboard: Res<ButtonInput<KeyCode>>,
 ) {
     // Check if any movement keys are pressed
-    let is_movement_pressed = keyboard.any_pressed([
-        KeyCode::KeyW,
-        KeyCode::KeyA,
-        KeyCode::KeyS,
-        KeyCode::KeyD,
-        KeyCode::ArrowUp,
-        KeyCode::ArrowDown,
-        KeyCode::ArrowLeft,
-        KeyCode::ArrowRight,
-    ]);
+    let is_movement_pressed = keyboard.any_pressed(MOVEMENT_KEYS);
 
     for (velocity, mut animations, mut animation_state) in &mut query {
         let horizontal_velocity = Vec2::new(velocity.x, velocity.z);
@@ -304,12 +288,14 @@ fn update_animations(
         // Check if fight moves are active
         if animation_state.fight_move_1 {
             // Play fight move 1 animation (index 5)
-            if animation_state.current_animation != 5 {
-                if let Some(animation) = animations.get_by_number(5) {
+            if animation_state.current_animation != CharacterAnimationConfig::FIGHT_MOVE_1 {
+                if let Some(animation) =
+                    animations.get_by_number(CharacterAnimationConfig::FIGHT_MOVE_1)
+                {
                     if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
                         player.stop_all();
                         player.play(animation);
-                        animation_state.current_animation = 5;
+                        animation_state.current_animation = CharacterAnimationConfig::FIGHT_MOVE_1;
                     }
                 }
             }
@@ -321,12 +307,14 @@ fn update_animations(
             }
         } else if animation_state.fight_move_2 {
             // Play fight move 2 animation (index 6)
-            if animation_state.current_animation != 6 {
-                if let Some(animation) = animations.get_by_number(6) {
+            if animation_state.current_animation != CharacterAnimationConfig::FIGHT_MOVE_2 {
+                if let Some(animation) =
+                    animations.get_by_number(CharacterAnimationConfig::FIGHT_MOVE_2)
+                {
                     if let Ok(mut player) = animation_players.get_mut(animations.animation_player) {
                         player.stop_all();
                         player.play(animation);
-                        animation_state.current_animation = 6;
+                        animation_state.current_animation = CharacterAnimationConfig::FIGHT_MOVE_2;
                     }
                 }
             }
@@ -339,11 +327,13 @@ fn update_animations(
         } else {
             // Normal movement animations - prioritize input over velocity for immediate response
             let target_animation = if !is_movement_pressed || !is_moving {
-                1 // Idle - immediately when no input or no movement
-            } else if animation_state.forward_hold_time >= 3.0 {
-                3 // Running
+                CharacterAnimationConfig::IDLE // Idle - immediately when no input or no movement
+            } else if animation_state.forward_hold_time
+                >= CharacterMovementConfig::RUN_TRIGGER_HOLD_TIME
+            {
+                CharacterAnimationConfig::RUNNING // Running
             } else {
-                4 // Regular walking
+                CharacterAnimationConfig::WALKING // Regular walking
             };
 
             // Only change animation if we need to
@@ -405,7 +395,7 @@ impl CharacterControllerBundle {
             movement: MovementBundle::new(CharacterMovementConfig::MOVEMENT_ACCELERATION, 0.9, 7.0),
             animation_state: AnimationState {
                 forward_hold_time: 0.0,
-                current_animation: 1, // Start with idle animation
+                current_animation: CharacterAnimationConfig::IDLE, // Start with idle animation
                 fight_move_1: false,
                 fight_move_2: false,
             },
